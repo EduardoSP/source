@@ -1,0 +1,233 @@
+# -*- coding: utf-8 -*-
+from ..autenticacion import autenticacion
+from django.conf              import settings
+from ..conexion               import conexion
+from datetime                 import datetime
+import geocoder
+import math
+from geopy.distance import vincenty
+import random
+
+RANGO_PUNTOSREFERENCIAS_LATITUD = 0.05
+RANGO_PUNTOSREFERENCIAS_LONGITUD = 0.05
+
+# RANGO_PEAJE_LATITUD  = 0.05
+# RANGO_PEAJE_LONGITUD = 0.05
+
+# RANGO_POSTE_LATITUD  = 0.02
+# RANGO_POSTE_LONGITUD = 0.02
+
+# RANGO_MUNICIPIO_LATITUD  = 0.1
+# RANGO_MUNICIPIO_LONGITUD = 0.1
+
+
+def buscarPuntosReferencias(peticion):
+    autenticacion = peticion['autenticacion']
+    datos         = peticion['data']
+
+    latitud          = datos["latitud"]
+    longitud         = datos["longitud"]
+    buscarDireccion  = datos["buscarDireccion"]
+
+    buscarDireccion = True
+    
+    db = conexion.getConexionGeocoder()
+
+    minLatitud  = latitud - RANGO_PUNTOSREFERENCIAS_LATITUD
+    maxLatitud  = latitud + RANGO_PUNTOSREFERENCIAS_LATITUD
+    minLongitud = longitud - RANGO_PUNTOSREFERENCIAS_LONGITUD
+    maxLongitud = longitud + RANGO_PUNTOSREFERENCIAS_LONGITUD
+
+    filas = db.view(
+        '_design/geocoder/_view/puntosreferencialatitud',
+        startkey      = [minLatitud, 0],
+        endkey        = [maxLatitud, {}],
+        include_docs  = True
+    )
+
+    docMunicipio = None
+    docPeaje     = None
+    docPoste     = None
+    
+    for fila in filas:
+        docPuntoReferencia      = fila.doc
+        latitudPuntoReferencia  = docPuntoReferencia["latitud"]
+        longitudPuntoReferencia = docPuntoReferencia["longitud"]
+
+        if longitudPuntoReferencia >= minLongitud and longitudPuntoReferencia <= maxLongitud:
+
+            if docPuntoReferencia["tipoReferencia"] == "municipio":
+                if esMasCerca(docPuntoReferencia, docMunicipio, latitud, longitud):
+                    docMunicipio = docPuntoReferencia
+            elif docPuntoReferencia["tipoReferencia"] == "peaje":
+                if esMasCerca(docPuntoReferencia, docPeaje, latitud, longitud):
+                    docPeaje = docPuntoReferencia
+            elif docPuntoReferencia["tipoReferencia"] == "poste":
+                if esMasCerca(docPuntoReferencia, docPoste, latitud, longitud):
+                    docPoste = docPuntoReferencia
+
+    direccion = ""
+    if buscarDireccion:
+        direccion = getDireccion(latitud, longitud)
+        
+    dataRaw = {
+        "direccion" : direccion
+    }
+    
+    if not docMunicipio == None:
+        dataRaw["municipio"] = {
+            "latitud"      : docMunicipio["latitud"],
+            "longitud"     : docMunicipio["longitud"],
+            "nombre"       : docMunicipio["nombre"],
+            "departamento" : docMunicipio["departamento"],
+            "distancia"    : calcularDistancia(docMunicipio["latitud"], docMunicipio["longitud"], latitud, longitud),
+            "direccion"    : calcularDireccion(docMunicipio["latitud"], docMunicipio["longitud"], latitud, longitud)
+        }
+
+    if not docPeaje == None:
+        dataRaw["peaje"] = {
+            "latitud"      : docPeaje["latitud"],
+            "longitud"     : docPeaje["longitud"],
+            "nombre"       : docPeaje["nombre"],
+            "departamento" : docPeaje["departamento"],
+            "sector"       : docPeaje["sector"],
+            "distancia"    : calcularDistancia(docPeaje["latitud"], docPeaje["longitud"], latitud, longitud),
+            "direccion"    : calcularDireccion(docPeaje["latitud"], docPeaje["longitud"], latitud, longitud)
+        }
+
+    if not docPoste == None:
+        dataRaw["poste"] = {
+            "latitud"      : docPoste["latitud"],
+            "longitud"     : docPoste["longitud"],
+            "nombre"       : docPoste["nombre"],
+            "tramo"        : docPoste["tramo"],
+            "sector"       : docPoste["sector"],
+            "distancia"    : calcularDistancia(docPoste["latitud"], docPoste["longitud"], latitud, longitud),
+            "direccion"    : calcularDireccion(docPoste["latitud"], docPoste["longitud"], latitud, longitud)
+        }
+    
+                    
+    return {
+        'success' : True,
+        'data'    : dataRaw
+    }
+    
+def getDireccion(latitud, longitud):
+    db    = conexion.getConexionGeocoder()
+
+    latitudS  = "{0:.4f}".format(float(latitud))
+    longitudS = "{0:.4f}".format(float(longitud))
+    
+    filas = db.view(
+        '_design/geocoder/_view/direcciones',
+        key           = [latitudS, longitudS],
+        include_docs  = False,
+        
+    )
+
+    direccion = ""
+    for fila in filas:
+        key       = fila.key
+        direccion = fila.value
+
+    if direccion == "":
+       g = geocoder.google([latitud, longitud], method='reverse')
+       direccion = g.address
+       if not direccion == None and not direccion == "":
+           guardarPosicionesGeocoder(db, latitud, longitud, direccion)
+       else:
+           direccion = ""
+
+    return direccion
+
+def guardarPosicionesGeocoder(db, latitud, longitud, direccion):
+    print "----------------------------Guardo-------------------------"
+    #funcion para guardar la geoposición en el documento posicionesGeocoder
+    if db == None:
+        return { 'success' : False, 'mensaje': "existe el tenant" }
+    try: 
+        doc_id, doc_rev = db.save({
+            "tipoDato"      : "geocoder",
+            "creadoEn"      : datetime.now().isoformat(),
+	    "activo"        : True,	    
+	    "latitud"       : latitud,
+	    "longitud"      : longitud,
+	    "direccion"     : direccion
+            
+        })
+        print doc_id
+
+    except ValueError:
+        return { 'success' : False }
+
+#Retorn true si docNUevo es mas cercano a docVehiejo a la latitud longitud
+def esMasCerca(docNuevo, docViejo, latitud, longitud):
+    if docViejo == None:
+        return True
+
+    distanciaNuevo = math.sqrt(
+        ((docNuevo["latitud"] - latitud)**2) +
+        ((docNuevo["longitud"] - longitud)**2)        
+    )
+
+    distanciaViejo = math.sqrt(
+        ((docViejo["latitud"] - latitud)**2) +
+        ((docViejo["longitud"] - longitud)**2)        
+    )
+
+    if distanciaNuevo < distanciaViejo:
+        return True
+    else:
+        return False
+    
+
+def calcularDistancia(latitud1, longitud1, latitud2, longitud2):
+    puntoInicial    = (
+        float(latitud1),
+        float(longitud1)
+    )
+
+    puntoFinal      = (
+        float(latitud2),
+        float(longitud2)
+    )
+
+    distanciaMetros = vincenty(puntoInicial, puntoFinal).meters
+
+    return distanciaMetros
+
+def calcularDireccion(latitud2, longitud2, latitud1, longitud1):
+    print latitud1, longitud1, latitud2, longitud2
+    longitud1 *= 1.25
+    longitud2 *= 1.25
+    radianes = math.atan2(latitud2-latitud1, longitud2-longitud1)
+    grados   = math.degrees(radianes)
+
+    print grados
+    respuesta = "Norte"
+    
+    if grados >= 0:
+        if grados <= 22.5:
+            respuesta = "Oriente"
+        elif grados <= 67.5:
+            respuesta = "Nororiente"
+        elif grados <= 112.5:
+            respuesta = "Norte"
+        elif grados <= 157.5:
+            respuesta = "Noroccidente"
+        elif grados <= 180:
+            respuesta = "Occidente"
+    else:
+        if grados <= -22.5:
+            respuesta = "Oriente"
+        elif grados <= -67.5:
+            respuesta = "Suroriente"
+        elif grados <= -112.5:
+            respuesta = "Sur"
+        elif grados <= -157.5:
+            respuesta = "Suroccidente"
+        elif grados <= -180:
+            respuesta = "Occidente"
+
+    print respuesta
+    return respuesta

@@ -1,0 +1,3690 @@
+{% extends baseTemplate %}
+{#% extends "webfleetbigui/baseAdminTenant.html" %#}
+{% load staticfiles %}
+{% block titulo %}Detalle vehículos{% endblock %}
+{% block codigoPrincipal %}
+<!-- Estilos -->
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "bootstrapSwitch/css/bootstrap-switch.min.css" %}"           rel="stylesheet">
+<link href="{% static "css/base.css" %}"  rel="stylesheet">
+<link href="{% static "DataTables/datatables.min.css" %}" rel="stylesheet" type="text/css"  />
+<link href="{% static "datetimepicker/css/bootstrap-datetimepicker.min.css" %}"           rel="stylesheet">
+<link href="{% static "mapsPicker/jquery-gmaps-latlon-picker.css" %}" rel="stylesheet" type="text/css" />
+<link href="{% static "bootstrap-player/css/bootstrap3_player.css" %}" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" href="https://www.amcharts.com/lib/3/plugins/export/export.css" type="text/css" media="all" />
+<!-- Bibliotecas -->
+<script src="{% static "select/js/bootstrap-select.min.js" %}"></script>
+<script src="{% static "moment/moment-with-locales.js"      %}"></script>
+<script src="{% static "nouislider/nouislider.js" %}"   type="text/javascript" ></script>
+<!-- <script src="//cdnjs.cloudflare.com/ajax/libs/noUiSlider/6.2.0/jquery.nouislider.min.js"></script> -->
+<script src="{% static "DataTables/datatables.min.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapsPicker/jquery-gmaps-latlon-picker.js" %}" ></script>
+<!--<script src="{% static "socketio/socket.io.js" %}"></script>-->
+<script src="{% static "datetimepicker/js/bootstrap-datetimepicker.min.js"      %}"></script>
+<script src="{% static "validatorNuevo/validator.js" %}"></script>
+<script src="{% static "bootstrap-player/js/bootstrap3_player.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mustache/mustache.min.js" %}"   type="text/javascript" ></script>
+<script src="{% static "bootstrapSwitch/js/bootstrap-switch.min.js"             %}"></script>
+<script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
+<script src="https://www.amcharts.com/lib/3/serial.js"></script>
+<script src="https://www.amcharts.com/lib/3/plugins/export/export.min.js"></script>
+<script src="https://www.amcharts.com/lib/3/themes/light.js"></script>
+{% verbatim %}
+<script id="templateInfoWindowPosicionORIGINAL" type="x-tmpl-mustache">
+ <div class="infoWindowRojo1" >{{direccion}}</div>
+ <div style="infoWindowNegro2">{{fechaHora}}</div>
+ <div class="infoWindowRojo2">{{velocidad}}</div>
+</script>
+
+<script id="templateInfoWindowPosicion" type="x-tmpl-mustache">
+	<div class="infoWindowRojo1" >{{direccion}}</div>
+	<div style="infoWindowNegro2">{{fechaHora}} <span class="infoWindowRojo2"> {{velocidad}}</span></div>
+	<div class="labelinfowindow">{{labelPoste}}</div><div class="">{{poste}}</div>
+	<div class="labelinfowindow">{{labelMunicipio}}</div><div class="">{{municipio}}</div>
+	<div class="labelinfowindow">{{labelPeaje}}</div><div class="">{{peaje}}</div>
+	
+</script>
+
+{% endverbatim %}
+<script>
+ //===================== Inicio Detalle vehiculo
+ //variables Globales
+var dataRuta = []; //Son los datos de las posiciones de la ruta. 
+var geocoder = null; //Geocoder para preguntar direcciones.
+var markerPosicionVehiculoRuta      = null; //Marcador de posición vehiculo
+var infoWindowPosicionVehiculoRuta  = null;
+var markerPosicionPopup      = null; //Marcador de posición vehiculo
+var infoWindowPosicionPopup  = null;
+var templateInfoWindowPosicion      = $('#templateInfoWindowPosicion').html();
+var fechaInicioPDF 	= "";
+var fechaPDFInicio	= "";
+var fechaFinPDF    	= "";
+var fechaPDFFin		= "";
+
+ //--------------------------------------
+ function initMap(){	
+     //cargarDatosMapa(3.4206,-76.5222); //con lat y long inicial para establecer el zoom
+     //cargarDatosMapa2(3.4206, -76.5222);
+ }
+ var map2 = null; 
+ var beachMarkerOrigen2 = null;
+ function cargarDatosMapa2(jsonDataPosicion){
+	 if (map2 == null){
+	     map2 = new google.maps.Map(document.getElementById('map2'), {
+	         center: {lat: parseFloat(jsonDataPosicion.latitud), lng: parseFloat(jsonDataPosicion.longitud)},
+	         zoom: 8
+	     });
+	 }
+	 pintarPin2(jsonDataPosicion);
+ }
+ function pintarPin2(jsonDataPosicion){
+	 var latitud  = parseFloat(jsonDataPosicion.latitud);
+	 var longitud = parseFloat(jsonDataPosicion.longitud);
+	 if(markerPosicionPopup == null){
+		 var imageOrigen2 = '{% static "images/pinUbicacion.png" %}';
+		 markerPosicionPopup = new google.maps.Marker({         
+			 map   : map2,
+			 icon  : imageOrigen2,
+			 title : "Lat " + latitud + " Long " + longitud			 
+		 });
+		 google.maps.event.addListener(markerPosicionPopup, 'click', function() {
+			 if(infoWindowPosicionPopup != null){
+				 infoWindowPosicionPopup.open(map2, this);
+			 }
+		 });
+		 
+	 }else{
+		 markerPosicionPopup.setMap(map2);
+	 }
+
+
+
+	 var fecha     = "";
+
+	 var velocidad = "";
+
+	 if("horaRegistrada" in jsonDataPosicion){
+		 fecha = moment(jsonDataPosicion.horaRegistrada).format("dddd DD [de] MMMM YYYY [a las] hh:mm a");
+	 }else{		 
+		 var fechahoraInicio = moment(jsonDataPosicion.fechahoraInicio);
+		 var fechahoraFin    = moment(jsonDataPosicion.fechahoraFin);
+		 fecha               = fechahoraInicio.format("dddd DD [de] MMMM YYYY [a las] hh:mm a");
+		 var velocidad       = calcularDiferencia(fechahoraInicio, fechahoraFin);
+ 
+	 }
+	 
+	 
+	 if("velocidad" in jsonDataPosicion){
+		 velocidad      = "Velocidad: "+parseFloat(jsonDataPosicion.velocidad.toFixed(1))+" Km/h";
+	 }
+	 
+	 var posicionMarker = {lat: latitud, lng: longitud};
+     markerPosicionPopup.setPosition(posicionMarker);
+	 if(infoWindowPosicionPopup == null){
+		 infoWindowPosicionPopup = new google.maps.InfoWindow({
+			 content: ''
+		 });
+	 }else{
+		 infoWindowPosicionPopup.close();
+	 }
+	 
+	 pintarInfoWindow(infoWindowPosicionPopup, map2, markerPosicionPopup, fecha, velocidad,  parseFloat(latitud), parseFloat(longitud) );
+	 // if(geocoder == null){
+	 // 	 geocoder = new google.maps.Geocoder;
+	 // }
+	 // geocoder.geocode(
+	 // 	 {'location': posicionMarker},
+	 // 	 function(results, status) {
+	 // 		 var direccion = "";			
+	 // 		 if (status === 'OK') {
+	 // 			 if (results[0]) {								   
+	 // 				 direccion = results[0].formatted_address;
+	 // 			 } else {
+	 // 				 direccion = "Dirección no definida";
+	 // 			 }
+	 // 		 } else {
+	 // 			 direccion = "Servicio de dirección no disponible";
+	 // 		 }
+	 // 		 var htmlInfoWindow = Mustache.render(templateInfoWindowPosicion,{
+	 // 			 "direccion" : direccion,
+	 // 			 "fechaHora" : fecha,
+	 // 			 "velocidad" : velocidad
+	 // 		 });
+			 
+	 // 		 infoWindowPosicionPopup.setContent(htmlInfoWindow);
+	 // 		 infoWindowPosicionPopup.open(map2, markerPosicionPopup);
+	 // 	 }
+	 // );
+	 
+ }
+
+
+function calcularDiferencia(fechahoraInicio, fechahoraFin){
+	var diferenciaSegundos 					= fechahoraFin.diff(fechahoraInicio,'seconds');
+	var diferenciaMinutos  					= fechahoraFin.diff(fechahoraInicio,'minutes');
+	var diferenciaHours    					= fechahoraFin.diff(fechahoraInicio,'hours');
+    
+	var segundos 							= diferenciaSegundos;
+	
+	var minutos  = parseInt(segundos / 60);
+	var horas    = parseInt(segundos/(60*60));
+	var dias     = parseInt(segundos/(60*60*24));
+	
+	var texto ="";
+	if(segundos < 60){
+		if (segundos==1){
+			texto = "1 Segundo";
+		}
+		else{
+			texto = segundos+" Segundos";
+		}
+		
+	}else if(minutos < 60){
+		if (minutos==1){
+			texto = "1 Minuto";
+		}
+		else{
+			texto = minutos+" Minutos";
+		}
+		
+	}else if(horas < 24){
+		var minutosResiduo = parseInt((segundos/60) % 60);
+		texto = horas+"h "+minutosResiduo+"min";
+	}else{
+		var horasResiduo = parseInt((minutos/60) % 24);
+		if(dias==1){
+			texto = dias+"día "+horasResiduo+"h";
+		}
+		else{
+			texto = dias+"días "+horasResiduo+"h";
+		}
+		
+	}
+	
+	return "Duración parada: "+texto;
+}
+
+
+ var zoomGlobal = null;
+ var posicionCamaraGlobal = null;
+ var usarZoom = false;
+ var map1 = null;
+ var beachMarkerOrigen = null; //pin
+ function cargarDatosMapa(latitud, longitud){
+	 //carga los valores iniciales la idea es traer la posicion actual
+	 var ruta = [];
+	 if(!usarZoom){
+		 if (map1 == null){
+	    	 map1 = new google.maps.Map(document.getElementById('map1'), {
+				 center: {lat: latitud, lng: longitud},
+				 zoom: 8
+	         });
+	     }
+	     usarZoom = false;
+	 }else{
+		 if (map1 == null){
+	    	 map1 = new google.maps.Map(document.getElementById('map1'), {
+				 center: {lat: latitud, lng: longitud},
+				 zoom: zoomGlobal
+	         });
+	         
+	         map1.setCenter(posicionCamaraGlobal);
+	     }
+	 }
+	 markerPosicionVehiculoRuta = new google.maps.Marker({
+		 //position: data_destino,
+		 //map     : map,
+		 icon    : guiImagePuntoControl+"/static/images/pinUbicacion.png",
+		 title   : "..."
+	 });
+	 google.maps.event.addListener(markerPosicionVehiculoRuta, 'click', function() {
+		 if(infoWindowPosicionVehiculoRuta != null){
+			 infoWindowPosicionVehiculoRuta.open(map1, this);
+		 }
+	 });
+ }
+ var ruta = [];
+var heatmap = null;
+var rutaPath = null;
+ function pintarLinea(){
+	 if (rutaPath != null){
+		 rutaPath.setMap(null);
+		 rutaPath = null;
+	 }
+	 rutaPath = new google.maps.Polyline({
+		 path: ruta,
+		 geodesic: true,
+		 strokeColor: '#FF0000',
+		 strokeOpacity: 1.0,
+		 strokeWeight: 4
+	 });
+	 rutaPath.setMap(map1);
+	 //Pinta los puntos de calor	
+	 heatmap = new google.maps.visualization.HeatmapLayer({
+		 data: puntosCalor,
+		 map: map1
+	 });
+	 
+ }
+ function pintarPin(ultimaPosicion){
+	 if(ultimaPosicion == null){
+		 map1 = null;
+		 cargarDatosMapa(3.4206,-76.5222); //con lat y long inicial para establecer el zoom
+		 //cargarDatosMapa();
+		 
+	 }else{
+		 var imageOrigen = '{% static "images/pinUbicacion.png" %}';
+	     beachMarkerOrigen = new google.maps.Marker({         
+			 map: map1,
+			 icon: imageOrigen,
+			 title: "Lat " + ultimaPosicion.lat + " Long " + ultimaPosicion.lng
+    	 });
+		 
+         beachMarkerOrigen.setPosition({lat: parseFloat(ultimaPosicion.lat), lng: parseFloat(ultimaPosicion.lng)});
+	 }
+	 ruta = [];
+ }
+ function alimentarRuta(dataList){
+	 puntosCalor = [];
+	 ruta = [];
+     for(var i = 0; i < dataList.length ; i++){
+    	 var data = dataList[i];
+    	 ruta.push({
+		     lat: parseFloat(data.latitud),
+		     lng: parseFloat(data.longitud)
+		 });
+		 //Inicio ruta para pintar la linea
+		 // ruta.push({
+		 //     lat: parseFloat(data.latitud),
+		 //     lng: parseFloat(data.longitud)
+		 // });
+		 //Fin ruta para pintar la linea--------------------------------------
+					//puntos para pintar paradas
+		 if (data.idFragmentoParada != ""){
+			 //esta condicion es para no pintar el mismo punto de calor
+			 //del vehiculo 
+			 if(parseFloat(data.latitud) != puntoAnteriorLat && parseFloat(data.longitud)!= puntoAnteriorLon){
+				 puntosCalor.push(
+					 new google.maps.LatLng(parseFloat(data.latitud), parseFloat(data.longitud))
+   				 ); 	
+			 }
+			 puntoAnteriorLat = parseFloat(data.latitud);
+			 puntoAnteriorLon = parseFloat(data.longitud);
+		 }
+	 }
+	 pintarLinea();
+	 //pintarPin(ruta[ruta.length-1]);				
+ }
+ //====================================================
+ //variables que sirven para guardar el punto anterior
+ //para no volver a a pintar la misma parada Nota:Pendiente	
+var puntoAnteriorLat = 0;
+var puntoAnteriorLon = 0;
+var setTablaGlobalPosiciones = []; 
+ //====================================================
+ var puntosCalor = [];
+ 
+ function pintarTablaRutas(data){
+ 	
+ 	var numeroPlaca		= "";
+	 dataRuta = data;
+	 //actualizarSliderFecha();
+	 
+	 
+	 if(data.length>0){
+		 //se carga el zoom deacuerdo a la ultima posicion de la busqueda
+		 //si se presentan datos para establecer el zoom	
+		 cargarDatosMapa(parseFloat(data[data.length -1].latitud),parseFloat(data[data.length -1].longitud)); //con lat y long inicial para establecer el zoom
+	 }else{
+		 //se carga la posicion actual del vehiculo para estblecer el zoom
+		 cargarDatosMapa(3.4206,-76.5222); //con lat y long inicial para establecer el zoom
+		 //traerPosicionActualVehiculo();	
+	 }
+	 alimentarRuta(data);
+	 var dataSet = data;
+	 setTablaGlobalPosiciones = data;
+	 if ( ! $.fn.DataTable.isDataTable( '#graficoTabla' ) ) {
+	     $('#graficoTabla').DataTable({
+	         responsive: true,
+	         data: dataSet,
+	         fixedHeader:true,
+			 buttons: [
+				 {
+					 extend: 'excelHtml5',
+					 title: 'Detalle vehículo '+$("#vehiculoPlaca").val()+'',
+					 exportOptions: {
+	                    columns: [0, 1, 2, 3, 5, 4]
+	                        
+	                },
+					 customizeData: function ( data ) {
+						 //console.log(data);
+						 data.header = ["Hora Registrada", "Hora Recibida", "Latitud", "Longitud","Velocidad", "Ver posicion"]; 
+						 data.body = [];
+						 for(var i = 0 ; i<setTablaGlobalPosiciones.length ; i++){
+							 var fila       = setTablaGlobalPosiciones[i];
+							 var horaRegistrada = moment(fila.horaRegistrada).format("DD/MM/YYYY, hh:mm a");
+							 var horaRecibida  	= moment(fila.horaRecibida).format("DD/MM/YYYY, hh:mm a");
+							 var latitud        = fila.latitud;
+							 var longitud       = fila.longitud;
+							 var velocidad      = fila.velocidad;
+							 data.body.push([
+								 horaRegistrada,
+								 horaRecibida,
+								 latitud,
+								 longitud,
+								 velocidad,
+								 "Ver posicion"
+								]);
+						 }
+					 },
+					customize: function (xlsx){ 
+						//link excel
+						var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                    	var filaCelda = 2;
+						var referenciaEnlaces 	= '<hyperlinks>';
+						var referenciaXlsTarget	= '';
+						for(var i = 0 ; i<setTablaGlobalPosiciones.length ; i++){
+							var fila    = setTablaGlobalPosiciones[i];
+							var horaRegistrada 		= fila.horaRegistrada;
+							var latitud        		= fila.latitud;
+							var longitud       		= fila.longitud;
+							filaCelda				= i + 2;
+							var urlDatos 			= horaRegistrada+'/'+latitud+'/'+longitud;
+							referenciaXlsTarget  	+= '<Relationship Id="rId'+i+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="'+guibase+'/mapaVerPosicionLink/'+urlDatos+'" TargetMode="External"/>';
+							referenciaEnlaces 		+= '<hyperlink ref="F'+filaCelda+'" r:id="rId'+i+'" display="'+guibase+'/mapaVerPosicionLink/'+urlDatos+'"/>';
+							
+						 }
+
+						xlsx.xl.worksheets['_rels'] = {
+							"sheet1.xml.rels" : $.parseXML('<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+referenciaXlsTarget+'</Relationships>')
+						};
+						referenciaEnlaces += '</hyperlinks>';
+						sheet["childNodes"][0]["innerHTML"] += referenciaEnlaces;
+						$('row c[r^="F"]', sheet).attr( 's', '4' );//underline
+						$('row c[r=F1]', sheet).attr( 's', '2' );//bold
+					},
+
+
+					 text: "Descargar Excel"
+				 },{
+				 	 
+					 extend : "pdf",
+					 stripHtml: true,
+					 title: function (){
+					 	return 'Detalle vehículo '+$("#vehiculoPlaca").val()+ " desde el "+fechaPDFInicio+ " hasta el "+fechaPDFFin;
+					 },
+					 text: "Descargar pdf",
+					 exportOptions: {
+	                    columns: [0, 1, 2, 3, 5, 4]
+	                        
+	                },
+					 customize: function(doc) {
+						//carta, legal, b4, a3
+						doc.pageSize                     = 'B4';
+						doc.pageOrientation              = "portrait";
+						doc.defaultStyle.fontSize        = 10;
+						doc.defaultStyle.alignment       = 'center';
+						doc.styles.tableHeader.fillColor = '#eb2626';
+						doc.styles.tableHeader.alignment = 'center';
+
+						doc.content[1].layout =         
+							{
+								hLineWidth: function(i, node) {
+									return (i === 0 || i === node.table.body.length) ? 2 : 1;
+								},
+								vLineWidth: function(i, node) {
+									return (i === 0 || i === node.table.widths.length) ? 2 : 1;
+								},
+								hLineColor: function(i, node) {
+									return (i === 0 || i === node.table.body.length) ? 'white' : 'white';
+								},
+								vLineColor: function(i, node) {
+									return (i === 0 || i === node.table.widths.length) ? 'white' : 'white';
+								},
+
+							};
+
+							for(var i = 0 ; i<setTablaGlobalPosiciones.length ; i++){
+								//Link PDF
+								var fila    = setTablaGlobalPosiciones[i];
+								var horaRegistrada 		= fila.horaRegistrada;
+								var latitud        		= fila.latitud;
+								var longitud       		= fila.longitud;
+								var velocidad 			= parseFloat(fila.velocidad).toFixed(1);
+								var urlDatos 			= horaRegistrada+'/'+latitud+'/'+longitud;
+								var horaRegistradaFormateada = moment(fila.horaRegistrada).format("DD/MM/YYYY, hh:mm a");
+								var horaRecibidaFormateada = moment(fila.horaRegistrada).format("DD/MM/YYYY, hh:mm a");
+								doc.content[1].table.body[i+1][0] = horaRegistradaFormateada;
+								doc.content[1].table.body[i+1][1] = horaRecibidaFormateada;
+								doc.content[1].table.body[i+1][2] = latitud;
+								doc.content[1].table.body[i+1][3] = longitud;
+								doc.content[1].table.body[i+1][4] = velocidad;
+								doc.content[1].table.body[i+1][5] = {text:"Ver posición", link: guibase+'/mapaVerPosicionLink/'+urlDatos, decoration:"underline", fontSize:12};							
+						 	}
+
+							doc.content.splice( 0, 0, {
+									margin: [ 0, 0, 0, 12 ],
+									alignment   : 'left',
+									image       : imagenPDF
+								} );    
+
+               },
+                name: "botonPdf",
+                className: "botonPdf",
+                // action: function ( e, dt, node, config ) {
+                    // fechaInicioPDF 	= $('#formRangoFecha1').data('DateTimePicker').date.format();
+				 	// fechaPDFInicio	= moment(fechaInicioPDF).format("DD/MM/YYYY, hh:mm a");
+				 	// fechaFinPDF    	= $('#formRangoFecha2').data('DateTimePicker').date.format();
+				 	// fechaPDFFin		= moment(fechaFinPDF).format("DD/MM/YYYY, hh:mm a");
+				 	// numeroPlaca		= $("#vehiculoPlaca").val();
+// 				 	
+                // }, 
+					 
+				 }],
+			 dom : "Blfrtip",	 
+	         "pageLength"	:100,
+			 "order" : [[0, "desc"]],
+	         language: traduccionDatatables,
+	         columns: [
+	             {  title: "Hora registrada",
+					data : null
+	             },
+	             {  title: "Hora recibida",
+					data : null
+	             },	        
+	             {  title: "Latitud",
+					data : null   },
+	             {  title: "Longitud",
+					data : null
+	             },
+	             {  title: "Acción",
+					data : null
+	             },
+	             {  title: "Velocidad (Km/h)",
+					data : null
+	             },
+				 {  title: "horaRegistrada",
+					data : null,
+				 },
+				 {  title: "horaRecibida",
+					data : null,
+				 }	             
+	         ],
+	         "columnDefs": [
+	        	 { responsivePriority: 1, targets: 0 },
+	        	 { responsivePriority: 2, targets: 1 },
+				 
+	      	     {
+	      	         "targets"   :[0],
+					 "orderData" :[6],
+					 "render": function (data, type, full, meta){
+					     var horaRegistrada = "";
+					     
+					     if( data.horaRegistrada != "" ){
+							 horaRegistrada = moment(data.horaRegistrada).format("dddd DD [de] MMMM YYYY [a las] hh:mm a");
+							 
+			    		 }
+	                     return horaRegistrada;
+	                 }
+		    	 },
+		    	 {
+	      	         "targets"   :[1],
+					 "orderData" :[7],
+					 "render": function (data, type, full, meta){
+					     var horaRecibida = "";
+					     if( data.horaRecibida != "" ){
+							 horaRecibida = moment(data.horaRecibida).format("dddd DD [de] MMMM YYYY [a las] hh:mm a");
+			    		 }
+	                     return horaRecibida;
+	                 }
+		    	 },
+		    	 {
+	      	         "targets": [2],
+					 "render": function (data, type, full, meta){
+					     var latitud = "";
+					     if( data.latitud != "" ){
+							 latitud = data.latitud;
+			    		 }
+	                     return latitud;
+	                 }
+		    	 },
+		    	 {
+	      	         "targets": [3],
+					 "render": function (data, type, full, meta){
+					     var longitud = "";
+					     if( data.longitud != "" ){
+						 	longitud = data.longitud;			    		
+			    		 }
+	                     return longitud;
+	                 }
+		    	 },
+		    	 {
+	      	         "targets": [4],
+					 "render": function (data, type, full, meta){
+						 return '<a href="#verPosicion" class="verPosicion" ><img src="{% static "images/pinUbicacion.png" %} " class="imagenPin" >Ver Posición</a>'+'<input class="verPosicionData" type="hidden" value="'+JSON.stringify(data).replace(/"/g, '&quot;')+'" />';
+	                 }
+		    	 },
+				 
+		    	
+		    	{
+	      	        "targets": [5],
+					"render": function (data, type, full, meta){
+					    var velocidad = "";
+					    if( data.velocidad !== "" ){
+							//velocidad = data.velocidad;
+							velocidad = parseFloat(data.velocidad).toFixed(1);
+			    		} 
+	                    return velocidad;
+	                }
+		    	},	 
+				 {
+					 "targets": [6],
+					 'visible': false,
+					 'searchable': false,
+					 "render": function (data, type, full, meta){
+						 return data.horaRegistrada;
+					 }
+				 },	 
+				 {
+					 "targets": [7],
+					 'visible': false,
+					 'searchable': false,
+					 "render": function (data, type, full, meta){
+						 return data.horaRecibida;
+					 }
+				 }		    	 
+	         ]
+	     });
+	     
+	 }   
+	 else{
+		 $('#graficoTabla').DataTable().clear().rows.add(dataSet).draw();
+		 
+	 }
+	 reiniciarSlider();
+	 
+ }
+ //------ Cargar Tabla listado de vehiculos----------------------------------------------------
+
+ function cargarTablaRutas(){
+ 	 fechaInicioPDF 	= $('#formRangoFecha1').data('DateTimePicker').date.format();
+ 	 fechaPDFInicio		= moment(fechaInicioPDF).format("DD/MM/YYYY - hh:mm a");
+ 	 fechaFinPDF    	= $('#formRangoFecha2').data('DateTimePicker').date.format();
+ 	 fechaPDFFin		= moment(fechaFinPDF).format("DD/MM/YYYY - hh:mm a");
+ 	
+
+     var fechaInicio = $('#formRangoFecha1').data('DateTimePicker').date.format();
+     var fechaFin    = $('#formRangoFecha2').data('DateTimePicker').date.format();
+	 $("#fechaSlider").text($('#formRangoFecha2').data('DateTimePicker').date.format("DD/MM/YYYY hh:mm a"));
+	 
+     /*
+		var fechaInicio = "2016-07-26T12:55";
+		var fechaFin = "2016-07-25T12:55";
+   	  */
+	 var peticion    = {
+		 'autenticacion' : {
+			 'usuario' : config.getUsuarioLogin(),
+             'token'   : config.getToken(),
+             'tenant'  : config.getTennant(),                                             
+		 },
+         'data'         : { 
+             'fechaInicio' : fechaInicio,
+             'fechaFin'    : fechaFin,
+             'id'          : "{{idVehiculo}}"
+         }
+     };
+	 
+     var request = $.ajax({
+         type : "POST",
+         url  : "{% url 'wsposicionVehiculoRangoFecha' %}",
+         data : {
+             request: JSON.stringify(peticion)
+         },
+         dataType: "json"
+     });
+	 
+     request.done(function(respuesta){
+    	 pintarTablaRutas(respuesta["data"]);
+     });
+	 
+     request.fail(function(jqXHR, textStatus){ });
+ };
+ function traerDatosVehiculo(){
+	 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : config.getTennant(),
+                                             
+     },
+                         'data'         : { 
+                        	 'id': "{{idVehiculo}}",
+                         }
+     };
+     var request = $.ajax({
+		 type        : "POST",
+		 url         : "{% url 'wslistarDetalleVehiculo' %}",
+		 data        : {
+             request :  JSON.stringify(peticion)
+         },
+		 dataType    : "json"
+	 }).done(function(respuesta){
+         if (respuesta.success){
+             cargarDatosDetalleVehiculo(respuesta.data);
+             cargarGraficoTemperaturas();
+         }
+         else{
+             notif({
+                 msg     : respuesta.mensaje,
+                 type    : "error",
+                 position: "center"
+             });
+         }
+     }).fail(function(jqXHR, textStatus){
+         notif({
+             msg     : "Falló la conexión",
+             type    : "error",
+             position: "center"
+         });
+     }).always(function(){
+     });
+ }
+ var numPlaca;
+ function cargarDatosDetalleVehiculo(data){
+	 //DATOS GENERALES
+     tempLimSuperior = data.tempLimSuperior;
+     tempLimInferior = data.tempLimInferior;
+
+     $("#limiteMaximoTemp").val(tempLimSuperior);
+     $("#limiteMinimoTemp").val(tempLimInferior);
+
+     $('input[name="my-checkbox"]').bootstrapSwitch('readonly', false);
+     if(data.estaAlarmaCadenaFrioActivada){
+         $('input[name="my-checkbox"]').bootstrapSwitch('state',true);
+     }else{
+         $('input[name="my-checkbox"]').bootstrapSwitch('state',false);
+     }
+     
+	 numPlaca= data.placa;
+	 $("#vehiculoPlaca").text(data.placa);
+	 $("#vehiculoPlaca").val(data.placa);
+	 $("#vehiculoMarca").text(data.marca);
+	 $("#vehiculoModelo").text(data.modelo);
+	 $("#vehiculoImei").text(data.imeiGps);
+	 $("#vehiculoSimcard").text(data.numSimCard);
+	 $("#vehiculoTipo").text(data.tipoGps);
+     var idConductor        = data.conductor;
+     var total				= conductores.length;
+	 if (idConductor == ""){
+    	 //$('#grupoConductor').append('<option value="'+total+'"> Sin conductor </option>');
+    	 $('#grupoConductor > option[value="'+total+'"]').attr('selected', 'selected');
+    	 
+    	 var posicion    = conductores.length;
+    	 $('#grupoConductor')	.val(posicion);
+    	 $('#grupoConductor')  .selectpicker('refresh');
+     }
+     else{
+    	 for(var i=0; i<conductores.length;i++){
+    		 var datoConductor		= conductores[i];
+    		 //alert(datoConductor.id)
+    		 var id			= datoConductor.id;
+    		 if(id == idConductor){
+    			 $('#grupoConductor')	.val(i);
+    			 $('#grupoConductor').selectpicker('refresh');
+    		 }
+    	     
+    	 }
+    	 
+     }
+  	 if(data.cargado){
+  		 $('#grupoCarga > option[value="'+0+'"]').attr('selected', 'selected');
+  	 }else{
+  		 $('#grupoCarga > option[value="'+1+'"]').attr('selected', 'selected');
+  	 }
+	 $('#grupoCarga')  .selectpicker('refresh');
+
+	codigoImagenPermisoPlataforma 	= opcionesAdicionalesPlataforma[0].idOpcionPlataforma;//permiso imagen manual
+	codigoAudioPermisoPlataforma  	= opcionesAdicionalesPlataforma[1].idOpcionPlataforma;// permiso audio manual
+	codigoCadenaFrio  				= opcionesAdicionalesPlataforma[18].idOpcionPlataforma;// permiso cadena de frio
+	//console.log([1, 2, 3].includes(0));
+	if(data.opcionesAdicionalesPlataforma != null){
+		if(data.opcionesAdicionalesPlataforma.includes(codigoImagenPermisoPlataforma)){
+			//verifica si el permiso esta en la plataforma
+			$("#tabImagenes").css("display", "block");
+
+		}
+        
+		if(data.opcionesAdicionalesPlataforma.includes(codigoAudioPermisoPlataforma)){
+			//verifica si el permiso esta en la plataforma
+			$("#tabAudios").css("display", "block");
+		}
+
+        if(data.opcionesAdicionalesPlataforma.includes(codigoCadenaFrio)){
+			//verifica si el permiso de cadena de frio esta en la plataforma
+            $("#tabCadena").css("display", "block");
+        }
+	}
+	
+ }
+
+var setTablaGlobalParadas = [];
+ //--------- Cargar tabla con las paradaVehiculo editando
+ function pintarTablaParadas(data){
+	 var dataSet           = data;
+	 setTablaGlobalParadas = data;
+	 if ( ! $.fn.DataTable.isDataTable( '#TablaParadas' ) ) {
+	     $('#TablaParadas').DataTable({
+	         responsive: true,
+	         data: dataSet,
+	         fixedHeader:true,
+			 buttons: [
+				 {
+					 extend: 'excelHtml5',
+					 text  : "Descargar excel",
+					 title: 'Paradas vehículo '+$("#vehiculoPlaca").val()+'',
+					 exportOptions: {
+	                    columns: [0, 1, 2, 3, 5]
+	                        
+	                },
+	
+					 customizeData: function ( data ) {
+						 //console.log(data);
+						 data.header = ["Fecha Hora inicio", "Fecha Hora Fin", "Duración Parada", "Latitud","Longitud", "Ver posicion"]; 
+						 data.body = [];
+						 for(var i = 0 ; i<setTablaGlobalParadas.length ; i++){
+							 var fila       = setTablaGlobalParadas[i];
+							 var fechahoraInicio = moment(fila.fechahoraInicio).format("DD/MM/YYYY, hh:mm a");
+							 var fechahoraFin  	 = moment(fila.fechahoraFin).format("DD/MM/YYYY, hh:mm a");
+							 var duracion        = calcularDuracionParada(moment(fila.fechahoraInicio), moment(fila.fechahoraFin));
+							 var latitud         = fila.latitud;
+							 var longitud        = fila.longitud;
+							 data.body.push([
+							 		fechahoraInicio,
+							 		fechahoraFin,
+									duracion,
+									latitud,
+									longitud,
+								 	"Ver posicion"
+								]);
+						 }
+					 },
+					customize: function (xlsx){ 
+						//link excel
+						var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                    	var filaCelda = 2;
+						var referenciaEnlaces 	= '<hyperlinks>';
+						var referenciaXlsTarget	= '';
+						for(var i = 0 ; i<setTablaGlobalParadas.length ; i++){
+							var fila    = setTablaGlobalParadas[i];
+							var horaRegistrada 		= fila.fechahoraInicio;
+							var latitud        		= fila.latitud;
+							var longitud       		= fila.longitud;
+							filaCelda				= i + 2;
+							var urlDatos 			= horaRegistrada+'/'+latitud+'/'+longitud;
+							console.log(urlDatos)
+							referenciaXlsTarget  	+= '<Relationship Id="rId'+i+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="'+guibase+'/mapaVerPosicionLink/'+urlDatos+'" TargetMode="External"/>';
+							referenciaEnlaces 		+= '<hyperlink ref="F'+filaCelda+'" r:id="rId'+i+'" display="'+guibase+'/mapaVerPosicionLink/'+urlDatos+'"/>';
+							
+						 }
+
+						xlsx.xl.worksheets['_rels'] = {
+							"sheet1.xml.rels" : $.parseXML('<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+referenciaXlsTarget+'</Relationships>')
+						};
+						referenciaEnlaces += '</hyperlinks>';
+						sheet["childNodes"][0]["innerHTML"] += referenciaEnlaces;
+						$('row c[r^="F"]', sheet).attr( 's', '4' );//underline
+						$('row c[r=F1]', sheet).attr( 's', '2' );//bold
+					}
+					 
+				 },
+				 {
+					 extend: 'pdf',
+					 title: function (){
+					 	return 'Paradas vehículo '+$("#vehiculoPlaca").val()+ " desde el "+fechaPDFInicio+ " hasta el "+fechaPDFFin;
+					 },
+					 text: "Descargar pdf",
+					 exportOptions: {
+	                    columns: [0, 1, 2, 3, 4, 5]
+	                        
+	                },
+					 customize: function(doc) {
+					
+                    //carta, legal, b4, a3
+                    doc.pageSize                     = 'B4';
+                    doc.pageOrientation              = "portrait";
+                    doc.defaultStyle.fontSize        = 10;
+                    doc.defaultStyle.alignment       = 'center';
+                    doc.styles.tableHeader.fillColor = '#eb2626';
+                    doc.styles.tableHeader.alignment = 'center';
+
+                    doc.content[1].layout =         
+                        {
+                            hLineWidth: function(i, node) {
+                                return (i === 0 || i === node.table.body.length) ? 2 : 1;
+                            },
+                            vLineWidth: function(i, node) {
+                                return (i === 0 || i === node.table.widths.length) ? 2 : 1;
+                            },
+                            hLineColor: function(i, node) {
+                                return (i === 0 || i === node.table.body.length) ? 'white' : 'white';
+                            },
+                            vLineColor: function(i, node) {
+                                return (i === 0 || i === node.table.widths.length) ? 'white' : 'white';
+                            },
+
+                        };
+
+					for(var i = 0 ; i<setTablaGlobalParadas.length ; i++){
+							//Link PDF
+							var fila    = setTablaGlobalParadas[i];
+							var horaRegistrada 		= fila.fechahoraInicio;
+							var latitud        		= fila.latitud;
+							var longitud       		= fila.longitud;
+							var urlDatos 			= horaRegistrada+'/'+latitud+'/'+longitud;
+							doc.content[1].table.body[i+1][0] = fila.fechahoraInicio;
+							doc.content[1].table.body[i+1][1] = fila.fechahoraFin;
+							doc.content[1].table.body[i+1][2] = calcularDuracionParada(moment(fila.fechahoraInicio), moment(fila.fechahoraFin));
+							doc.content[1].table.body[i+1][3] = latitud;
+							doc.content[1].table.body[i+1][4] = longitud;
+							doc.content[1].table.body[i+1][5] = {text:"Ver posición", link: guibase+'/mapaVerPosicionLink/'+urlDatos, decoration:"underline", fontSize:12};							
+						}
+
+                     doc.content.splice( 0, 0, {
+                            margin: [ 0, 0, 0, 12 ],
+                            alignment   : 'left',
+                            image       : imagenPDF
+                        } );    
+
+               },
+                name: "botonPdf",
+                className: "botonPdf",
+				 }],
+			 dom : "Blfrtip",	 
+	         "pageLength"	:100,			 
+			 "order" : [[0, "desc"]],
+			 
+	         language: traduccionDatatables,
+			 columns: [
+	            {  title: "Fecha hora inicio",
+	               data : null
+	            },
+	            {  title: "Fecha Hora Fin",
+	               data : null
+	            },	
+	            
+	            {  title: "Duración parada",
+	               data : null
+	            },	        
+	            {  title: "Latitud",
+	               data : null   },
+	            {  title: "Longitud",
+	               data : null
+	            },
+	            {  title: "Acción",
+	               data : null
+	            },
+				 {  title: "fechaHoraInicio",
+					data : null,
+				 },
+				 {  title: "fechaHoraFin",
+					data : null,
+				 }
+	            
+	        ],
+			 "columnDefs": [
+	        	{ responsivePriority: 1, targets: 0 },
+	        	{ responsivePriority: 2, targets: 1 },
+	           
+	      	    {
+	      	        "targets": [0],
+					"orderData" :[6],
+					"render": function (data, type, full, meta){
+					    var fechahoraInicio = "";
+					    if( data.fechahoraInicio != "" ){
+							fechahoraInicio = moment(data.fechahoraInicio).format("dddd DD [de] MMMM YYYY [a las] hh:mm a");
+			    		}
+	                    return fechahoraInicio;
+	                }
+		    	},
+		    	{
+	      	        "targets": [1],					
+					"orderData" :[7],
+					"render": function (data, type, full, meta){
+					    var fechahoraFin = "";
+					    if( data.fechahoraFin != "" ){
+							fechahoraFin = moment(data.fechahoraFin).format("dddd DD [de] MMMM YYYY [a las] hh:mm a");
+			    		}
+	                    return fechahoraFin;
+	                }
+		    	},
+		    	{
+	      	        "targets": [2],
+					"render": function (data, type, full, meta){
+					    var tiempo = "";
+					    if(data.fechahoraInicio && data.fechahoraFin != "" ){
+					    	var fechahoraInicio 	= moment(data.fechahoraInicio);
+							var fechahoraFin	 	= moment(data.fechahoraFin);
+							tiempo = calcularDuracionParada(fechahoraInicio, fechahoraFin);
+			    		}
+						
+	                    return tiempo;
+	                }
+		    	},
+		    	{
+	      	        "targets": [3],
+					"render": function (data, type, full, meta){
+					    var latitud = "";
+					    if( data.latitud != "" ){
+							latitud = data.latitud;
+			    		}
+	                    return latitud;
+	                }
+		    	},
+		    	{
+	      	        "targets": [4],
+					"render": function (data, type, full, meta){
+					    var longitud = "";
+					    if( data.longitud != "" ){
+							longitud = data.longitud;
+			    		}
+	                    return longitud;
+	                }
+		    	},
+		    	{
+	      	        "targets": [5],
+					"render": function (data, type, full, meta){
+					return '<a href="#verPosicion" class="verPosicion" ><img src="{% static "images/pinUbicacion.png" %} " class="imagenPin" >Ver Posición</a>'+'<input class="verPosicionData" type="hidden" value="'+JSON.stringify(data).replace(/"/g, '&quot;')+'" />';
+	                }
+		    	},	 
+				 {
+					 "targets": [6],
+					 'visible': false,
+					 'searchable': false,
+					 "render": function (data, type, full, meta){
+						 return data.fechahoraInicio;
+					 }
+				 },	 
+				 {
+					 "targets": [7],
+					 'visible': false,
+					 'searchable': false,
+					 "render": function (data, type, full, meta){
+						 return data.fechahoraFin;
+					 }
+				 }			
+	        ]
+	     });
+	 }   
+	 else{
+		 $('#TablaParadas').DataTable().clear().rows.add(dataSet).draw();
+		 
+	 }
+ }
+
+function calcularDuracionParada(fechahoraInicio, fechahoraFin ){
+	var tiempo = "";
+	var diferenciaSegundos = fechahoraFin.diff(fechahoraInicio,'seconds');
+	var diferenciaMinutos  					= fechahoraFin.diff(fechahoraInicio,'minutes');
+	var diferenciaHours    					= fechahoraFin.diff(fechahoraInicio,'hours');
+
+	var segundos 							= diferenciaSegundos;
+	
+	var minutos  = parseInt(segundos / 60);
+	var horas    = parseInt(segundos/(60*60));
+	var dias     = parseInt(segundos/(60*60*24));
+	
+	var texto ="";
+	if(segundos < 60){
+	if (segundos==1){
+		texto = "1 Segundo";
+	}
+	else{
+		texto = segundos+" Segundos";
+	}
+		
+	}else if(minutos < 60){
+	if (minutos==1){
+		texto = "1 Minuto";
+	}
+	else{
+		texto = minutos+" Minutos";
+	}
+		
+	}else if(horas < 24){
+		var minutosResiduo = parseInt((segundos/60) % 60);
+		texto = horas+"h "+minutosResiduo+"min";
+	}else{
+	var horasResiduo = parseInt((minutos/60) % 24);
+	if(dias==1){
+			texto = dias+"día "+horasResiduo+"h";
+	}
+	else{
+		texto = dias+"días "+horasResiduo+"h";
+	}
+		
+	}
+	
+	tiempo 		= texto;
+	return tiempo	
+}
+
+ function cargarTablaParadas(){
+ 	fechaInicioPDF 		= $('#formRangoFecha1').data('DateTimePicker').date.format();
+ 	 fechaPDFInicio		= moment(fechaInicioPDF).format("DD/MM/YYYY - hh:mm a");
+ 	 fechaFinPDF    	= $('#formRangoFecha2').data('DateTimePicker').date.format();
+ 	 fechaPDFFin		= moment(fechaFinPDF).format("DD/MM/YYYY - hh:mm a");
+ 	
+     var fechaInicio 	= $('#formRangoFecha1').data('DateTimePicker').date.format();
+     var fechaFin 		= $('#formRangoFecha2').data('DateTimePicker').date.format();
+     /*
+		var fechaInicio = "2016-07-26T12:55";
+		var fechaFin = "2016-07-25T12:55";
+   	  */
+	 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : config.getTennant(),
+                                             
+     },
+                         'data'         : { 
+                        	 'fechaInicio': fechaInicio,
+                        	 'fechaFin'		: fechaFin,
+                        	 'id'	: "{{idVehiculo}}",
+                         }
+     };
+	 
+     var request = $.ajax({
+         type: "POST",
+         url		: "{% url 'wslistarParadaVehiculo' %}",
+         data	: {
+             request: JSON.stringify(peticion)
+         },
+         dataType: "json"
+     });
+     request.done(function(respuesta){
+         if(respuesta.success){
+             pintarTablaParadas(respuesta["data"]);
+         }else{ }
+     });
+     request.fail(function(jqXHR, textStatus){ });
+ };
+ 
+ $(document).on('click', '.verPosicion', function(){
+	 //Limpia el div del mapa
+	 $(".map2").html("");
+   	 map2 = null;
+  	 //map1 = null; 
+  	 $('#detailModal').modal('show');
+  	 $('#contenedorMapa2').show();
+   	 var data = $(this).parent().find(".verPosicionData").val();
+   	 var jsonData = JSON.parse(data);
+	 setTimeout(function(){
+		 
+		 //cargarDatosMapa2(jsonData.latitud, jsonData.longitud);
+		 cargarDatosMapa2(jsonData);	
+	 }, 1000);
+ });
+ function traerPosicionActualVehiculo(){
+	 //funcion que trae la posicion actual del vehiculo y su estado("activo o inactivo")
+	 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : config.getTennant(),
+                                             
+     },
+                         'data'         : { 
+                        	 'id': "{{idVehiculo}}",
+                         }
+     };
+     var request = $.ajax({
+		 type        : "POST",
+		 url         : "{% url 'wsultimaPosicionVehiculo' %}",
+		 data        : {
+             request :  JSON.stringify(peticion)
+         },
+		 dataType    : "json"
+	 }).done(function(respuesta){
+         if (respuesta.success){
+             pintarPinPosicionActual(respuesta.data);
+         }
+         else{
+             notif({
+                 msg     : respuesta.mensaje,
+                 type    : "error",
+                 position: "center"
+             });
+         }
+     }).fail(function(jqXHR, textStatus){
+         notif({
+             msg     : "Falló la conexión",
+             type    : "error",
+             position: "center"
+         });
+     }).always(function(){
+     });
+ }
+ function pintarPinPosicionActual(data){
+	 if(data.estado == "activo"){
+		 var imageOrigen = '{% static "images/pinUbicacion.png" %}';
+	 }else
+	 if(data.estado == "inactivo"){
+		 var imageOrigen = '{% static "images/pinDesactivado.png" %}';
+	 }
+	 var beachMarkerOrigen = null;
+     if (beachMarkerOrigen == null){
+		 
+	     beachMarkerOrigen = new google.maps.Marker({         
+			 map: map1,
+			 icon: imageOrigen,
+			 title: " Posicion actual. "+"Lat " + data.latitud + " Long " + data.longitud
+    	 });
+		 
+         beachMarkerOrigen.setPosition({lat: parseFloat(data.latitud), lng: parseFloat(data.longitud)});
+     }	
+ }
+ //===================== Fin Detalle vehiculo==============================
+ //==================== Inicio imagenes vehículo===========================
+ function pintarTablaRutasCapturaImagen(data){
+	 var dataSet = data;
+	 if ( ! $.fn.DataTable.isDataTable( '#graficoTabla2' ) ) {
+	     $('#graficoTabla2').DataTable({
+	         responsive: true,
+	         data: dataSet,
+	         fixedHeader:true,
+			 
+	         "pageLength"	:100,
+	         //"aaSorting": [],
+			 "order": [[ 0, "desc" ]],
+	         language: traduccionDatatables,
+	         columns: [
+	             {  title: "Hora registrada",
+					data : null
+	             },
+				 
+	             {  title: "Latitud",
+					data : null   },
+	             {  title: "Longitud",
+					data : null
+	             }, 
+	             {  title: "Acción",
+					data : null
+	             },
+	             {  title: "Imágen",
+					data : null
+	             }, 
+	             {  title: "",
+					data : null
+	             },        
+	         ],
+	         "columnDefs": [
+	        	 { responsivePriority: 1, targets: 0 },
+	        	 { responsivePriority: 2, targets: 1 },
+				 
+	      	     {
+	      	         "targets": [0],
+					 "render": function (data, type, full, meta){
+					     var horaRegistrada = "";
+					     if( data.horaRegistrada != "" ){
+							 horaRegistrada = moment(data.horaRegistrada).format("dddd DD [de] MMMM YYYY [a las] hh:mm a");
+			    		 }
+	                     return horaRegistrada;
+	                 }
+		    	 },
+		    	 {
+	      	         "targets": [1],
+					 "render": function (data, type, full, meta){
+					     var latitud = "";
+					     if( data.latitud != "" ){
+							 latitud = data.latitud;
+			    		 }
+	                     return latitud;
+	                 }
+		    	 },
+		    	 {
+	      	         "targets": [2],
+					 "render": function (data, type, full, meta){
+					     var longitud = "";
+					     if( data.longitud != "" ){
+							 longitud = data.longitud;
+			    		 }
+	                     return longitud;
+	                 }
+		    	 },
+		    	 
+		    	 {
+	      	         "targets": [3],
+					 "render": function (data, type, full, meta){
+						 return '<a href="#verPosicion" class="verPosicion" ><img src="{% static "images/pinUbicacion.png" %} " class="imagenPin" >Ver Posición</a>'+'<input class="verPosicionData" type="hidden" value="'+JSON.stringify(data).replace(/"/g, '&quot;')+'" />';
+	                 }
+		    	 },
+		    	 {
+	      	         "targets": [4],
+					 "render": function (data, type, full, meta){
+					     var urlImagen = "";
+					     if( data.urlImagen != "" ){
+							 urlImagen = data.urlImagen;
+			    		 }
+						 return '<img src="'+data.urlImagen+'_thumbnail'+'">';
+	                 }
+		    	 },
+		    	 {
+	      	         "targets": [5],
+					 "render": function (data, type, full, meta){
+					     var urlImagen = "";
+					     var horaRegistrada = "";
+					     if( data.urlImagen != "" && data.horaRegistrada != "" ){
+							 urlImagen = data.urlImagen;
+					  		 moment(data.horaRegistrada).format(); 
+							 horaRegistrada = moment().format("YYYY-MM-DD h:mm a");
+			    		 }
+						 return '<a download= "'+numPlaca+"#"+horaRegistrada+'" href="'+urlImagen+'" title="'+numPlaca+"#"+horaRegistrada+'"> <i class="fa fa-arrow-circle-down" aria-hidden="true"></i> Descargar imagen</a>';
+						 
+	                 }
+		    	 },
+	         ]
+	     });
+	 }   
+	 else{
+		 $('#graficoTabla2').DataTable().clear().rows.add(dataSet).draw();
+		 
+	 }
+ }
+ //------ Cargar Tabla listado rutas con imagen----------------------------------------------------
+ function cargarTablaRutasCapturaImagen(){
+     var fechaInicio = $('#formRangoFecha1Imagenes').data('DateTimePicker').
+													 date.format();
+     var fechaFin = $('#formRangoFecha2Imagenes').data('DateTimePicker').
+												  date.format();
+     /*
+		var fechaInicio = "2016-07-26T12:55";
+		var fechaFin = "2016-07-25T12:55";
+   	  */
+	 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : config.getTennant(),
+                                             
+     },
+                         'data'         : { 
+                        	 'fechaInicio': fechaInicio,
+                        	 'fechaFin': fechaFin,
+                        	 'id': "{{idVehiculo}}"
+                         }
+     };
+	 
+     var request = $.ajax({
+         type: "POST",
+         url		: "{% url 'wsvehiculoRangoFechaCapturaImagen' %}",
+         data	: {
+             request: JSON.stringify(peticion)
+         },
+         dataType: "json"
+     });
+     request.done(function(respuesta){
+         if(respuesta.success){
+             pintarTablaRutasCapturaImagen(respuesta["data"]);
+         }else{ }
+     });
+     request.fail(function(jqXHR, textStatus){ });
+ };
+ //===========================Fin Imagenes vehículo ==================================
+ //===========================Inicio audio vehículo ==================================
+ function convertirFormatoAudio(duracion){
+	 var tiempo = parseInt(duracion);
+	 var horas = parseInt(tiempo/3600);
+	 var minutos = parseInt((tiempo - (horas*3600)) / 60);
+	 var segundos = tiempo -((horas * 3600) +(minutos * 60));
+	 return horas.toString() + " h " + minutos.toString() + " min " + segundos.toString()+" segs";
+ }
+ function pintarTablaRutasCapturaAudio(data){
+	 var dataSet = data;
+	 if ( ! $.fn.DataTable.isDataTable('#graficoTabla3')) {
+	     $('#graficoTabla3').DataTable({
+	         responsive: true,
+	         data: dataSet,
+	         fixedHeader:true,	       
+	         "pageLength"	:100,
+	         "aaSorting": [],
+	         language: traduccionDatatables,
+	         columns: [
+	             {  title: "Hora registrada",
+					data : null
+	             },
+				 
+	             {  title: "Latitud",
+					data : null   },
+	             {  title: "Longitud",
+					data : null
+	             },
+	             {  title: "Acción",
+					data : null
+	             }, 	            
+	             {  title: "Duración",
+					data : null
+	             }, 	            
+	             {  title: "Audios",
+					data : null
+	             },     
+	         ],
+	         "columnDefs": [
+	        	 { responsivePriority: 1, targets: 0 },
+	        	 { responsivePriority: 2, targets: 1 },
+				 
+	      	     {
+	      	         "targets": [0],
+					 "render": function (data, type, full, meta){
+					     var horaRegistrada = "";
+					     if( data.horaRegistrada != "" ){
+							 horaRegistrada = moment(data.horaRegistrada).format("dddd DD [de] MMMM YYYY [a las] hh:mm a");
+			    		 }
+	                     return horaRegistrada;
+	                 }
+		    	 },
+		    	 {
+	      	         "targets": [1],
+					 "render": function (data, type, full, meta){
+					     var latitud = "";
+					     if( data.latitud != "" ){
+							 latitud = data.latitud;
+			    		 }
+	                     return latitud;
+	                 }
+		    	 },
+		    	 {
+	      	         "targets": [2],
+					 "render": function (data, type, full, meta){
+					     var longitud = "";
+					     if( data.longitud != "" ){
+							 longitud = data.longitud;
+			    		 }
+	                     return longitud;
+	                 }
+		    	 },
+		    	 {
+	      	         "targets": [3],
+					 "render": function (data, type, full, meta){
+						 return '<a href="#verPosicion" class="verPosicion" ><img src="{% static "images/pinUbicacion.png" %} " class="imagenPin" >Ver Posición</a>'+'<input class="verPosicionData" type="hidden" value="'+JSON.stringify(data).replace(/"/g, '&quot;')+'" />';
+	                 }
+		    	 },
+		    	 
+		    	 {
+	      	         "targets": [4],
+					 "render": function (data, type, full, meta){
+						 var tiempo = 0;
+					     var duracion = "";
+					     if( data.duracion != ""){
+							 duracion = data.duracion;
+						     var resultado = convertirFormatoAudio(duracion);
+						     if(data.duracion!= null){
+						    	 duracion = resultado;
+						     }else{
+						    	 duracion = "0 h 0 min 0 segs";	
+						     }
+			    		 }
+			    		 return duracion;
+	                 }
+		    	 },
+		    	 
+		    	 {
+	      	         "targets": [5],
+					 "render": function (data, type, full, meta){
+						 var urlAudio = "";	
+						 if(data.urlAudio!= ""){
+							 urlAudio = data.urlAudio;
+							 return '<audio controls>'+
+									'<source src="'+urlAudio+'" type="audio/wav" />'+
+									'<a href="'+urlAudio+'">Descarga</a>'+
+									'</audio>';
+						 }
+						 else{
+							 return urlAudio;
+						 }
+						 /*return '<a href="'+urlAudio+'" class="botonReproductor"><img src="{% static "images/play.png" %} " class="imagenPlay">Reproducir</a>';*/
+	                 }
+		    	 },
+	         ]
+	     });
+	 }   
+	 else{
+		 $('#graficoTabla3').DataTable().clear().rows.add(dataSet).draw();
+		 
+	 }
+ }
+ function cargarTablaRutasCapturaAudio(){
+     var fechaInicio = $('#formRangoFecha1Audio').data('DateTimePicker').
+												  date.format();
+     var fechaFin = $('#formRangoFecha2Audio').data('DateTimePicker').
+											   date.format();
+     /*
+		var fechaInicio = "2016-07-26T12:55";
+		var fechaFin = "2016-07-25T12:55";
+   	  */
+	 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : config.getTennant(),
+                                             
+     },
+                         'data'         : { 
+                        	 'fechaInicio': fechaInicio,
+                        	 'fechaFin': fechaFin,
+                        	 'id': "{{idVehiculo}}"
+                         }
+     };
+	 
+     var request = $.ajax({
+         type: "POST",
+         url		: "{% url 'wsvehiculoRangoFechaCapturaAudio' %}",
+         data	: {
+             request: JSON.stringify(peticion)
+         },
+         dataType: "json"
+     });
+     request.done(function(respuesta){
+         if(respuesta.success){
+             pintarTablaRutasCapturaAudio(respuesta["data"]);
+         }else{ }
+     });
+     request.fail(function(jqXHR, textStatus){ });
+ };
+ //------------------Inicio carga el listado de alarmas por vehiculo-----------------------
+ function cargarTablaAlarmasPorVehiculo(){
+     var fechaInicio = $('#formRangoFecha1Alarma').data('DateTimePicker').date.format();
+     var fechaFin = $('#formRangoFecha2Alarma').data('DateTimePicker').date.format();
+     
+     var peticion    = {
+		 'autenticacion': {
+			 'usuario' : config.getUsuarioLogin(),
+             'token'   : config.getToken(),
+             'tenant'  : config.getTennant(),
+             
+         },
+         'data'         : {
+             'fechaInicio': fechaInicio,
+             'fechaFin': fechaFin,
+             'id': "{{idVehiculo}}"
+         }
+     };
+	 
+     var request = $.ajax({
+         type : "POST",
+         url  : "{% url 'wslistarAlarmasPorVehiculo' %}",
+         data : {
+             request: JSON.stringify(peticion)
+         },
+         dataType: "json"
+     });
+     
+     request.done(function(respuesta){
+         if(respuesta.success){
+             pintarTablaAlarmasPorVehiculo(respuesta["data"]);
+         }else{ }
+     });
+     request.fail(function(jqXHR, textStatus){ });
+ };
+ function pintarTablaAlarmasPorVehiculo(data){
+     var dataSet = data;
+     if ( ! $.fn.DataTable.isDataTable( '#graficoTabla4' ) ) {
+		 $('#graficoTabla4').DataTable({
+			 responsive: true,
+			 data: dataSet,
+			 fixedHeader:true,
+			 
+			 "pageLength"	:100,
+			 "aaSorting": [],
+			 language: traduccionDatatables,
+			 columns: [
+				 {  title: "Hora registrada",
+					data : null
+				 },
+				 {  title: "Tipo",
+					data : null
+				 },	        
+				 {  title: "Latitud",
+					data : null
+				 },
+				 {  title: "Longitud",
+					data : null
+				 },
+				 {  title: "Ver posición",
+					data : null
+				 },
+				 {  title: "Detalle",
+					data : null
+				 },
+				 
+			 ],
+			 "columnDefs": [	        	
+							
+	      					{
+	      						"targets": [0],
+								"render": function (data, type, full, meta){
+									if( data.horaRegistrada != "" ){
+										horaRegistrada = moment(data.horaRegistrada).format("dddd DD [de] MMMM YYYY [a las] hh:mm a");
+		    						}					
+									return horaRegistrada;
+								}
+							},
+							{
+	      						"targets": [1],
+								"render": function (data, type, full, meta){
+									var tipoAlarma = data.tipoAlarma;
+									if(tipoAlarma ==  "alarmasBotonPanico"){
+										return "Botón pánico";	
+									}else{
+										return "Zona alarma";	
+									}
+									
+								}
+							},
+							{
+	      						"targets": [2],
+								"render": function (data, type, full, meta){
+									var latitud = "";
+									if( data.latitud != "" ){
+										latitud = data.latitud;
+		    						}
+									return latitud;
+								}
+							},
+							{
+	      						"targets": [3],
+								"render": function (data, type, full, meta){
+									var longitud = "";
+									if( data.longitud != "" ){
+										longitud = data.longitud;
+		    						}
+									return longitud;
+								}
+							},
+							{
+	      						"targets": [4],
+								"render": function (data, type, full, meta){
+									return '<a href="#verPosicion" class="verPosicion" ><img src="{% static "images/pinUbicacion.png" %} " class="imagenPin" >Ver Posición</a>'+'<input class="verPosicionData" type="hidden" value="'+JSON.stringify(data).replace(/"/g, '&quot;')+'" />';
+								}
+							},			
+							{
+								"targets": [5],
+								"render": function (data, type, full, meta){
+									var tipoAlarma = data.tipoAlarma;
+									if(tipoAlarma ==  "alarmasBotonPanico"){
+										return '<a href="'+guibase+'/{{tenant}}/adminDetalleAlarmaPanico/'+data.idAlarma+'" >Ver detalle</a>';	
+									}else{
+										return '<a href="'+guibase+'/{{tenant}}/adminDetalleZonaAlarma/'+data.idAlarma+'" >Ver detalle</a>';	
+									}	            	
+									
+								}
+      						},
+			 ]
+		 });
+     }   
+     else{
+		 $('#graficoTabla4').DataTable().clear().rows.add(dataSet).draw();
+		 
+     }
+ }
+ //-----Fin carga el listado de alarmas por vehiculo--------------------
+ //========================= Fin audio vehículo ==================================
+ //------ Cargar picker de conductores----------------------------------------------------
+ function traerConductores(){
+     var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : config.getTennant(),          
+     },
+                         'data'          : {      }
+     };
+	 
+     var request = $.ajax({
+		 type        : "POST",
+		 url         : "{% url 'wsPickerConductores' %}",
+		 data        : {
+             request :  JSON.stringify(peticion)
+         },
+		 dataType    : "json"
+     }).done(function(respuesta){
+         if (respuesta.success){
+             cargarPickerConductores(respuesta.data);
+         }
+         else{
+             notif({
+                 msg     : respuesta.mensaje,
+                 type    : "error",
+                 position: "center"
+             });
+         }
+     }).fail(function(jqXHR, textStatus){
+         notif({
+             msg     : "Falló la conexión",
+             type    : "error",
+             position: "center"
+         });
+     }).always(function(){
+         
+     });
+ }
+ var conductores = new Array();
+ function cargarPickerConductores(data){
+	 if(data.length != 0){
+	     for(i = 0; i < data.length; i++){
+	    	 conductores[i] = data[i];
+	     }
+	     
+	     var totalDatos	= conductores.length;
+	     for (i = 0; i < totalDatos; i++){
+			 var itemConductor = conductores[i];
+			 var cedulaConductor = itemConductor.cedula;
+			 var nombresConductor = itemConductor.nombres;
+			 var apellidosConductor = itemConductor.apellidos;
+			 $('#grupoConductor').append('<option value="'+i+'">'+cedulaConductor+'-'+nombresConductor+' '+apellidosConductor+'</option>');
+	     }
+	     totalDatos	= conductores.length;
+		 
+    	 $('#grupoConductor').append('<option value="'+totalDatos+'"> Sin conductor </option>');
+	     
+	     $('#grupoConductor').selectpicker('refresh');
+		 $('#grupoConductor').selectpicker('deselectAll');
+	 	 $('#grupoConductor').selectpicker('refresh');
+	 	 
+ 	 }
+ }
+ function asignarConductorVehiculo(idConductor){
+	 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : config.getTennant(),
+     },
+                         'data'         : {  
+                        	 'idVehiculo' : "{{idVehiculo}}",
+                        	 'idConductor': idConductor
+                         }
+     };
+	 
+     var request = $.ajax({
+         type: "POST",
+         url		: "{% url 'wsAsignarConductor' %}",
+         data	: {
+             request: JSON.stringify(peticion)
+         },
+         dataType: "json"
+     });
+     request.done(function(respuesta){
+         if(respuesta.success){
+        	 $('#formularioAceptarAsignar').modal('hide');
+             notif({
+                 msg     : "El conductor fue asignado",
+                 type    : "success",
+                 position: "center"
+             });    
+         }else{
+        	 notif({
+                 msg     : "Error",
+                 type    : "error",
+                 position: "center"
+             });
+         }
+     });
+     request.fail(function(jqXHR, textStatus){ });
+ }
+ function reAsignarConductorVehiculo(idConductor){
+	 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : config.getTennant(),
+     },
+                         'data'         : {  
+                        	 'idVehiculo' : "{{idVehiculo}}",
+                        	 'idConductor': idConductor
+                         }
+     };
+	 
+     var request = $.ajax({
+         type: "POST",
+         url		: "{% url 'wsReAsignarConductor' %}",
+         data	: {
+             request: JSON.stringify(peticion)
+         },
+         dataType: "json"
+     });
+     request.done(function(respuesta){
+         if(respuesta.success){
+        	 $('#formularioAceptarAsignarForzado').modal('hide');
+             notif({
+                 msg     : "El conductor fue asignado",
+                 type    : "success",
+                 position: "center"
+             });    
+         }else{
+        	 notif({
+                 msg     : "Error",
+                 type    : "error",
+                 position: "center"
+             });
+         }
+     });
+     request.fail(function(jqXHR, textStatus){ });
+ }
+ function verificarConductorAsignado(idConductor){
+	 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : config.getTennant(),
+     },
+                         'data'         : {  
+                        	 'idConductor': idConductor
+                         }
+     };
+	 
+     var request = $.ajax({
+         type: "POST",
+         url		: "{% url 'wsVerificarConductorAsignado' %}",
+         data	: {
+             request: JSON.stringify(peticion)
+         },
+         dataType: "json"
+     });
+     request.done(function(respuesta){
+    	 $('#formularioAceptarAsignar').modal('hide');
+         if(respuesta.success){
+        	 if(respuesta.existe){
+        		 $('#formularioAceptarAsignarForzado').modal('show');
+        	 }else{
+        		 //asigna el conductor al vehiculo
+        		 asignarConductorVehiculo(idConductor);
+        	 }
+         }else{
+        	 notif({
+                 msg     : "Error",
+                 type    : "error",
+                 position: "center"
+             });
+         }
+     });
+     request.fail(function(jqXHR, textStatus){ });
+ }
+ //------ Cargar picker de estado de carga----------------------------------------------------
+ var estadoCarga = ["Con carga", "Sin carga"];
+ function cargarPickerEstadoCarga(data){
+	 var totalDatos	= estadoCarga.length;
+	 for (i = 0; i < totalDatos; i++){
+		 var itemCarga = estadoCarga[i];
+		 $('#grupoCarga').append('<option value="'+i+'">'+itemCarga+'</option>');
+	 }
+	 
+	 $('#grupoCarga').selectpicker('refresh');
+	 $('#grupoCarga').selectpicker('deselectAll');
+	 $('#grupoCarga').selectpicker('refresh');
+	 
+ }
+ function actualizarEstadoCarga(estaCargado){
+	 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : config.getTennant(),
+     },
+                         'data'         : {  
+                        	 'idVehiculo' : "{{idVehiculo}}",
+                        	 'cargado': estaCargado
+                         }
+     };
+	 
+     var request = $.ajax({
+         type: "POST",
+         url		: "{% url 'wsActualizarEstadoCarga' %}",
+         data	: {
+             request: JSON.stringify(peticion)
+         },
+         dataType: "json"
+     });
+     request.done(function(respuesta){
+         if(respuesta.success){
+             notif({
+                 msg     : "El estado de carga fue actualizado",
+                 type    : "success",
+                 position: "center"
+             });    
+         }else{
+        	 notif({
+                 msg     : "Error al actualizar",
+                 type    : "error",
+                 position: "center"
+             });
+         }
+     });
+     request.fail(function(jqXHR, textStatus){ });
+ }
+ function cargarSlider(){
+	 var slider         = document.getElementById('slider');	 
+	 noUiSlider.create(slider, {
+		 start: 100000,
+		 connect: "lower",
+		 step:	1,
+		 range: {
+			 min: 0,
+			 max: 100000
+		 }
+	 });
+	 
+	 $('#fechaSlider').text("...");	   
+	 slider.noUiSlider.on('update', function(){
+		 actualizarSliderFecha(false);
+	 });
+	 slider.noUiSlider.on('set', function(){
+		 actualizarSliderFecha(true);
+	 });
+ }
+ //Resetea en la posición inicial de slider fecha con la fecha adecuada.
+ function actualizarSliderFecha(debeCargarDireccion){
+	 var slider     = document.getElementById('slider');
+	 var valor      = slider.noUiSlider.get();
+	 var porcentaje = valor / 100000*1.0;
+	 if(dataRuta != null){
+		 if(dataRuta.length > 0){
+			 var posicion = parseInt( (dataRuta.length-1) * porcentaje);
+			 if(posicion < 0 ){
+				 posicion = 0;
+			 }
+			 var posicionRuta   = dataRuta[posicion];
+			 var horaRegistrada = posicionRuta.horaRegistrada;
+			 //var fecha          = moment(horaRegistrada).format("DD/MM/YYYY hh:mm a");
+			 var fecha = moment(horaRegistrada).format("dddd DD [de] MMMM YYYY [a las] hh:mm a");
+			 var velocidad      = "Velocidad: "+parseFloat(posicionRuta.velocidad.toFixed(1))+"km/h";
+			 $('#fechaSlider').text(fecha);	   
+			 
+			 if(debeCargarDireccion){
+				 if(markerPosicionVehiculoRuta != null){
+					 markerPosicionVehiculoRuta.setMap(null);
+					 markerPosicionVehiculoRuta = null;
+				 }
+				 markerPosicionVehiculoRuta = new google.maps.Marker({
+					 //position: data_destino,
+					 //map     : map,
+					 icon    : guiImagePuntoControl+"/static/images/pinUbicacion.png",
+					 title   : "..."
+				 });
+				 google.maps.event.addListener(markerPosicionVehiculoRuta, 'click', function() {
+					 if(infoWindowPosicionVehiculoRuta != null){
+						 infoWindowPosicionVehiculoRuta.open(map1, this);
+					 }
+				 });
+				 
+				 //if(markerPosicionVehiculoRuta != null){
+				 var posicionMarker = { lat: parseFloat(posicionRuta.latitud), lng: parseFloat(posicionRuta.longitud)};				   
+				 markerPosicionVehiculoRuta.setPosition(posicionMarker);
+				 markerPosicionVehiculoRuta.setMap(map1);				   
+				 
+				 if(infoWindowPosicionVehiculoRuta == null){
+					 infoWindowPosicionVehiculoRuta = new google.maps.InfoWindow({
+						 content: ''
+					 });
+				 }else{
+					 infoWindowPosicionVehiculoRuta.close();
+				 }
+				 
+				 pintarInfoWindow(infoWindowPosicionVehiculoRuta, map1, markerPosicionVehiculoRuta, fecha, velocidad,  parseFloat(posicionRuta.latitud), parseFloat(posicionRuta.longitud) );
+
+				 //Geocoder good:
+				 // if(geocoder == null){
+				 // 	 geocoder = new google.maps.Geocoder;
+				 // }
+				 // geocoder.geocode(
+				 // 	 {'location': posicionMarker},
+				 // 	 function(results, status) {
+				 // 		 var direccion = "";						   						   
+				 // 		 if (status === 'OK') {
+				 // 			 if (results[0]) {								   
+				 // 				 direccion = results[0].formatted_address;													   
+				 // 			 } else {
+				 // 				 direccion = "Dirección no definida";
+				 // 			 }
+				 // 		 } else {
+				 // 			 direccion = "Servicio de dirección no disponible";
+				 // 		 }
+				 // 		 var htmlInfoWindow = Mustache.render(templateInfoWindowPosicion,{
+				 // 			 "direccion" : direccion,
+				 // 			 "fechaHora" : fecha,
+				 // 			 "velocidad" : velocidad
+				 // 		 });
+						 
+				 // 		 infoWindowPosicionVehiculoRuta.setContent(htmlInfoWindow);
+				 // 		 infoWindowPosicionVehiculoRuta.open(map1, markerPosicionVehiculoRuta);
+				 // 	 }
+				 // );
+				 
+				 
+				 
+				 //}
+				 
+			 }
+			 
+			 
+		 }
+	 }
+ }
+ function reiniciarSlider(){
+	 var slider  = document.getElementById('slider');
+	 slider.noUiSlider.set(100000);
+	 //actualizarSliderFecha(true)
+ }
+
+//==============================================================================
+function pintarInfoWindow(infoWindow, mapa, marker, fecha, velocidad,  latitud, longitud){
+	// funcion para listar la posición de los vehiculos latitud y longitud
+	var peticion = {
+		'autenticacion': {
+			'usuario' : config.getUsuarioLogin(),
+            'token'   : config.getToken(),
+            'tenant'  : config.getTennant()
+        },
+        'data'         : {                     					
+			"latitud"         : parseFloat(latitud),
+			"longitud"        : parseFloat(longitud),
+			"buscarDireccion" : true 
+		}
+    };
+	
+    var request = $.ajax({
+        type: "POST",
+        url		: "{% url 'wsBuscarPuntosReferencias' %}",
+        data	: {
+            request: JSON.stringify(peticion)
+        },
+        dataType: "json"
+    });
+	
+    request.done(function(respuesta){
+        if(respuesta.success){
+
+			var slabelpeaje     = "";
+			var slabelmunicipio = "";
+			var slabelposte     = "";
+			var speaje     = "";
+			var smunicipio = "";
+			var sposte     = "";
+			
+            if("peaje" in respuesta.data){
+				var peaje = respuesta.data.peaje;				
+				speaje = peaje.nombre+" - "+peaje.sector+" - "+peaje.departamento+ " al "+peaje.direccion+" a "+convertirMetrosAKilometros(peaje.distancia)+"Km ";
+				slabelpeaje = "Peaje más cercano:";
+			}else{
+				slabelpeaje = "";
+				speaje      = "";				
+			}
+			if("municipio" in respuesta.data){
+				var municipio  = respuesta.data.municipio;
+				smunicipio = municipio.nombre+" - "+municipio.departamento+ " al "+municipio.direccion+" a "+convertirMetrosAKilometros(municipio.distancia)+"Km";
+				slabelmunicipio = "Municipio más cercano:";				
+			}else{
+				smunicipio      = "";
+				slabelmunicipio = "";
+			}
+			
+			if("poste" in respuesta.data){
+				var poste = respuesta.data.poste;
+				var sposte = "#"+poste.nombre+" - "+poste.tramo+" | "+poste.sector+" a "+convertirMetrosAKilometros(poste.distancia)+"Km";
+				var slabelposte = "Poste de referencia:";
+			}else{
+				sposte      = "";
+				slabelposte = "";
+			}
+						
+			var direccion = respuesta.data.direccion;
+            direccion = direccion.trim();
+			if(direccion  == ""){
+			    direccion = "Sin información";
+			}
+			var htmlInfoWindow = Mustache.render(templateInfoWindowPosicion,{
+				"direccion"      : direccion,				
+				"fechaHora"      : fecha,
+				"labelPoste"     : slabelposte, 
+				"poste"          : sposte,
+				"labelMunicipio" : slabelmunicipio,
+				"municipio"      : smunicipio,
+				"labelPeaje"     : slabelpeaje,
+				"peaje"          : speaje,
+				"velocidad"      : velocidad
+			});
+			
+			infoWindow.setContent(htmlInfoWindow);
+			infoWindow.open(mapa, marker);
+			
+        }else{
+
+		}
+    });
+    request.fail(function(jqXHR, textStatus){ });
+}
+
+function convertirMetrosAKilometros(metros){
+	var kilometros = metros/1000.0;
+	return kilometros.toFixed(2);
+}
+
+ function cargarTablaTemperaturasAlarmas(){
+     var fechaInicio 	= $('#formRangoFecha1CadenaFrio').data('DateTimePicker').date.format();
+ 
+	 var peticion    = {
+         'autenticacion': {
+             'usuario' : config.getUsuarioLogin(),
+             'token'   : config.getToken(),
+             'tenant'  : config.getTennant(),             
+         },
+         'data'         : {              
+             "fechaInicio" : fechaInicio.substring(0,10)+"T00:00:01",
+             "fechaFin"    : fechaInicio.substring(0,10)+"T23:59:59",
+             "idVehiculo"  : "{{idVehiculo}}",
+         }
+     };
+	 
+     var request = $.ajax({
+         type   : "POST",
+         url	: "{% url 'wsListadoAlarmasCadenaFrio' %}",
+         data	: {
+             request: JSON.stringify(peticion)
+         },
+         dataType: "json"
+     });
+     request.done(function(respuesta){
+         if(respuesta.success){
+             pintarTablaTemperaturasAlarmas(respuesta["data"]);
+         }else{ }
+     });
+     request.fail(function(jqXHR, textStatus){ });
+ };
+ 
+ function pintarTablaTemperaturasAlarmas(data){
+ 	var dataSet = data;
+     if ( ! $.fn.DataTable.isDataTable( '#tablaTemperaturas' ) ) {
+		 $('#tablaTemperaturas').DataTable({
+			 responsive: true,
+			 data: dataSet,
+			 fixedHeader:true,
+			 
+			 "pageLength"	:100,
+			 "aaSorting": [],
+			 language: traduccionDatatables,
+			 columns: [
+                 {  title: "Tipo alarma",
+					data : null
+				 },
+				 {  title: "Inicio de la alarma",
+					data : null
+				 },
+				 {  title: "Fin de la alarma",
+					data : null
+				 },	        
+				 {  title: "Temperatura alcanzada",
+					data : null
+				 },
+				 {  title: "Duración",
+					data : null
+				 }/*,
+				 {  title: "Detalle",
+					data : null
+				 },*/
+				
+				 
+			 ],
+			 "columnDefs": [	        	
+                 {
+	      			 "targets": [0],
+					 "render": function (data, type, full, meta){
+
+                         var tipoAlarma = data.tipoAlarma;
+						 if(tipoAlarma ==  "superiorSuperado"){
+							 return "Temperatura Alta";	
+						 }else{
+							 return "Temperatura Baja";	
+						 }
+                         
+					 }
+				 },
+                 {
+	      			 "targets": [1],
+					 "render": function (data, type, full, meta){
+                         var fechahoraInicio = "";
+						 if( data.fechahoraInicio != "" ){
+							 fechahoraInicio = moment(data.fechahoraInicio).format("DD/MM/YYYY, h:mm a");
+		    			 }					
+						 return fechahoraInicio;
+					 }
+				 },
+				 {
+	      			 "targets": [2],
+					 "render": function (data, type, full, meta){
+						 var fechahoraFin = "";
+						 if( data.fechahoraFin != "" ){
+							 fechahoraFin = moment(data.fechahoraFin).format("DD/MM/YYYY, h:mm a");
+		    			 }					
+						 return fechahoraFin;
+					 }
+				 },
+				 {
+	      			 "targets": [3],
+					 "render": function (data, type, full, meta){
+                         var tipoAlarma = data.tipoAlarma;
+                         var tempMaxima = data.tempMaxima;
+                         var tempMinima = data.tempMinima;
+						 if(tipoAlarma ==  "superiorSuperado"){
+							 return tempMaxima+"°C";	
+						 }else{
+							 return tempMinima+"°C";	
+						 }
+					 }
+				 },                 
+				 {
+	      			 "targets": [4],
+					 "render": function (data, type, full, meta){
+                         var fechahoraInicio 	= moment(data.fechahoraInicio);
+						 var fechahoraFin	 	= moment(data.fechahoraFin);
+						 var tiempo = calcularDuracionParada(fechahoraInicio, fechahoraFin);
+                         return tiempo;
+					 }
+				 },	             	      		 
+			 ]
+		 });
+     }   
+     else{
+		 $('#tablaTemperaturas').DataTable().clear().rows.add(dataSet).draw();
+		 
+     }
+ }
+
+ function cargarGraficoTemperaturas(){
+     var fechaInicio 	= $('#formRangoFecha1CadenaFrio').data('DateTimePicker').date.format();
+ 
+	 var peticion    = {
+         'autenticacion': {
+             'usuario' : config.getUsuarioLogin(),
+             'token'   : config.getToken(),
+             'tenant'  : config.getTennant(),
+             
+     },
+         'data'         : { 
+             "fechaInicio" : fechaInicio.substring(0,10)+"T00:00:01",
+             "fechaFin"    : fechaInicio.substring(0,10)+"T23:59:59",
+             "idVehiculo"  : "{{idVehiculo}}",
+         }
+     };
+	 
+     var request = $.ajax({
+         type: "POST",
+         url  : "{% url 'wsListadoPuntosCadenaFrio' %}",         
+         data	: {
+             request: JSON.stringify(peticion)
+         },
+         dataType: "json"
+     });
+     request.done(function(respuesta){
+         if(respuesta.success){
+             pintarGraficaTemperatura(respuesta["data"]);
+         }else{ }
+     });
+     request.fail(function(jqXHR, textStatus){ });
+ };
+
+function pintarGraficaTemperatura(dataGrafica){
+
+    var temperaturas = dataGrafica.temperaturas;
+    var tempMaxima   = dataGrafica.tempMaxima;
+    var tempMinima   = dataGrafica.tempMinima;
+
+    $("#labelTemperaturaMaxima").text(tempMaxima+"°C");
+    $("#labelTemperaturaMinima").text(tempMinima+"°C");
+    if(temperaturas.length>0){
+        var ultimaPosicion = temperaturas[temperaturas.length-1];
+        $("#labelTemperaturaActual").text(ultimaPosicion.temperatura+"°C");
+    }
+    
+    // var listadoDatos    = data;
+    for(var i=0; i<temperaturas.length; i++){
+    	temperaturas[i]["fechahora"] = moment(temperaturas[i]["fechahora"]).format("h:mm a");
+    }
+		
+	var chart = AmCharts.makeChart("graficaTemperatura", {
+		"type": "serial",
+        "theme": "light",
+        "marginRight":30,
+        "legend": {
+            "equalWidths": false,
+            "position": "top",
+            "valueAlign": "left",
+            "valueWidth": 100
+        },
+        
+        "dataProvider": temperaturas,
+        "valueAxes": [{
+            "stackType": "regular",
+            "gridAlpha": 0.07,
+            "position": "left",
+            "title": "Grafico de temperaturas",
+            "guides": [{
+                value: tempLimSuperior,                
+                lineColor: "#CC0000",
+                lineAlpha: 1,
+                fillAlpha: 0.2,
+                fillColor: "#CC0000",
+                dashLength: 2,
+                inside: true,
+                labelRotation: 40,
+                label: "Límite máximo"
+            }, {
+                value: tempLimInferior,
+                lineColor: "#CC0000",
+                lineAlpha: 1,
+                dashLength: 2,
+                inside: true,
+                labelRotation: 90,
+                label: "Límite mínimo"
+            }]
+        }],
+        "graphs": [{
+            //"balloonText": "<img src='{% static "images/thermometer2.png" %}' style='vertical-align:bottom; margin-right: 10px; width:28px; height:21px;'><span style='font-size:14px; color:#000000;'><b>[[value]]</b> [[fechahora]]</span>",
+            "balloonFunction": function(graphDataItem, graph) {
+                var value = graphDataItem.values.value;
+                var fechahora = moment(graphDataItem.dataContext.fechahora).format("dddd DD [de] MMMM YYYY [a las] hh:mm a");
+                return "<img src='{% static "images/thermometer2.png" %}' style='vertical-align:bottom; margin-right: 10px; width:28px; height:21px;'><span style='font-size:14px; color:#000000;'><b>"+value+"°C</b> "+fechahora+"</span>";
+            },
+            "fillAlphas": 0.6,
+            "lineAlpha": 0.4,
+            "title": "Temperatura",
+            "valueField": "temperatura",
+            "type": "smoothedLine"
+        }],
+        "plotAreaBorderAlpha": 0,
+        "marginTop": 10,
+        "marginLeft": 0,
+        "marginBottom": 0,
+        "chartScrollbar": {},
+        "chartCursor": {
+            "cursorAlpha": 0
+        },
+        "categoryField": "fechahora",
+        "categoryAxis": {
+            "parseDates": false,
+            "startOnAxis": true,
+            "axisColor": "#DADADA",
+            "gridAlpha": 0.07,
+            "title": "Fecha"
+            
+        },
+        "export": {
+    	    "enabled": true
+        }
+});
+}
+
+function enviarActualizarTemperatura(){
+
+    var estaAlarmaCadenaFrioActivada      =  $('input[name="my-checkbox"]').bootstrapSwitch('state');
+    
+    var localTempLimSuperior              = $("#limiteMaximoTemp").val();
+    var localTempLimInferior              = $("#limiteMinimoTemp").val();
+        
+	var peticion    = {
+        'autenticacion': {
+            'usuario' : config.getUsuarioLogin(),
+            'token'   : config.getToken(),
+            'tenant'  : config.getTennant(),            
+        },
+        'data'         : {            
+            "idVehiculo"  : "{{idVehiculo}}",
+            "estaAlarmaCadenaFrioActivada" : estaAlarmaCadenaFrioActivada,
+            "tempLimSuperior"              : localTempLimSuperior,
+            "tempLimInferior"              : localTempLimInferior    
+        }
+    };
+	
+    var request = $.ajax({
+        type: "POST",
+        url  : "{% url 'wsActualizarAlarmaCadenaFrio' %}",         
+        data	: {
+            request: JSON.stringify(peticion)
+        },
+        dataType: "json"
+    });
+    request.done(function(respuesta){
+        if(respuesta.success){
+            tempLimSuperior = localTempLimSuperior;
+            tempLimInferior = localTempLimInferior;
+			notif({
+                 msg     : "Los datos han sido actualizados",
+                 type    : "success",
+                 position: "center"
+             });
+            cargarGraficoTemperaturas();
+        }else{ }
+    });
+    request.fail(function(jqXHR, textStatus){ });
+};
+
+ function pintarGraficaTemperaturaOLD(dataGrafica){
+    // var listadoDatos    = data;
+    // for(var i=0; i<listadoDatos.length; i++){
+    	// //listadoDatos[i]['color'] = colores[(i % colores.length)];
+    // }
+		
+	var chart = AmCharts.makeChart("graficaTemperatura", {
+		"type": "serial",
+        "theme": "light",
+        "marginRight":30,
+        "legend": {
+            "equalWidths": false,
+            "periodValueText": "total: [[value.sum]]",
+            "position": "top",
+            "valueAlign": "left",
+            "valueWidth": 100
+        },
+        "dataProvider": [{
+            "year": 1994,
+            "cars": 1587,
+            "motorcycles": 650,
+            "bicycles": 121
+        }, {
+            "year": 1995,
+            "cars": 1567,
+            "motorcycles": 683,
+            "bicycles": 146
+        }, {
+            "year": 1996,
+            "cars": 1617,
+            "motorcycles": 691,
+            "bicycles": 138
+        }, {
+            "year": 1997,
+            "cars": 1630,
+            "motorcycles": 642,
+            "bicycles": 127
+        }, {
+            "year": 1998,
+            "cars": 1660,
+            "motorcycles": 699,
+            "bicycles": 105
+        }, {
+            "year": 1999,
+            "cars": 1683,
+            "motorcycles": 721,
+            "bicycles": 109
+        }, {
+            "year": 2000,
+            "cars": 1691,
+            "motorcycles": 737,
+            "bicycles": 112
+        }, {
+            "year": 2001,
+            "cars": 1298,
+            "motorcycles": 680,
+            "bicycles": 101
+        }, {
+            "year": 2002,
+            "cars": 1275,
+            "motorcycles": 664,
+            "bicycles": 97
+        }, {
+            "year": 2003,
+            "cars": 1246,
+            "motorcycles": 648,
+            "bicycles": 93
+        }, {
+            "year": 2004,
+            "cars": 1318,
+            "motorcycles": 697,
+            "bicycles": 111
+        }, {
+            "year": 2005,
+            "cars": 1213,
+            "motorcycles": 633,
+            "bicycles": 87
+        }, {
+            "year": 2006,
+            "cars": 1199,
+            "motorcycles": 621,
+            "bicycles": 79
+        }, {
+            "year": 2007,
+            "cars": 1110,
+            "motorcycles": 210,
+            "bicycles": 81
+        }, {
+            "year": 2008,
+            "cars": 1165,
+            "motorcycles": 232,
+            "bicycles": 75
+        }, {
+            "year": 2009,
+            "cars": 1145,
+            "motorcycles": 219,
+            "bicycles": 88
+        }, {
+            "year": 2010,
+            "cars": 1163,
+            "motorcycles": 201,
+            "bicycles": 82
+        }, {
+            "year": 2011,
+            "cars": 1180,
+            "motorcycles": 285,
+            "bicycles": 87
+        }, {
+            "year": 2012,
+            "cars": 1159,
+            "motorcycles": 277,
+            "bicycles": 71
+        }],
+    "valueAxes": [{
+        "stackType": "regular",
+        "gridAlpha": 0.07,
+        "position": "left",
+        "title": "Traffic incidents",
+        "guides": [{
+            value: "700",
+           
+            lineColor: "#CC0000",
+            lineAlpha: 1,
+            fillAlpha: 0.2,
+            fillColor: "#CC0000",
+            dashLength: 2,
+            inside: true,
+            labelRotation: 40,
+            label: "fines for speeding increased"
+        }, {
+            value: "200",
+            lineColor: "#CC0000",
+            lineAlpha: 1,
+            dashLength: 2,
+            inside: true,
+            labelRotation: 90,
+            label: "motorcycle fee introduced"
+        }]
+    }],
+    "graphs": [{
+        "balloonText": "<img src='https://www.amcharts.com/lib/3/images/motorcycle.png' style='vertical-align:bottom; margin-right: 10px; width:28px; height:21px;'><span style='font-size:14px; color:#000000;'><b>[[value]]</b></span>",
+        "fillAlphas": 0.6,
+        "lineAlpha": 0.4,
+        "title": "Motorcycles",
+        "valueField": "motorcycles"
+    }],
+    "plotAreaBorderAlpha": 0,
+    "marginTop": 10,
+    "marginLeft": 0,
+    "marginBottom": 0,
+    "chartScrollbar": {},
+    "chartCursor": {
+        "cursorAlpha": 0
+    },
+    "categoryField": "year",
+    "categoryAxis": {
+        "startOnAxis": true,
+        "axisColor": "#DADADA",
+        "gridAlpha": 0.07,
+        "title": "Year"
+        
+    },
+    "export": {
+    	"enabled": true
+     }
+});
+}
+
+ 
+
+ 
+//==============================================================================
+var tempLimSuperior = 0;
+var tempLimInferior = 0;
+ // === Document ready!!! =======================================================
+ $(document).ready(function() {
+	//activa la pestana cadena de frio si es 8 o la de detalle si es 1
+	$('.nav-tabs a[href="#' + "{{pestanaActivada}}" + '"]').tab('show');
+    // valida si la peticion es de un generador de carga
+    if(config.getEsGeneradorCarga()){
+		//si la peticion es de un generador de carga entonces muestra el mensaje del rango de fechas definidos por el codigo de acceso
+		var fechaDesde = moment(config.getFechaGeneracion()).format("DD/MM/YYYY h:mm a");
+		var fechaHasta = moment(config.getFechaCaducidad()).format("DD/MM/YYYY h:mm a");
+    	$("#textoInfoFechas").text('Habilitado desde '+fechaDesde+ ' hasta '+ fechaHasta);
+    }
+     
+ 	$('.formRangoFechaCadena').datetimepicker(
+	     { 	pickTime: false,
+	       showToday: true,
+	       pick12HourFormat: true,
+	       minViewMode: "years",
+		   minViewMode: "months",
+		   minViewMode: "days",
+		    language:'es' });
+     
+	 cargarSlider();
+	 cargarPickerEstadoCarga();
+	 //pintarGraficaTemperatura();
+     //cargarGraficoTemperaturas();
+	 cargarTablaTemperaturasAlarmas();
+	 //======= Inicio Picker conductores =======	
+	 traerConductores();
+	 $("#grupoConductor").change(function() {
+		 //click picker
+		 $('#formularioAceptarAsignar').modal('show');
+	 });
+
+	 //Deshabilita el selectpicker si es un generador de carga
+	 if(!(config.getCodigoAcceso()=="None")){
+	 	$("#grupoConductor").attr('disabled', true);
+	 }
+	 
+	 $(document).on('click', '#aceptarAsignarConductor', function(){
+		 var posicion = $('#grupoConductor')	.val();
+         if(!(posicion == conductores.length)){
+ 			 var datoConductor = conductores[posicion];
+ 			 idConductor		  = datoConductor.id;
+ 			 verificarConductorAsignado(idConductor);
+ 		 }else{
+ 			 idConductor = "";
+ 			 asignarConductorVehiculo(idConductor);
+ 		 }	
+	 });	
+	 
+	 $(document).on('click', '#aceptarAsignarConductorForzado', function(){
+		 var posicion = $('#grupoConductor')	.val();
+         if(!(posicion == conductores.length)){
+ 			 var datoConductor = conductores[posicion];
+ 			 idConductor		= datoConductor.id;
+			 reAsignarConductorVehiculo(idConductor);
+ 		 }else{
+ 			 idConductor = "";
+ 			 asignarConductorVehiculo(idConductor);
+ 		 }		
+	 });   
+	 //======= Fin Picker conductores ==========
+	 //======= Inicio Picker estado carga =======	
+	 
+	 $("#grupoCarga").change(function() {
+		 //click picker
+		 var estaCargado = false;
+		 var posicion = $('#grupoCarga')	.val();
+		 if(posicion == 0){
+			 estaCargado = true;
+		 }
+		 actualizarEstadoCarga(estaCargado);
+	 });	
+	 //======= Fin Picker carga =======	
+	 buscarLlamadaActivaDirecta();
+	 $("#tabAudios").click(function() {
+		 // cuando se da click a la pestaña audios
+		 $("#sidLlamada").val("");
+		 if($("#sidLlamada").val()==""){
+			 pintarBotonAudioPlay();	
+		 }else{
+			 pintarBotonAudioStop();
+		 } 	
+	 });
+	 $("#tabAudios").click(function() {
+		 // cuando se da click a la pestaña audios
+		 buscarLlamadaActivaDirecta();
+		 
+	 });
+	 var fechaAhora = moment();
+	 var fechaAyer = moment().subtract(1, 'days');
+    //----------------------------------------------------------------
+    //Generador de carga
+    //Evalua que la fecha de inicio este habilitado al generador de carga
+    if(config.getEsGeneradorCarga()){
+	    var fechaGeneracion = moment(config.getFechaGeneracion());
+	    if(fechaGeneracion > fechaAyer){
+	    	fechaAyer 	= fechaGeneracion;
+	    }
+	}
+    //----------------------------------------------------------------
+
+	 $('.formRangoFecha').datetimepicker(
+	     { 	pickTime: true,
+	       showToday: true,
+	       pick12HourFormat: true,
+	       minViewMode: "years",
+		   minViewMode: "months",
+		   minViewMode: "days",
+		   language:'es' });
+		   
+	   
+	 $('#formRangoFecha1').data('DateTimePicker').setDate(fechaAyer);
+	 $('#formRangoFecha2').data('DateTimePicker').setDate(fechaAhora);
+	 
+	 	   
+	 $('#formRangoFecha1CadenaFrio').data('DateTimePicker').setDate(fechaAhora);	   
+	 
+	 traerDatosVehiculo();
+	 cargarTablaRutas();
+	 cargarTablaParadas();
+	 cargarTablaRutasCapturaImagen();
+	 cargarTablaRutasCapturaAudio();
+	 cargarTablaAlarmasPorVehiculo();
+	 //==========================Inicio Ready Detalle vehiculo=================================
+	 //submit posiciones
+	 $('#formularioDetalle').validator().on('submit', function (e) {
+		 if (e.isDefaultPrevented()) {
+			 notif({
+	             msg     : "Invalido campo",
+	             type    : "error",
+	             position: "center"
+	         });
+		 } else {
+		  	 //aqui se valida que la primer fecha no sea superior a la segunda
+		  	 var permiteAccion =validarFechasUsuario('#formRangoFecha1', '#formRangoFecha2');
+		  	 // --------------valida si la peticion es de un generador de carga------------------
+		  	//permiteAccionGeneradorCarga = true;
+		  	var permiteAccionGeneradorCarga = {success: true, tipoFecha: ""}; 	
+		    if(config.getEsGeneradorCarga()){
+				//si la peticion es de un generador de carga se validan las fechas con las configuradas por un cliente
+				var fechaGeneracion = moment(config.getFechaGeneracion());
+    			var fechaCaducidad  = moment(config.getFechaCaducidad());
+				permiteAccionGeneradorCarga = validarFechasGeneradorCarga("#formRangoFecha1", "#formRangoFecha2", "DD/MM/YYYY h:mm a");
+				if(permiteAccionGeneradorCarga["tipoFecha"] == "fechaGeneracion"){
+					//se le asigna la fecha inicial la fecha de generacion
+					$('#formRangoFecha1').data('DateTimePicker').setDate(fechaGeneracion);
+					permiteAccionGeneradorCarga["success"] = true;	
+				}else if(permiteAccionGeneradorCarga["tipoFecha"] == "fechaCaducidad"){
+					//se le asigna la fecha fin la fecha de caducidad
+					$('#formRangoFecha2').data('DateTimePicker').setDate(fechaCaducidad);
+					permiteAccionGeneradorCarga["success"] = true;
+				}
+		    }
+		    //-------------------------------------------------------------------------------------
+		  	 if(permiteAccion && permiteAccionGeneradorCarga["success"]){
+			  	 map1	= null;
+			  	 fechaInicioPDF 	= $('#formRangoFecha1').data('DateTimePicker').date.format();
+			 	 fechaPDFInicio		= moment(fechaInicioPDF).format("DD/MM/YYYY - hh:mm a");
+			 	 fechaFinPDF    	= $('#formRangoFecha2').data('DateTimePicker').date.format();
+			 	 fechaPDFFin		= moment(fechaFinPDF).format("DD/MM/YYYY - hh:mm a");
+				 //Limpia el div del map1
+				 $(".map1").html("");	
+			     cargarTablaRutas();
+			     cargarTablaParadas();
+			     //cargarDatosMapa();
+			 }
+		     e.preventDefault();
+		 }
+	 });	
+	 //==========================Fin Ready Detalle vehiculo=================================
+	 //========================= Inicio Ready Imagenes vehiculo =======
+	 $('#formRangoFecha1Imagenes').data('DateTimePicker').setDate(fechaAyer);
+	 $('#formRangoFecha2Imagenes').data('DateTimePicker').setDate(fechaAhora);
+	 $('#formularioImagenes').validator().on('submit', function (e) {
+		 if (e.isDefaultPrevented()) {
+			 notif({
+	             msg     : "Invalido campo",
+	             type    : "error",
+	             position: "center"
+	         });
+		 } else {
+			 //aqui se valida que la primer fecha no sea superior a la segunda
+			 var permiteAccion =validarFechasUsuario('#formRangoFecha1Imagenes', '#formRangoFecha2Imagenes');
+		  	 // --------------valida si la peticion es de un generador de carga------------------
+		  	var permiteAccionGeneradorCarga = {success: true, tipoFecha: ""}; 	
+		    if(config.getEsGeneradorCarga()){
+				//si la peticion es de un generador de carga se validan las fechas con las configuradas por un cliente
+				var fechaGeneracion = moment(config.getFechaGeneracion());
+    			var fechaCaducidad  = moment(config.getFechaCaducidad());
+				permiteAccionGeneradorCarga = validarFechasGeneradorCarga("#formRangoFecha1Imagenes", "#formRangoFecha2Imagenes", "DD/MM/YYYY h:mm a");
+				if(permiteAccionGeneradorCarga["tipoFecha"] == "fechaGeneracion"){
+					//se le asigna la fecha inicial la fecha de generacion
+					$('#formRangoFecha1Imagenes').data('DateTimePicker').setDate(fechaGeneracion);
+					permiteAccionGeneradorCarga["success"] = true;	
+				}else if(permiteAccionGeneradorCarga["tipoFecha"] == "fechaCaducidad"){
+					//se le asigna la fecha fin la fecha de caducidad
+					$('#formRangoFecha2Imagenes').data('DateTimePicker').setDate(fechaCaducidad);
+					permiteAccionGeneradorCarga["success"] = true;
+				}
+		    }
+		    //-------------------------------------------------------------------------------------
+			 if(permiteAccion && permiteAccionGeneradorCarga["success"]){
+				 cargarTablaRutasCapturaImagen();
+			 }		    
+		     e.preventDefault();
+		 }
+	 });
+	 function capturarImagenDirectaGPS(){
+		 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+	                                             'token'   : config.getToken(),
+	                                             'tenant'  : config.getTennant(),
+	                                             
+	     },
+	                         'data'         : { 
+	                        	 'idVehiculo': "{{idVehiculo}}",
+	                         }
+	     };
+		 
+	     var request = $.ajax({
+	         type: "POST",
+	         url		: "{% url 'wssolicitarCapturaImagen' %}",
+	         data	: {
+	             request: JSON.stringify(peticion)
+	         },
+	         dataType: "json"
+	     });
+	     request.done(function(respuesta){
+	         if(respuesta.success){
+	        	 data = respuesta.data;
+	             //alert(data.id);
+	             //console.log(data.id);
+				 $('#mensajeNotificacion').text("Se solicito la captura de la imagen");
+				 $('#formularioAceptarNotificacion').modal('show');
+	         }else{ }
+	     });
+	     request.fail(function(jqXHR, textStatus){ });
+	 };
+	 $(document).on('click', '#capturarImagen', function(){ 
+		 //Peticion del boton para capturar la imagen del GPS
+		 capturarImagenDirectaGPS();
+	 });
+	 //================ Fin Ready Imagenes vehiculo =======
+	 //========================= Inicio Audio vehiculo =================================
+	 $('#formRangoFecha1Audio').data('DateTimePicker').setDate(fechaAyer);
+	 $('#formRangoFecha2Audio').data('DateTimePicker').setDate(fechaAhora);
+	 $('#formularioAudios').validator().on('submit', function (e) {
+		 if (e.isDefaultPrevented()) {
+			 notif({
+	             msg     : "Invalido campo",
+	             type    : "error",
+	             position: "center"
+	         });
+		 } else {
+			 var permiteAccion =validarFechasUsuario('#formRangoFecha1Audio', '#formRangoFecha2Audio');
+		  	 // --------------valida si la peticion es de un generador de carga------------------
+		  	var permiteAccionGeneradorCarga = {success: true, tipoFecha: ""}; 	
+		    if(config.getEsGeneradorCarga()){
+				//si la peticion es de un generador de carga se validan las fechas con las configuradas por un cliente
+				var fechaGeneracion = moment(config.getFechaGeneracion());
+    			var fechaCaducidad  = moment(config.getFechaCaducidad());
+				permiteAccionGeneradorCarga = validarFechasGeneradorCarga("#formRangoFecha1Audio", "#formRangoFecha2Audio", "DD/MM/YYYY h:mm a");
+				if(permiteAccionGeneradorCarga["tipoFecha"] == "fechaGeneracion"){
+					//se le asigna la fecha inicial la fecha de generacion
+					$('#formRangoFecha1Audio').data('DateTimePicker').setDate(fechaGeneracion);
+					permiteAccionGeneradorCarga["success"] = true;	
+				}else if(permiteAccionGeneradorCarga["tipoFecha"] == "fechaCaducidad"){
+					//se le asigna la fecha fin la fecha de caducidad
+					$('#formRangoFecha2Audio').data('DateTimePicker').setDate(fechaCaducidad);
+					permiteAccionGeneradorCarga["success"] = true;
+				}
+		    }
+		    //-------------------------------------------------------------------------------------
+			 if(permiteAccion && permiteAccionGeneradorCarga["success"]){
+				 cargarTablaRutasCapturaAudio();
+			 }		  	
+		     e.preventDefault();
+		 }
+	 });
+	 var sid; //variable temporal para prueba
+	 function capturarAudioGPS(){
+		 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+	                                             'token'   : config.getToken(),
+	                                             'tenant'  : config.getTennant(),
+	                                             
+	     },
+	                         'data'         : { 
+	                        	 'idVehiculo': "{{idVehiculo}}",
+	                         }
+	     };
+		 
+	     var request = $.ajax({
+	         type: "POST",
+	         url		: "{% url 'wssolicitarCapturaAudio' %}",
+	         data	: {
+	             request: JSON.stringify(peticion)
+	         },
+	         dataType: "json"
+	     });
+	     request.done(function(respuesta){
+	         if(respuesta.success){
+	        	 sid = respuesta["sid"];
+	        	 pintarBotonAudioStop();
+	             $("#sidLlamada").val(sid);
+	         }else{ 
+	        	 mensaje = respuesta["mensaje"];
+				 $('#mensajeNotificacion').text(mensaje);
+				 $('#formularioAceptarNotificacion').modal('show');
+	         }
+	     });
+	     request.fail(function(jqXHR, textStatus){ });
+	 };
+	 function buscarLlamadaActivaDirecta(){
+		 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+	                                             'token'   : config.getToken(),
+	                                             'tenant'  : config.getTennant(),
+	                                             
+	     },
+	                         'data'         : { 
+	                        	 'idVehiculo': "{{idVehiculo}}",
+	                         }
+	     };
+		 
+	     var request = $.ajax({
+	         type: "POST",
+	         url		: "{% url 'wsbuscarLlamadaActivaDirecta' %}",
+	         data	: {
+	             request: JSON.stringify(peticion)
+	         },
+	         dataType: "json"
+	     });
+	     request.done(function(respuesta){
+	         if(respuesta.success){
+	        	 $("#sidLlamada").val(respuesta.sidLlamada);
+	        	 pintarBotonAudioStop();	
+	         }
+	         else{
+				 respuesta = respuesta["respuesta"];
+				 $("#sidLlamada").val("");
+				 pintarBotonAudioPlay();	        	
+	         }
+	     });
+	     request.fail(function(jqXHR, textStatus){ });
+	 };
+	 function detenerAudioGPS(sid){
+		 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+	                                             'token'   : config.getToken(),
+	                                             'tenant'  : config.getTennant(),
+	                                             
+	     },
+	                         'data'         : { 
+	                        	 'idVehiculo': "{{idVehiculo}}",
+	                        	 'sid': sid,
+	                         }
+	     };
+		 
+	     var request = $.ajax({
+	         type: "POST",
+	         url		: "{% url 'wsdetenerCapturaAudio' %}",
+	         data	: {
+	             request: JSON.stringify(peticion)
+	         },
+	         dataType: "json"
+	     });
+	     request.done(function(respuesta){
+	         if(respuesta.success){
+	        	 respuesta = respuesta["respuesta"];
+				 pintarBotonAudioPlay();
+				 $("#sidLlamada").val("");
+	         }
+	         else{
+	        	 respuesta = respuesta["respuesta"];
+	        	 pintarBotonAudioStop();
+	        	 $("#sidLlamada").val(sid);
+	         }
+	       	 $('#mensajeNotificacion').text(respuesta);
+			 $('#formularioAceptarNotificacion').modal('show');
+	     });
+	     request.fail(function(jqXHR, textStatus){ });
+	 };
+	 function pintarBotonAudioPlay(){
+		 $("#capturarAudio i").removeClass("fa-stop");
+		 $("#capturarAudio i").removeClass("fa-microphone");
+		 $("#capturarAudio i").addClass("fa-2x");
+		 $("#capturarAudio span").text("Tomar una nueva captura");
+		 $("#capturarAudio i").addClass("fa-microphone");
+		 
+	 }
+	 $(document).on('click', '#capturarAudio', function(){ 
+		 //alert($("#sidLlamada").val())
+		 //Peticion del boton para capturar el audio del GPS 
+		 if($("#sidLlamada").val()==""){
+			 //alert("hola"+$("#sidLlamada").val());
+			 capturarAudioGPS();
+			 //$("#sidLlamada").val("nuevo");
+			 pintarBotonAudioStop();	
+		 }else{
+			 //sid = $("#sidLlamada").val("");
+			 detenerAudioGPS(sid);
+			 //alert("hola2"+sid);
+			 pintarBotonAudioPlay();
+			 $("#sidLlamada").val("");
+			 /*
+				if($("#sidLlamada").val("") !=""){
+				$("#sidLlamada").val(sid);
+				$("#sidLlamada").val("");
+				}
+				else{
+			 	$("#sidLlamada").val("");
+				}*/
+		 }
+		 
+	 });
+	 //========================= Fin Ready Audio vehiculo =================================
+	 //========================= Inicio Ready alarmas vehiculo=============================
+	 $('#formRangoFecha1Alarma').data('DateTimePicker').setDate(fechaAyer);
+	 $('#formRangoFecha2Alarma').data('DateTimePicker').setDate(fechaAhora);
+	 $('#formularioAlarmas').validator().on('submit', function (e) {
+		 if (e.isDefaultPrevented()) {
+			 notif({
+	             msg     : "Invalido campo",
+	             type    : "error",
+	             position: "center"
+	         });
+		 } else {
+			 var permiteAccion =validarFechasUsuario('#formRangoFecha1Alarma', '#formRangoFecha2Alarma');
+		  	 // --------------valida si la peticion es de un generador de carga------------------
+		  	var permiteAccionGeneradorCarga = {success: true, tipoFecha: ""}; 	
+		    if(config.getEsGeneradorCarga()){
+				//si la peticion es de un generador de carga se validan las fechas con las configuradas por un cliente
+				var fechaGeneracion = moment(config.getFechaGeneracion());
+    			var fechaCaducidad  = moment(config.getFechaCaducidad());
+				permiteAccionGeneradorCarga = validarFechasGeneradorCarga("#formRangoFecha1Alarma", "#formRangoFecha2Alarma", "DD/MM/YYYY h:mm a");
+				if(permiteAccionGeneradorCarga["tipoFecha"] == "fechaGeneracion"){
+					//se le asigna la fecha inicial la fecha de generacion
+					$('#formRangoFecha1Alarma').data('DateTimePicker').setDate(fechaGeneracion);
+					permiteAccionGeneradorCarga["success"] = true;	
+				}else if(permiteAccionGeneradorCarga["tipoFecha"] == "fechaCaducidad"){
+					//se le asigna la fecha fin la fecha de caducidad
+					$('#formRangoFecha2Alarma').data('DateTimePicker').setDate(fechaCaducidad);
+					permiteAccionGeneradorCarga["success"] = true;
+				}
+		    }
+		    //-------------------------------------------------------------------------------------
+			 if(permiteAccion && permiteAccionGeneradorCarga["success"]){
+				 cargarTablaAlarmasPorVehiculo();
+			 }		  	
+		     e.preventDefault();
+		 }
+	 });
+	 //========================= Fin Ready alarmas Vehiculo================================
+	 //================Inicio Boton actualizar===============
+	 $( "#actualizarPestanas" ).click(function() {
+		 var pestanas = $("#pestanaSuperiores li.active");
+		 var idPestana = $("#pestanaSuperiores li.active").attr('id');
+		 if (idPestana == "tabDetalle"){
+			 //aqui se valida que la primer fecha no sea superior a la segunda
+			 var fechaAhora = moment();
+			 $('#formRangoFecha2').data('DateTimePicker').setDate(fechaAhora);
+			 var permiteAccion = validarFechasUsuario('#formRangoFecha1', '#formRangoFecha2');
+			 if(permiteAccion){
+				 zoomGlobal = map1.getZoom();
+    			 posicionCamaraGlobal = map1.getCenter();
+    			 usarZoom = true;
+				 map1	= null;
+				 //Limpia el div del map1
+				 $(".map1").html("");
+				 //cargarDatosMapa();
+				 traerDatosVehiculo();
+				 cargarTablaRutas();
+				 cargarTablaParadas();
+			 }
+		 }
+		 if (idPestana == "tabImagenes"){
+			 //aqui se valida que la primer fecha no sea superior a la segunda
+			 var fechaAhora = moment();
+			 $('#formRangoFecha2Imagenes').data('DateTimePicker').setDate(fechaAhora);		
+			 var permiteAccion = validarFechasUsuario('#formRangoFecha1Imagenes', '#formRangoFecha2Imagenes');
+			 if(permiteAccion){
+				 cargarTablaRutasCapturaImagen();	
+			 }
+			 
+		 }
+		 if(idPestana == "tabAudios"){
+			 //aqui se valida que la primer fecha no sea superior a la segunda
+			 var fechaAhora = moment();
+			 $('#formRangoFecha2Audio').data('DateTimePicker').setDate(fechaAhora);		
+			 var permiteAccion = validarFechasUsuario('#formRangoFecha1Audio', '#formRangoFecha2Audio');
+			 if(permiteAccion){
+				 cargarTablaRutasCapturaAudio();	
+			 }		
+			 
+		 }
+		 if(idPestana == "tabAlarmas"){
+			 var fechaAhora = moment();
+			 $('#formRangoFecha2Alarma').data('DateTimePicker').setDate(fechaAhora);		
+			 var permiteAccion = validarFechasUsuario('#formRangoFecha1Alarma', '#formRangoFecha2Alarma');
+			 if(permiteAccion){
+				 cargarTablaAlarmasPorVehiculo();	
+			 }			
+		 }
+		 if(idPestana == "tabCadenaFrio"){
+			 var fechaAhora = moment();
+			 $('#formRangoFecha1CadenaFrio').data('DateTimePicker').setDate(fechaAhora);		
+			 // var permiteAccion = validarFechasUsuario('#formRangoFecha1Alarma', '#formRangoFecha2Alarma');
+			 // if(permiteAccion){
+				 cargarTablaAlarmasPorVehiculo();	
+			 //}			
+		 }
+	 });
+	 //================Fin Boton actualizar===============	
+	 
+	
+	 //========================= Inicio Ready CadenaFrio vehiculo=============================
+	 	 
+	 	 
+	  //========================= Fin Ready Cadena frio vehiculo =================================
+
+	 function pintarBotonAudioStop(){
+		 $("#capturarAudio i").removeClass("fa-microphone");
+		 $("#capturarAudio i").removeClass("fa-stop");
+		 $("#capturarAudio i").removeClass("fa-2x");
+		 $("#capturarAudio span").text("Grabando");
+		 $("#capturarAudio i").addClass("fa-stop");
+		 
+	 }
+	 //moviendo el encabezado de las tablas de las pestnañas de posicions de vehiculo y tabla paradas no se solapen
+	$('a[data-toggle="tab"]').on('shown.bs.tab', function (e){
+		var target = $(e.target).attr("href"); // activated tab
+		if(target == "#5"){
+		 	var table = $('#TablaParadas').DataTable( );
+		    table.fixedHeader.disable();
+		    
+		    var table1 = $('#graficoTabla').DataTable( );
+		    table1.fixedHeader.enable();
+		 }
+		
+		 if(target == "#6"){
+		 	
+		 	var table1 = $('#graficoTabla').DataTable( );
+		    table1.fixedHeader.disable();
+		 	
+		 	var table = $('#TablaParadas').DataTable( );
+		 	table.fixedHeader.enable();
+		 	
+		 	
+		 }
+		
+	});
+
+	$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+	  e.target // newly activated tab
+	  e.relatedTarget // previous active tab
+	});
+
+
+     $('#formularioCadenaFrio').validator().on('submit', function (e) {
+		 if (e.isDefaultPrevented()) {
+			 notif({
+	             msg     : "Invalido campo",
+	             type    : "error",
+	             position: "center"
+	         });
+		 } else {			
+		    //-------------------------------------------------------------------------------------			 
+			 cargarGraficoTemperaturas();
+             cargarTablaTemperaturasAlarmas();
+		     e.preventDefault();
+		 }
+	 });
+
+     $('#formularioDatosCadena').validator().on('submit', function (e) {
+		 if (e.isDefaultPrevented()) {
+			 notif({
+	             msg     : "Invalido campo",
+	             type    : "error",
+	             position: "center"
+	         });
+		 } else {			
+		    //-------------------------------------------------------------------------------------			 
+			 enviarActualizarTemperatura();
+		     e.preventDefault();
+		 }
+	 });
+     
+     
+
+		 // --- End document ready ------------------------------------------------------
+ });
+</script>
+{% endblock %}
+{% block contenido %}
+<body>
+	
+	<div id="page-wrapper" style="  margin: 3em; margin-top: 0;">
+		
+	
+	    <div class="row">
+	        <!-- /.col-lg-12 -->
+	    </div>
+	    <!-- /.row -->
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <div class="panel panel-default">
+	                <!-- /.panel-heading -->
+	                <div class="panel-body">
+							<div class="tabbable pestana">
+								<ul id="pestanaSuperiores" class="nav nav-tabs">
+									<div class="row">
+									<!-- 
+										<div class="col-md-10">
+								    		<h3 id="vehiculoPlaca" >placa</h3>
+								    		<label style="color: #eb2626" id="textoInfoFechas"></label>
+								    	</div>
+								    	 -->
+										<div class="col-md-10">
+											<div class="row">
+											   	<div class="col-md-10">
+									    			<h3><span id="vehiculoPlaca" >placa</span> <small class="rojoFleet" id="textoInfoFechas"></small></h3>
+									    		</div>
+								    		</div>
+								    	</div>
+								    	<div class="col-md-2">
+								    		<button id="actualizarPestanas" type="button" class="btn btn-success btn-lg">    
+										    	<i class="fa fa fa-refresh" aria-hidden="true"></i>
+										    					Actualizar
+									    	</button>
+								    	</div>
+						  			 </div>
+						  		
+								    <li id="tabDetalle" class="active"><a href="#1" data-toggle="tab">Detalle</a></li>
+								    <li id="tabImagenes" {% if paquete in 'basico'|slice:',' %} style= "display: none;" {% endif %} ><a href="#2" data-toggle="tab">Imágenes</a></li>
+								    <li id="tabAudios" style= "display: none;" ><a href="#3" data-toggle="tab">Audios</a></li>
+								    <li id="tabAlarmas" ><a href="#4" data-toggle="tab">Alarmas</a></li>
+								    <li id="tabCadena" style= "display: none;" ><a href="#8" data-toggle="tab">Cadena de frio</a></li>
+								
+							  	</ul>
+								<div class="tab-content">
+	                                <div class="tab-pane active" id="1">
+	                                	<form data-toggle="validator" role="form" id="formularioDetalle">
+	                                		<!--Inicio Tab detalle-->
+											<div class="row">
+											  											  											  
+											  <div class="col-md-2" style="display:none;"><h5 class="bold">IMEI GPS</h5>
+											  		<h6 id="vehiculoImei"></h6></div>
+											  <div class="col-md-2"  style="display:none;"><h5 class="bold">N. Simcard</h5> 
+											  		<h6 id="vehiculoSimcard"></h6></div>
+											  <div class="col-md-2"  style="display:none;"><h5 class="bold">Tipo GPS</h5>
+											  		<h6 id="vehiculoTipo"></h6></div>
+											</div>
+											
+											<div class="row">
+												<div class="col-md-4">
+													
+													<div class="row">
+														<div class="col-md-6"><h5 class="bold">Marca</h5> 
+											  				<h6 id="vehiculoMarca"></h6></div>
+														<div class="col-md-6"><h5 class="bold">Modelo</h5>
+											  				<h6 id="vehiculoModelo"></h6></div>
+													</div>
+											  	<div class="form-group">
+									           		<div class="row">
+														<div class="col-md-5">
+															 <h5 class="bold">Conductor asignado:</h5>
+														  </div>
+														  <div class="col-md-7">																  		
+															  	<div id="selectConductor">
+															      <select class="selectpicker" data-width="100%"  data-live-search="true" title="Seleccionar Conductor" id="grupoConductor" name="grupoConductor">
+															      </select>
+														    	</div>
+														    </div>	
+														
+													</div>
+
+									           		<div class="row">
+														<div class="col-md-5">
+															 <h5 class="bold">Estado de carga:</h5>
+																    
+															  
+														  </div>
+														  <div class="col-md-7">
+																  		
+															  	<div id="selectCarga">
+															      <select class="selectpicker" data-width="100%"  data-live-search="true" title="Seleccionar Estado" id="grupoCarga" name="grupoCarga">
+															      </select>
+														    	</div>
+														    </div>	
+														
+													</div>
+								           		</div>
+<!-- 								           		<div class="form-group">
+														<label style="color: #eb2626" id="textoInfoFechas"></label>
+																											
+								           		</div> -->
+											    <div class="form-group">
+									           		<label>Fecha Inicio:</label>
+									                <div class="input-group date formRangoFecha" id="formRangoFecha1">
+									                  <input id="inputPeriodoGrafico1" type="text" required class="form-control" data-date-format="DD/MM/YYYY hh:mm a" data-error="Ingrese una fecha (DD/MM/YYYY hh:mm)"
+									                  pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\s[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$"
+									                  >
+									                  <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+									                  </span>
+									            	</div>
+									            	<div class="help-block with-errors"></div>
+										         </div>
+											    <div class="form-group">
+									           		<label>Fecha Fin:</label>
+									                <div class="input-group date formRangoFecha" id="formRangoFecha2">
+									                  <input id="inputPeriodoGrafico2" type="text" required class="form-control" data-date-format="DD/MM/YYYY hh:mm a" data-error="Ingrese una fecha (DD/MM/YYYY hh:mm)"
+									                  pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\s[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$"
+									                  >
+									                  <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+									                  </span>
+									            	</div>
+									            	<div class="help-block with-errors"></div>
+										         </div>
+												<button id="recuperarRutas" type="submit" class="btn btn-raised btn-lg btn-success btn-block ">
+													Recuperar
+												</button>
+											  </div>
+											  <!-- --------------------------------------------------------------- -->
+											  <!-- Parte derecha -->
+											  <div class="col-md-8">
+												  <div class=" text-center" style="padding-top: 1em; padding-bottom: 3em;">
+													  <label id="fechaSlider" class="estiloLabelSlider"> </label>
+													  <div class="slider shor" id="slider" style=""></div>
+												  </div>
+											  	  <div id="contenedorMapa">
+					    							  <div class="map1" id="map1" style="width:100%; height:30em;"></div>    
+												  </div>
+											  </div>
+											  <!-- --------------------------------------------------------------- -->
+											  
+											</div>
+											<!--Tabs detalles-->
+											<div class="tabbable pestana">
+												<ul idid="pestanaTablas" class="nav nav-tabs" role="tablist">
+													<li id="posicionesVehiculo" class="active"><a href="#5" data-toggle="tab"  role="tab">Posiciones vehículo</a></li>
+													<li id="paradas"><a href="#6" data-toggle="tab" role="tab">Paradas</a></li>
+												</ul>
+												<div class="tab-content">
+													<div class="tab-pane active" id="5" role="tabpanel" >
+														<div class="row">
+															<div class="col-md-12">
+													
+														   	 		<table id="graficoTabla" class="table table-striped table-bordered display" style="width: 100%">
+										                      		</table>
+														   		
+															</div>
+														</div>
+													</div>
+													<div class="tab-pane" role="tabpanel"  id="6">
+														<div class="row">
+															<div class="col-md-12">
+														   	 		<table id="TablaParadas" class="table table-striped table-bordered display" style="width: 100%">
+										                      		</table>
+															</div>
+														</div>
+													</div>	
+												</div>
+											</div>
+										</form>		
+	                                </div>
+	                                <!--Fin Tab detalle-->
+	                                <!--Inicio tab imagenes-->
+	                                <div class="tab-pane" id="2">
+	                             		<form data-toggle="validator" role="form" id="formularioImagenes">
+			                                
+		                                	<div class="row">
+		                                		<div class="col-md-3">
+												    <div class="form-group">
+										           		<label>Fecha Inicio:</label>
+										                <div class="input-group date formRangoFecha" id="formRangoFecha1Imagenes">
+										                  <input id="inputPeriodoGrafico3" type="text" class="form-control" 
+															data-date-format="DD/MM/YYYY hh:mm a"data-date-format="DD/MM/YYYY hh:mm a" data-error="Ingrese una fecha (DD/MM/YYYY hh:mm)"
+									                  		pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\s[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$"
+									                  		>
+										                  <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+										                  </span>
+										            	</div>
+										            	<div class="help-block with-errors"></div>
+											         </div>
+		                                		</div>
+		                                		<div class="col-md-3">
+												    <div class="form-group">
+										           		<label>Fecha Fin:</label>
+										                <div class="input-group date formRangoFecha" id="formRangoFecha2Imagenes">
+										                  <input id="inputPeriodoGrafico4" type="text" class="form-control" 
+															data-date-format="DD/MM/YYYY hh:mm a" data-error="Ingrese una fecha (DD/MM/YYYY hh:mm)"
+									                  		pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\s[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$"
+									                  		>
+										                  <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+										                  </span>
+										            	</div>
+										            	<div class="help-block with-errors"></div>
+											         </div>
+		                                		</div>
+		                                		<div class="col-md-2">
+												    <div class="form-group"> 
+												    	<label></label>                               	
+														<button id="recuperarRutasImagen" type="submit" class="btn btn-raised btn-lg btn-success btn-block ">
+															Filtrar
+														</button>
+													</div>
+		                                		</div>
+		                                		<div class="col-md-4">
+												    <div class="form-group">
+												    	<label></label>
+												    	<button id="capturarImagen" type="submit" class="btn btn-success btn-lg btn-block" >    
+													    	<i class="fa fa-camera fa-2x" aria-hidden="true"></i>
+													    	Tomar una nueva captura
+												    	</button>
+													</div>
+		                                		</div>
+		                                	</div>
+											<div class="row">
+												<div class="col-md-12">
+													<div class="tab-pane active" id="1" >
+											   	 		<table id="graficoTabla2" class="table table-striped table-bordered display" style="width: 100%">
+							                      		</table>
+											   		</div>
+												</div>
+											</div>
+	                                  	</form>
+	                                </div>
+	                                	<!--Fin tab imagenes-->
+	                                <div class="tab-pane" id="3">
+	                                <!--Inicio tab audios-->
+	                                	<form data-toggle="validator" role="form" id="formularioAudios">
+		                                	<div class="row">
+		                                		<div class="col-md-3">
+												    <div class="form-group">
+										           		<label>Fecha Inicio:</label>
+										                <div class="input-group date formRangoFecha" id="formRangoFecha1Audio">
+										                  <input id="inputPeriodoGrafico5" type="text" class="form-control" 
+										                  		data-date-format="DD/MM/YYYY hh:mm a" data-error="Ingrese una fecha (DD/MM/YYYY hh:mm)"
+										                  		pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\s[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$"
+										                  		>
+										                  <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+										                  </span>
+										            	</div>
+										            	<div class="help-block with-errors"></div>
+											        </div>
+		                                		</div>
+		                                		<div class="col-md-3">
+												    <div class="form-group">
+										           		<label>Fecha Fin:</label>
+										                <div class="input-group date formRangoFecha" id="formRangoFecha2Audio">
+										                  <input id="inputPeriodoGrafico6" type="text" class="form-control" 
+																data-date-format="DD/MM/YYYY hh:mm a" data-error="Ingrese una fecha (DD/MM/YYYY hh:mm)"
+										                  		pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\s[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$"
+										                  		>
+										                  <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+										                  </span>
+										            	</div>
+										            	<div class="help-block with-errors"></div>
+											         </div>
+		                                		</div>
+		                                		<div class="col-md-2">
+												    <div class="form-group">
+												    	<label></label>                                	
+														<button id="recuperarRutasAudio" type="submit" class="btn btn-raised btn-lg btn-success btn-block ">
+															Filtrar
+														</button>
+													</div>
+		                                		</div>
+		                                		<div class="col-md-4">
+												    <div class="form-group">
+												    	<label></label>
+												    	<button id="capturarAudio" type="submit" class="btn btn-success btn-lg btn-block capturarAudio" {% if paquete in 'basico'|slice:',' %} style="" {% endif %}>    
+													    	<i class="fa fa-microphone fa-2x " aria-hidden="true"></i>
+													    	<span>Tomar una nueva captura</span>
+													    	 <input type="hidden" id="sidLlamada"></button>
+													    </button>
+													</div>
+		                                		</div>
+		                                	</div>
+											<div class="row">
+												<div class="col-md-12">
+													<div class="tab-pane active" id="1" >
+											   	 		<table id="graficoTabla3" class="table table-striped table-bordered display" style="width: 100%">
+							                      		</table>
+											   		</div>
+												</div>
+											</div>
+	                                	</form>
+	                                </div>
+	  									<!--Fin tab Audios-->
+	                                <div class="tab-pane" id="4">
+	                                <!--Inicio tab alarmas-->
+	                                	<form data-toggle="validator" role="form" id="formularioAlarmas">
+		                                	<div class="row">
+		                                		<div class="col-md-3">
+												    <div class="form-group">
+										           		<label>Fecha Inicio:</label>
+										                <div class="input-group date formRangoFecha" id="formRangoFecha1Alarma">
+										                  <input id="inputPeriodoGrafico7" type="text" class="form-control" 
+																data-date-format="DD/MM/YYYY hh:mm a" data-error="Ingrese una fecha (DD/MM/YYYY hh:mm)"
+											                  	pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\s[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$"
+											                  		>
+										                  <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+										                  </span>
+										            	</div>
+										            	<div class="help-block with-errors"></div>
+											         </div>
+		                                		</div>
+		                                		<div class="col-md-3">
+												    <div class="form-group">
+										           		<label>Fecha Fin:</label>
+										                <div class="input-group date formRangoFecha" id="formRangoFecha2Alarma">
+										                  <input id="inputPeriodoGrafico8" type="text" class="form-control" 
+																data-date-format="DD/MM/YYYY hh:mm a" data-error="Ingrese una fecha (DD/MM/YYYY hh:mm)"
+											                  	pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\s[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$"
+											                  		>
+										                  <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+										                  </span>
+										            	</div>
+										            	<div class="help-block with-errors"></div>
+											         </div>
+		                                		</div>
+		                                		<div class="col-md-2">
+												    <div class="form-group">
+												    	<label></label>                                	
+														<button id="recuperarRutasAlarma" type="submit" class="btn btn-raised btn-lg btn-success btn-block ">
+															Filtrar
+														</button>
+													</div>
+		                                		</div>
+		                                	</div>
+											<div class="row">
+												<div class="col-md-12">
+													<div class="tab-pane active" id="1" >
+											   	 		<table id="graficoTabla4" class="table table-striped table-bordered display" style="width: 100%">
+							                      		</table>
+											   		</div>
+												</div>
+											</div>
+											
+	                                	</form>
+	                                </div>
+	                                <div class="tab-pane" id="8">
+	                                <!--Inicio tab cadena frio-->
+	                                	
+	                                		<div class="row" style="margin-top:1em;">
+	                                			<form data-toggle="validator" role="form" id="formularioDatosCadena">
+		                                			<div></div>
+		                                			
+												    <div class="col-md-3" style="align-items:center;text-align: center; margin-top: 1em;">
+												      <span id="checkEstado">
+														<input type="checkbox" id="my-checkbox" name="my-checkbox" checked data-on-text="Alarma Activa" data-off-text="Alarma Inactiva" data-size="mini" data-on-color="success" data-off-color="danger" />
+												
+														<script>
+														  $("[name='my-checkbox']").bootstrapSwitch();
+														</script>
+												      </span>
+												    </div>
+												    <div class="col-md-2 tempera">
+												      <table>
+											   				<tr>
+											   					<td><label id="labelTemperatura" >Lím máx temp: </label></td>
+											   					<td >
+											   						<input id="limiteMaximoTemp" name="limiteMaximoTemp" type="text" required class="form-control temp" required data-error="Ingrese un límite máximo de temperatura"/>
+											   					</td>
+											   				</tr>
+											   			</table>
+												    </div>
+												    <div class="col-md-2 tempera">
+												      <table>
+											   				<tr>
+											   					<td><label id="labelTemperatura" >Lím mín temp: </label></td>
+											   					<td>
+											   						<input id="limiteMinimoTemp" name="limiteMinimoTemp" type="text" required class="form-control temp" required data-error="Ingrese un límite mínimo de temperatura"/>
+											   					</td>
+											   				</tr>
+											   			</table>
+												    </div>
+												    <div class="col-md-2">
+												     	<button id="guardarCadenaFrio" type="submit" class="btn btn-raised btn-lg btn-success btn-block ">
+																Aceptar
+															</button>
+												    </div>
+											   </form> 
+										    </div>
+		                                	<div class="row">
+		                                		<form data-toggle="validator" role="form" id="formularioCadenaFrio">
+			                                		<div class="col-md-3">
+													    <div class="form-group">
+											           		<label>Fecha</label>
+											                <div class="input-group date formRangoFechaCadena" id="formRangoFecha1CadenaFrio">
+											                  <input id="inputPeriodoGrafico9" type="text" class="form-control" 
+																	data-date-format="DD/MM/YYYY" data-error="Ingrese una fecha (DD/MM/YYYY)"
+												                  	pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]">
+											                  <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+											                  </span>
+											            	</div>
+											            	<div class="help-block with-errors"></div>
+												         </div>
+			                                		</div>
+			                                	
+			                                		<div class="col-md-2">
+													    <div class="form-group">
+													    	<label></label>                                	
+															<button id="recuperarCadenaFrio" type="submit" class="btn btn-raised btn-lg btn-success btn-block ">
+																Filtrar
+															</button>
+														</div>
+			                                		</div>
+		                                		</form>
+		                                	</div>
+											<div class="row">
+												<div class="col-md-9">
+													<div class="tab-pane active" id="1" >
+											   	 		<!-- <table id="graficoTabla4" class="table table-striped table-bordered display" style="width: 100%">
+							                      		</table> -->
+							                      		<div id="graficaTemperatura" style="height: 500px; width: 100%;"></div>
+											   		</div>
+												</div>
+												<div class="col-md-3" style="margin-top: 12em;">
+													<div class="tab-pane active" id="1" >
+											   	 	
+							                      		<img style="width: 38px;" src="{% static "images/thermometer2.png" %}" /><label id="labelTemperaturaActual" style="font-size: 32px;padding-top: 1em;color:#000000;"></label>
+							                      
+											   		</div>
+											   		<div class="row">
+											   			<div class="col-md-8">
+											   				<table>
+												   				<tr>
+												   					<td><label id="labelTemperatura" style="font-size: 16px; color:#000000;">Temp. máxima: </label></td>
+												   					<td style="padding-left: 1em;"><label id="labelTemperaturaMaxima" style="font-size: 20px;color:#000000;"></label> </td>
+												   				</tr>
+												   				<tr>
+												   					<td><label id="labelTemperatura" style="font-size: 16px; color:#000000;">Temp. mínima: </label></td>
+												   					<td style="padding-left: 1em;"><label id="labelTemperaturaMinima" style="font-size: 20px; color:#000000;"></label> </td>
+											   					</tr>
+												   			</table>
+											   			</div>
+											   		</div>
+												</div>
+											</div>
+											<div class="row">
+
+												<div class="col-md-12">
+											   	 		<table id="tablaTemperaturas" class="table table-striped table-bordered display" style="width: 100%">
+							                      		</table>
+												</div>
+											</div>
+	                                	
+	                                	
+	                                </div>
+	  									<!--Fin tab cadena frio-->
+	                            </div>						  
+							</div>
+					
+					</div>
+	                <!-- /.panel-body -->
+	            </div>
+	            <!-- /.panel -->
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	</div>
+<!-- /#page-wrapper -->
+<!-- /#MODAL, VENTANA EMERGENTE PARA EL MAPA-->
+	<div class="modal fade" id="detailModal" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+		<div class="modal-dialog-dp detailNoventa">
+			<div class="modal-content">
+				<div class="modal-header">
+				
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
+					<h1 class="modal-title" id="myModalLabel">Mapa</h1>
+					
+					<div id="contenedorMapa2" style="display:none">
+							    <div id="map2" class="map2" style="width:100%; height:40em;"></div>    
+					</div>
+				</div>
+				<div class="modal-body">
+				</div>
+					<div class="modal-footer">	<button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>		
+				</div>
+			</div>
+		</div>
+	</div>
+<!-- /#MODAL, VENTANA EMERGENTE PARA MOSTRAR NOTIFICACION-->
+<div class="modal fade" id="formularioAceptarNotificacion" > 
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title">Notificación</h3>
+      </div>
+      <div class="modal-body">
+      	<form>
+      	<div class="row">
+			<div class="col-md-10">
+				<input type="hidden" id="formNotificacionId"/>
+				<span id= "mensajeNotificacion" > </span>
+			</div>
+		</div>
+        
+		</form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" data-dismiss="modal">Aceptar</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<!-- /#MODAL, VENTANA EMERGENTE PARA MOSTRAR NOTIFICACION-->
+<!-- /#MODAL, VENTANA EMERGENTE PARA ACEPTAR ASIGNAR CONDUCTOR-->
+<div class="modal fade" id="formularioAceptarAsignar" > 
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title">Asignar conductor al vehículo</h3>
+      </div>
+      <div class="modal-body">
+      	<form>
+      	<div class="row">
+			<div class="col-md-10">
+				<input type="hidden" id="formConductorId"/>
+				<span> ¿Está seguro de asignar el conductor al vehículo?</span>
+			</div>
+		</div>
+        
+		</form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-success" id="aceptarAsignarConductor">Asignar conductor</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<!-- /#MODAL, VENTANA EMERGENTE PARA ACEPTAR ASIGNAR CONDUCTOR-->
+<!-- /#MODAL, VENTANA EMERGENTE PARA ACEPTAR ASINACION FORZADA-->
+<div class="modal fade" id="formularioAceptarAsignarForzado" > 
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title">Asignar conductor al vehículo</h3>
+      </div>
+      <div class="modal-body">
+      	<form>
+      	<div class="row">
+			<div class="col-md-10">
+				<input type="hidden" id="formConductorId"/>
+				<span> El conductor ya tiene asignado un vehículo. ¿Desea asignarlo a este vehículo?</span>
+			</div>
+		</div>
+        
+		</form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-success" id="aceptarAsignarConductorForzado">Si</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<!-- /#MODAL, VENTANA EMERGENTE PARA ACEPTAR ASIGNAR CONDUCTOR-->
+<script async defer
+     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDOqPrm-nuqELi0b_kPt7nP0vHFdUunOHc&signed_in=true&libraries=visualization&callback=initMap">
+     </script>
+</body>
+{% endblock %}

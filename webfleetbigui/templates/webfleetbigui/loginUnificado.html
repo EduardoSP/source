@@ -1,0 +1,327 @@
+{% extends "webfleetbigui/base.html" %}
+{% load staticfiles %}
+{% block titulo %}Login{% endblock %}
+
+{% block codigoPrincipal %}
+<link href="{% static "css/login.css" %}"  rel="stylesheet">
+<!-- <link href='http://fonts.googleapis.com/css?family=Cabin:400,700,400italic' rel='stylesheet' type='text/css'> -->
+<link href='https://fonts.googleapis.com/css?family=Poppins' rel='stylesheet' type='text/css'>
+
+<script>
+
+
+
+if(config.getLogueado()){
+    verificarEstadoIngreso(
+		"perfil",
+		{ 
+			"adminTenant"         : guibase+"/"+config.getTennant()+"/adminVistaGeneral"
+		},
+		"{% url 'loginUnificado' %}");                
+}
+
+
+$(document).ready(function() {
+  $('#buttonLogin' ).click(function() {
+		autenticarUsuarioLogin();
+	});
+
+	$('.campoFormulario').keypress(function (e) {
+	   if (e.which == 13) {
+	   		e.preventDefault();
+			autenticarUsuarioLogin();
+	    }
+	});
+	
+	$(document).on('click', '#olvideContrasena', function(){
+		$('#formularioRecuperarContrasena').modal('show');
+	});
+	
+	$(document).on('click', '#recuperarContrasena', function(){
+		enviarRecuperacionContrasena();
+	});
+
+	$(document).on('click', '#generadorCarga', function(){
+		var urlLoginGeneradorCarga      = urlAccesoGeneradorCarga;
+		window.location.href 			= urlLoginGeneradorCarga;
+	});		
+});
+
+function autenticarUsuarioLogin(){
+	var autenticar          	= new Object();
+	autenticar.accion       	= 'ingresar';
+	autenticar.usuario 			= $('#usuarioLogin').val();
+	autenticar.contrasena		= $('#usuarioContrasena').val();
+	autenticar.tipoIngreso		= "fleetBiWeb";
+	if(isMobile.any()) {
+   		// It is mobile
+		autenticar.dispositivo = isMobile.any(); 
+	}else{
+		var os = navigator.platform;
+		autenticar.dispositivo = os; 	
+	}  
+
+	var jsonsample          = JSON.stringify(autenticar);
+	var l = Ladda.create(document.querySelector('#buttonLogin'));
+	l.start();
+	
+	var request = $.ajax({
+		type: "POST",
+		url		: "{% url 'wsAutenticarUnificado' %}",
+		data	: { request: jsonsample },
+		dataType: "json"
+   	});
+	request.done(function(respuesta){
+		l.stop();
+
+		if(respuesta.success){
+			var login	= $('#usuarioLogin').val();
+			var token 	= respuesta.token;
+			var perfil  = respuesta.perfil;
+			var nombreUsuario = respuesta.usuario;
+			var nombreTennant = respuesta.tenant;
+			config.setLogueado(true);
+			config.setUsuarioLogin($('#usuarioLogin').val());
+			config.setNombreUsuario(nombreUsuario);
+			config.setToken(respuesta.token);
+			config.setPerfilUsuario(perfil);
+			config.setTennant(nombreTennant);
+			config.setCodigoAcceso("None");
+			config.setEsGeneradorCarga(false);
+			config.setIdUsuario(respuesta.idUsuario);
+			config.setIdSesion(respuesta.idSesion);
+			// no hay alerta de seguridad generada al iniciar sesion
+			config.setMensajeAlerta("");
+			config.setNotificacionAlertaLeida(true);
+
+			notif({
+ 				msg		: "logueado corrrectamente",
+  				type	: "success",
+  				position: "center"
+			});
+            var urlLogin 			= guibase+"/"+nombreTennant+"/adminVistaGeneral";
+			window.location.href 	= urlLogin;
+
+		}else{
+			if (respuesta.sesionActiva){
+				//existe una sesion activa
+				notif({
+					msg		: respuesta.mensaje,
+					type	: "warning",
+					position: "center",
+					multiline : true
+				});
+			}else{
+				notif({
+					msg		: "Usuario o contraseña erronea.",
+					type	: "error",
+					position: "center"
+				});
+
+			}
+		}
+	});
+	request.fail(function(jqXHR, textStatus){
+		l.stop();
+		notif({
+ 				msg		: "Error de conexión, verfica tu conexión a internet.",
+  				type	: "error",
+  				position: "center"
+			});
+	});
+}
+
+function enviarRecuperacionContrasena(){
+	var usuario		= $('#formUsuarioRecuperar').val();
+	var peticion    = {
+		'usuario':  usuario,
+    };
+	
+    var request = $.ajax({
+            type: "POST",
+            url		: "{% url 'wsRecuperarContrasenaUnificado' %}",
+            data	: {
+                        request: JSON.stringify(peticion)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+        	$('#formularioRecuperarContrasena').modal('hide');
+           notif({
+ 				msg		: "Recuperacion de la clave enviada correctamente.",
+  				type	: "success",
+  				position: "center"
+			});
+        }else{ 
+        	 notif({
+ 				msg		: "Correo o usuario incorrecto",
+  				type	: "warning",
+  				position: "center"
+			});
+		}
+    });
+    request.fail(function(jqXHR, textStatus){ });
+}
+
+
+</script>
+{% endblock %}
+
+{% block contenido %}
+<body>
+  
+	<div class="fondoImagen">
+		<!-- <img style="width: 100%;" src="{% static "images/fleetbifondo.jpg" %}" /> -->
+		<img style="    width: 300px; margin-left: 3em; margin-top: 3em;" src="{% static "images/logoSloganRojo.png" %}" />
+	</div>
+	<!-- <nav class="navbar navbar-default navbar-fixed-top shadow-z-2">
+	    <div class="container-fluid">
+	      <!-- Brand and toggle get grouped for better mobile display -->
+	      <!-- <div class="navbar-header">
+	        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+	          <span class="sr-only">Toggle navigation</span>
+	          <span class="icon-bar"></span>
+	          <span class="icon-bar"></span>
+	          <span class="icon-bar"></span>
+	        </button>
+	        <a class="navbar-brand" href="#"> -->
+	          <!-- <img src="{% static "images/logoBiod3.png" %}" style="height: 2em;"/> -->
+	        <!-- </a>
+	      </div> -->
+	    <!-- </div> --><!-- /.container-fluid -->
+  	<!-- </nav> -->
+  	
+	<div style="position:absolute; top: 0px; left:0px; display:flex;justify-content:center;align-items:center;width:100%;height:100%;">
+		<div>
+			
+			<div class="login-panel panel panel-default shadow-z-3">
+	            <!-- <div class="panel-heading">
+	                <h3 id="tituloLogin" class="panel-title"></h3>
+	            </div> -->
+	            
+	            <div class="panel-body">
+	            	<div style=" margin: 2em; text-align: center;">
+			  <img style="width: 199px;" src="{% static "images/logoBlancoFull.png" %}" />
+			  <!-- <div style="color:white; padding-top: 1em; font-size: 1.4em;">{{tenant}}</div> -->
+			  <div style="color:white; padding-top: 1em; font-size: 1.4em;">Inicio de sesión</div>
+			</div>
+	            	<div class="row">
+		        	<div class="col-md-8 col-md-offset-2">
+	                    <form id="formLogin" class="formLogin" role="form">
+	                        <fieldset>
+	                            <div class="form-group">
+	                                <input id="usuarioLogin" class="form-control colorTexto campoFormulario" placeholder="Usuario" name="email" type="email" autofocus>
+	                            </div>
+	                            <div class="form-group">
+	                                <input id="usuarioContrasena" class="form-control colorTexto campoFormulario" placeholder="Contraseña" name="password" type="password" value="">
+	                            </div>
+	                            <div style="padding: 1.2em;">
+	                            	<a 	href="#" id="buttonLogin" class="btn btn-raised btn-lg btn-success btn-block ladda-button" data-style="" style="text-transform: none;">Ingresar</a>
+	                            </div>
+	                            <div class="olvidasteContrasena">
+	                              <a class="textContrasena"	href="#" id="olvideContrasena" data-style="" style="text-transform: none;">¿Has olvidado tu contraseña?</a>
+								  
+	                            </div>
+
+	                            <div class="olvidasteContrasena">
+	                            	<a class="textContrasena"	href="#" id="generadorCarga" data-style="" style="text-transform: none;">Ingresar como generador de carga</a>
+	                            </div>
+	                            
+	                        </fieldset>
+	                    </form>
+	                </div>
+	              </div>
+	            </div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- <div id="footer" class="footer">
+		<div class="row">
+			<div class="col-md-3">
+		 		<label class="lbldatos">Copyright © 2016</label>
+		 	</div>
+		 	<div class="col-md-3">
+		 		<label class="lbldatos"> Tel: (+57 2) 3799764</label>
+		 	</div>
+		 	<div class="col-md-3">
+		 		<img src="/static/images/favicon-96x96.png" style="width: 35px; height: ">
+		 		 <a class="lbldatos" href="http://www.fleetbi.cloud">www.fleetbi.cloud</a>
+		 	</div>
+		 	
+		</div>
+	</div> -->
+	
+	<nav class="navbar  navbar-fixed-bottom shadow-z-2 footer">
+	    <div class="container-fluid">
+	      <!-- Brand and toggle get grouped for better mobile display -->
+		    <div class="navbar-header">
+		        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+		          <span class="sr-only">Toggle navigation</span>
+		          <span class="icon-bar"></span>
+		          <span class="icon-bar"></span>
+		          <span class="icon-bar"></span>
+		        </button>
+		        <!-- <a class="navbar-brand" href="#"> -->
+		          <!-- <img src="{% static "images/logoBiod3.png" %}" style="height: 2em;"/> 
+		       </a>-->
+		       
+		       
+		    </div>
+		    <div class="row">
+				<div class="col-md-4">
+			 		<label class="lbldatos">Copyright © 2017 - 2018</label>
+			 	</div>
+			 	<div class="col-md-4">
+			 		<label class="lbldatos"> Tel: (+57 2) 379 97 64 </label>
+			 	</div>
+			 	<div class="col-md-4">
+			 		<img src="/static/images/favicon-96x96.png" style="width: 35px; height: ">
+			 		 <a class="lbldatos" href="http://www.fleetbi.co">www.fleetbi.co</a>
+			 	</div>
+			</div>
+	  	</div><!-- /.container-fluid -->
+	</nav>
+
+	<!-- /#MODAL, VENTANA EMERGENTE PARA RECUPERAR CONTRASEÑA-->
+	<div class="modal fade" data-backdrop="static" id="formularioRecuperarContrasena" tabindex="-1" role="dialog"
+		aria-labelledby="basicModal" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-hidden="true">X</button>
+					<h3 class="modal-title">Recuperar contraseña</h3>
+					<hr class="lineaDivision"/>
+				</div>
+				<div class="modal-body">
+					<form data-toggle="validator" role="form" id="formularioCrud">
+						<input type="hidden" id="formId"/>
+							<div class="row espacioFila" >
+								<div class="form-group">
+									<div class="">
+										<label>Podemos ayudarte a restablecer tu contraseña. Escribe tu nombre de usuario o correo electrónico </label>
+									</div>
+									<div class="form-group row" id="cantidadRecibida">
+										<div class="col-md-8">
+											<input id="formUsuarioRecuperar" name="formNombre" class="form-control" placeholder="correo electrónico o nombre de usuario"/>
+										</div>
+									</div>
+								</div>
+							</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal" style="text-transform: none">Cerrar</button>
+					<button id="recuperarContrasena" type="button" class="btn btn-success" style="text-transform: none">Recuperar contraseña</button>
+				</div> 				
+				
+			</div>
+		</div>
+	</div>
+
+	
+<!-- /#MODAL, VENTANA EMERGENTE PARA ACTUALIZACION DE DATOS-->
+</body>
+{% endblock %}

@@ -1,0 +1,9 @@
+{
+    "ws"         : "http://localhost:8080/ws/enviarRuta",
+    "idVehiculo" : "20160801",
+	"fechaHoraInicial" : "2017-01-04T08:00:00",
+    "ping"       : "1",
+    "ruta" : [
+			
+    ]
+}

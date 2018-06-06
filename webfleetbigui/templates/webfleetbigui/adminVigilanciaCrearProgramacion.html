@@ -1,0 +1,508 @@
+{% extends baseTemplate %}
+{#% extends "webfleetbigui/baseAdminTenant.html" %#}
+{% load staticfiles %}
+{% block titulo %}Crear Programación{% endblock %}
+
+{% block codigoPrincipal %}
+<!-- Estilos -->
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "css/base.css" %}"  rel="stylesheet">
+<link href="{% static "DataTables/datatables.min.css" %}" rel="stylesheet" type="text/css"  />
+<link href="{% static "datetimepicker/css/bootstrap-datetimepicker.min.css" %}"           rel="stylesheet">
+<link href="{% static "mapsPicker/jquery-gmaps-latlon-picker.css" %}" rel="stylesheet" type="text/css" />
+
+<!-- Bibliotecas -->
+<script src="{% static "moment/moment-with-locales.js"      %}"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/noUiSlider/6.2.0/jquery.nouislider.min.js"></script>
+<script src="{% static "DataTables/datatables.min.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapsPicker/jquery-gmaps-latlon-picker.js" %}" ></script>
+<!--<script src="{% static "socketio/socket.io.js" %}"></script>-->
+<script src="{% static "datetimepicker/js/bootstrap-datetimepicker.min.js"      %}"></script>
+<script src="{% static "validatorNuevo/validator.js" %}"></script>
+<script src="{% static "select/js/bootstrap-select.min.js" %}"></script>
+
+<script>
+
+function validarLimiteGrabacion(horaInicio, horaFin){
+	var resHoraInicio 	= horaInicio.split(":");
+	var resHoraFin 		= horaFin.split(":");
+	cantMinutosInicio	= (parseInt(resHoraInicio[0]) * 60) + parseInt(resHoraInicio[1]);
+	cantMinutosFin		= (parseInt(resHoraFin[0]) * 60) + parseInt(resHoraFin[1]);
+	tiempoMaxGrab = cantMinutosFin - cantMinutosInicio;
+	return String(Math.abs(tiempoMaxGrab))
+}
+
+function enviarProgramacion(){
+    var idVehiculo      = $('#grupoVehiculos').val();
+    var registrarAudio	= $("input[name='audio']").is(":checked");
+    var registrarImagen = $("input[name='imagenes']").is(":checked");
+    //var formCapturasMax = $('#formCapturasMax').val();
+    var formCapturasMax = "0";//editando
+    //var formGrabMax		= $('#formGrabMax').val();
+    var fechaInicio 	= $('#formRangoFecha1').data('DateTimePicker').date.format("YYYY-MM-DD");
+    var fechaFin 		= $('#formRangoFecha2').data('DateTimePicker').date.format("YYYY-MM-DD");
+    var horaInicio 		= $('#formHoraInicio').data('DateTimePicker').date.format("HH:mm");
+    var horaFin 		= $('#formHoraFin').data('DateTimePicker').date.format("HH:mm");
+    var formGrabMax		= validarLimiteGrabacion(horaInicio, horaFin);
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                                      
+                                         },
+                        'data'         : {  
+		                        		    'idVehiculo'	: idVehiculo,
+		                        			'registrarAudio' : registrarAudio,
+		                        			'registrarImagen' : registrarImagen,
+		                        			'capturasMax': formCapturasMax,
+		                        			'grabMax': formGrabMax,
+		                        			'fechaInicio' : fechaInicio,
+		                        		    'fechaFin' : fechaFin,
+		                        		    'horaInicio' : horaInicio,
+		                        		    'horaFin' : horaFin,
+		                        		 }
+                      };
+   	bloquearTodo();
+    var request = $.ajax({
+	type        : "POST",
+	url         : "{% url 'wscrearProgramacionVigilancia'  %}",
+	data        : {
+            request :  JSON.stringify(peticion)
+        },
+	dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+    		notif({
+                msg     : "La nueva programacion se ha creado",
+                type    : "success",
+                multiline: true,
+                position: "center"
+        	});
+        setTimeout(function() { window.location.href 	= "{% url 'adminVigilancia' tenant=tenant %}"; 
+				  }, 
+		       3000);	
+        
+        }
+        else{
+            notif({
+                msg     : respuesta.error,
+                type    : "error",
+                position: "center"
+            });
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        desbloquearTodo();
+    });
+}
+//Bloquea toda la interfaz para que no hagan nada.
+function bloquearTodo(){
+    $("input")		.prop('disabled', true);
+    //$("select")		.prop('disabled', true);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', true);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', true);
+}
+
+//desloquea toda la interfaz para que haga algo.
+function desbloquearTodo(){
+    $("input")      .prop('disabled', false);
+    $("select")     .prop('disabled', false);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', false);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', false);
+}
+
+
+
+function cargarListadoVehiculos(){
+    var peticion    = {
+        'autenticacion': {
+
+            'usuario' : config.getUsuarioLogin(),
+            'token'   : config.getToken(),
+            'tenant'  : config.getTennant(),                                                                               
+        },                                                                               
+        'data'         : {                                                      
+        }                                                                                                    
+    }; 
+
+	// valida si la peticion es de un generador de carga
+    if(config.getEsGeneradorCarga()){
+		//si la peticion es de un generador de carga entonces a la autenticación se le agrega el codigo de acceso
+    	peticion["autenticacion"]["codigoAcceso"] = config.getCodigoAcceso();
+    }
+	                                                                                                                                     
+    var request = $.ajax({                                                                                                                                 
+        type        : "POST",                                                                                                           
+        url         : "{% url 'wslistVehiculos' %}",                                                                                    
+        data        : {                                                                                                                   
+            request :  JSON.stringify(peticion)                                                                                                   
+
+        },                                                                                                                                        
+        dataType    : "json"                                                                                                               
+    }).done(function(respuesta){                                                                                                  
+        if (respuesta.success){                                                                                                                        
+            pintarPickerVehiculos(respuesta.data);                                                                                                 
+        }                                                                                                                                      
+        else{                                                                                                                                  
+            notif({                                                                                                                               
+                msg     : respuesta.mensaje,                                                                                                  
+                type    : "error",                                                                                                            
+                position: "center"                                                                                                             
+            });                                                                                                                                   
+        }                                                                                                                                      
+    }).fail(function(jqXHR, textStatus){                                                                                                          
+        notif({                                                                                                                                   
+            msg     : "Falló la conexión",                                                                                                        
+            type    : "error",                                                                                                                    
+            position: "center"                                                                                                                    
+        });                                                                                                                                       
+    }).always(function(){                                                                                                                         
+    }); 
+
+}
+
+function pintarPickerVehiculos(data){
+    vehiculos   = data;                                                 
+
+    for (i=0; i<vehiculos.length; i++){  
+        var dato   = vehiculos[i];                                                                                                         
+        $("#grupoVehiculos").append('<option value="'+dato.idVehiculo+'">'+dato.placa+'</option>');                                                         
+    }
+    $('#grupoVehiculos').selectpicker('refresh');
+    $('#grupoVehiculos').selectpicker('deselectAll');
+    $('#grupoVehiculos').selectpicker('refresh');    
+
+	//funcion que valida si se habilita o no las opciones de audio o imagen
+	validarAudioImagenProgramacionVigilancia();
+}
+
+function validarFechasHoras(fechaInicio, fechaFin, horaInicio, horaFin){
+	//valida que la fecha hora inicio no sea menor a la fecha de generacion y que
+	//la fecha hora fin no sea mayor que la fecha de caducidad
+	var respuesta = true;
+	var fechaInicio = fechaInicio.split("T");
+	var fechaFin 	= fechaFin.split("T");	
+	var fechaInicioCompleta = moment(fechaInicio[0]+"T"+horaInicio+":00-05:00").format();
+	var fechaFinCompleta 	= moment(fechaFin[0]+"T"+horaFin+":00-05:00").format();
+	if(config.getEsGeneradorCarga()){
+		// si es generador de carga valida con la fecha de generacion y la fecha de caducidad
+	    var fechaGeneracion = moment(config.getFechaGeneracion()).format();
+	    var fechaCaducidad  = moment(config.getFechaCaducidad()).format();
+		if (fechaInicioCompleta < fechaGeneracion){
+			notif({
+		    	msg     : "La fecha y hora de inicio es menor a la fecha de generación",
+		    	type    : "warning",
+		    	multiline: true,
+		    	position: "center"
+			});
+			respuesta = false;
+		}
+		if (fechaFinCompleta > fechaCaducidad){
+			notif({
+		    	msg     : "La fecha y hora Fin es mayor a la fecha de caducidad",
+		    	type    : "warning",
+		    	multiline: true,
+		    	position: "center"
+			});
+			respuesta= false
+		}
+	}
+	if (fechaInicioCompleta > fechaFinCompleta){
+		notif({
+	    	msg     : "La fecha y hora Inicio es mayor a la fecha hora Fin",
+	    	type    : "warning",
+	    	multiline: true,
+	    	position: "center"
+		});
+		respuesta = false;
+	}
+	return respuesta;
+
+}
+
+//funcion que valida si se habilita o no las opciones de audio o imagen
+function validarAudioImagenProgramacionVigilancia(){
+    var idVehiculo      = $('#grupoVehiculos').val();
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                                      
+                                         },
+                        'data'         : {  
+		                        		    'idVehiculo'	: idVehiculo
+		                        		 }
+                      };
+    var request = $.ajax({
+	type        : "POST",
+	url         : "{% url 'wsValidarAudioImagenVehiculo'  %}",
+	data        : {
+            request :  JSON.stringify(peticion)
+        },
+	dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+			//habilita opciones imagen y audio en el html
+			if(respuesta.mostrarImagen){
+				$("#opcionImagen").css("display", "block");
+
+			}else{
+				$("#opcionImagen").css("display", "none");
+
+			}
+			if(respuesta.mostrarAudio){
+				$("#opcionAudio").css("display", "block");
+			}else{
+				$("#opcionAudio").css("display", "none");
+			}
+        
+        }
+        else{
+            notif({
+                msg     : respuesta.error,
+                type    : "error",
+                position: "center"
+            });
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        desbloquearTodo();
+    });
+}
+
+// === Document ready!!! =======================================================
+$(document).ready(function() {	
+// valida si la peticion es de un generador de carga
+if(config.getEsGeneradorCarga()){
+	//si la peticion es de un generador de carga entonces muestra el mensaje del rango de fechas definidos por el codigo de acceso
+	var fechaDesde = moment(config.getFechaGeneracion()).format("DD/MM/YYYY h:mm a");
+	var fechaHasta = moment(config.getFechaCaducidad()).format("DD/MM/YYYY h:mm a");
+	$("#textoInfoFechas").text('Habilitado desde '+fechaDesde+ ' hasta '+ fechaHasta);
+}
+
+$('.formHora').datetimepicker({ 
+        pickDate         : false,
+        pick12HourFormat : false,
+        language:'es'       
+    });
+ 
+$('.formRangoFecha').datetimepicker(
+
+        { 	pickTime: false,
+          	showToday: true,
+          	pick12HourFormat: false,
+          	minViewMode: "years",
+			minViewMode: "months",
+			minViewMode: "days",
+			language:'es' });
+
+
+    //----------------------------------------------------------------
+    //Generador de carga
+    //Asigna la fechaGeneracion a la fecha inicio y la fechaCaduciodad a la fecha fin del formulario 
+    if(config.getEsGeneradorCarga()){
+	    var fechaGeneracion = moment(config.getFechaGeneracion());
+	    var fechaCaducidad  = moment(config.getFechaCaducidad());
+	    $('#formRangoFecha1').data('DateTimePicker').setDate(fechaGeneracion);
+    	$('#formRangoFecha2').data('DateTimePicker').setDate(fechaCaducidad);
+	}
+    //----------------------------------------------------------------
+
+
+cargarListadoVehiculos();
+
+//Inicio Botón guardar programacion
+
+	$('#formularioCrearProgramacion').validator().on('submit', function (e) {
+	  if (e.isDefaultPrevented()) {
+		notif({
+                msg     : "Invalido campo",
+                type    : "error",
+                position: "center"
+            });
+	  } else {
+	  	//aqui se valida que la primer fecha no sea superior a la segunda
+		//var permiteAccion =validarFechasUsuario('#formRangoFecha1', '#formRangoFecha2');
+	  	 // --------------valida si la peticion es de un generador de carga------------------
+	  	var permiteAccionGeneradorCarga = {success: true, tipoFecha: ""}; 	
+	    if(config.getEsGeneradorCarga()){
+			//si la peticion es de un generador de carga se validan las fechas con las configuradas por un cliente
+			var fechaGeneracion = moment(config.getFechaGeneracion());
+			var fechaCaducidad  = moment(config.getFechaCaducidad());
+			//Valida solo las fechas
+			permiteAccionGeneradorCarga = validarFechasGeneradorCarga("#formRangoFecha1", "#formRangoFecha2", "DD/MM/YYYY");
+			if(permiteAccionGeneradorCarga["tipoFecha"] == "fechaGeneracion"){
+				//se le asigna la fecha inicial la fecha de generacion
+				$('#formRangoFecha1').data('DateTimePicker').setDate(fechaGeneracion);
+				permiteAccionGeneradorCarga["success"] = true;	
+			}else if(permiteAccionGeneradorCarga["tipoFecha"] == "fechaCaducidad"){
+				//se le asigna la fecha fin la fecha de caducidad
+				$('#formRangoFecha2').data('DateTimePicker').setDate(fechaCaducidad);
+				permiteAccionGeneradorCarga["success"] = true;
+			}
+	    }
+	    //-------------------------------------------------------------------------------------
+		if(permiteAccionGeneradorCarga["success"]){
+/*			 setTimeout(function(){
+			 }, 2000);*/
+			var fechaInicio 		= $("#formRangoFecha1").data('DateTimePicker').date.format();
+			var fechaFin 			= $("#formRangoFecha2").data('DateTimePicker').date.format();
+			var horaInicio 			= $('#formHoraInicio').data('DateTimePicker').date.format("HH:mm");
+			var horaFin 			= $('#formHoraFin').data('DateTimePicker').date.format("HH:mm");
+			var enviaProgramacion 	= validarFechasHoras(fechaInicio, fechaFin, horaInicio, horaFin);
+			if (enviaProgramacion){
+				enviarProgramacion();
+			}	
+
+		}	
+	    e.preventDefault();
+	  }
+	});
+//Fin botón guardar programacion
+
+
+//======= Inicio Picker tipo grupoVehiculos =======		
+$("#grupoVehiculos").change(function() {
+		//click picker
+		validarAudioImagenProgramacionVigilancia();
+	});	
+//======= Fin Picker tipo grupoVehiculos =======	
+
+
+});
+
+
+// --- End document ready ------------------------------------------------------
+</script>	
+
+{% endblock %}
+
+{% block contenido %}
+<body>
+	
+	<div id="page-wrapper" style="  margin: 3em; margin-top: 0;">
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <h1 class="">Vigilancia <small class="rojoFleet" id="textoInfoFechas"></small></h1>
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <div class="panel panel-default">
+	                <!-- /.panel-heading -->
+	                <div class="panel-body">
+						<form data-toggle="validator" role="form" id="formularioCrearProgramacion">
+							<div class="row">
+									<div class="col-md-3">
+										<div class="form-group">
+	                       					<label id="lblvehiculos" for="grupoVehiculos">Vehiculos</label> <label id="lblvehiculos"> </label>
+					                       <div id="selectVehiculos">
+					                           <select class="selectpicker" data-width="fit"   data-live-search="true" title="Seleccionar vehiculos" id="grupoVehiculos" name="grupoVehiculos">
+					                           </select>
+	                       					</div>
+										</div>
+									</div>
+									<div class="col-md-4">
+									  <div class="form-group">
+									    <label>Tipo de Vigilancia</label>
+									    <div class="row">
+							                      <div class="col-md-6">
+								                <div id="opcionAudio" class="checkbox programacionCheckbox checkbox-danger" style="display :none;">
+								                  <label><input type="checkbox" name="audio" id="audio"/> Audio</label>
+								                </div>
+							                      </div>
+							                      <div id="opcionImagen" class="col-md-6" {% if paquete in 'basico'|slice:',' %} style="display:none;" {% endif %}>
+								                <div class="checkbox programacionCheckbox checkbox-success">
+								                  <label><input type="checkbox" name="imagenes" id="imagenes"/> Imágenes</label>
+								                </div>
+							                      </div>
+							                    </div>
+									  </div>
+									</div>
+
+							</div>
+								<div class="col-md-3">
+									<div class="form-group">
+						           		<label>Fecha Inicio:</label>
+						                <div class="input-group date formRangoFecha" id="formRangoFecha1">
+							                  <input id="inputFechaInicio" name="inputFechaInicio"  type="text" required class="form-control" data-date-format="DD/MM/YYYY" data-error="Ingrese una fecha (YYYY-MM-DD)"
+							                	pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]$"
+							                  >
+							                  <span class="input-group-addon">
+							                  <span class="glyphicon-calendar glyphicon"></span>
+							                  </span>
+						            	</div>
+						            	<div class="help-block with-errors"></div>
+									</div>
+								</div>
+								<div class="col-md-3">
+									<div class="form-group">
+						           		<label>Fecha Fin:</label>
+						                <div class="input-group date formRangoFecha" id="formRangoFecha2">
+							                  <input id="inputFechaFin" name="inputFechaFin" type="text" required class="form-control " data-date-format="DD/MM/YYYY" data-error="Ingrese una fecha (YYYY-MM-DD)"
+								              pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]$"    
+							                  >
+							                  <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+							                  </span>
+							            
+						            	</div>
+						            	 <div class="help-block with-errors"></div>
+									</div>
+								</div>	
+							<div class="row">
+								<div class="col-md-3">
+									<div class="form-group">
+				                         <label for="formHora">Hora Inicio</label>
+				                         <div class="input-group date formHora" id="formHoraInicio">
+				                           <input id="inputHoraInicio" name="inputHoraInicio" required class="form-control " data-date-format="hh:mm a" pattern="^[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$" data-error="Ingrese una hora (hh:mm)">
+				                           <span class="input-group-addon"><span class="glyphicon-o-clock glyphicon"></span>
+				                           </span>
+				                         </div>
+
+				                         <div class="help-block with-errors"></div>
+                       				</div>
+								</div>
+								<div class="col-md-3">
+									<div class="form-group">
+				                         <label for="formHora">Hora Fin</label>
+				                         <div class="input-group date formHora" id="formHoraFin">
+				                           <input id="inputHoraFin" name="inputHoraFin" required class="form-control " data-date-format="hh:mm a" pattern="^[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$" data-error="Ingrese una hora (hh:mm)">
+				                           <span class="input-group-addon"><span class="glyphicon-o-clock glyphicon"></span>
+				                           </span>
+				                         </div>
+
+				                         <div class="help-block with-errors"></div>
+                       				</div>
+								</div>
+								
+                            	<div class="col-md-6" style="text-align: center;">
+									<div class="form-group" >
+										<button id="crearProgramacion" type="submit" class="btn btn-lg btn-success btn-raised" style=" margin-bottom: 0; margin-top: 1.7em;">
+											Crear Programación
+										</button>
+									</div>
+                            	</div>		
+							</div>
+						</form>
+	                </div>
+	            </div>
+	        </div>       
+	    </div>
+
+	</div>
+
+</body>
+
+
+{% endblock %}

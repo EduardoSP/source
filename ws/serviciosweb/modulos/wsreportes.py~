@@ -1,0 +1,386 @@
+# -*- coding: utf-8 -*-
+from django.shortcuts          import render
+from django.http               import HttpResponse
+import json
+from ProtocoloComunicacion     import responder, validarProtocoloPeticion
+from permisos                  import permisos
+from jsonschema                import validate, ValidationError
+import logging
+
+
+
+
+#--------------------------------------------------------------
+def wsReporteEstadisticasVehiculos(request):
+    respuestaRaw = {'success'        : False,
+                    'data'           : { }    }
+
+    validacionProtocolo = validarProtocoloPeticion(request)
+    if not validacionProtocolo['success']:
+        return responder(validacionProtocolo)
+
+    requestRaw  = request.POST['request']
+    peticion    = json.loads(requestRaw)
+
+    validacionPeticion = validacionWsReporteEstadisticasVehiculos(peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPeticion)
+
+    validacionPermisos = permisos.validacionPermisos("wsReporteEstadisticasVehiculos",peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPermisos)
+
+    respuestaRaw = {}#alarmas.listarAlarmas(peticion)
+    
+    return responder(respuestaRaw)
+
+
+def validacionWsReporteEstadisticasVehiculos(peticion):
+    success = True
+    error   = ''    
+    try:                
+        schema = {
+            'type'        : 'object',
+            'properties'  : {
+                'autenticacion' : {
+                    'type'        : 'object',
+                    'properties'  : {
+                        'usuario' : { 'type' : 'string' },
+                        'token'   : { 'type' : 'string' },
+                    },
+                    'required' : [
+                        'usuario',
+                        'token'
+                    ]
+                },
+                'data': {
+                    'type'       : 'object',
+                    'properties' : {
+                        "fechaInicio" : { 'type' : 'string'},
+                        "fechaFin"    : { 'type' : 'string'},
+                        "vehiculos"   : { 'type' : 'array' }
+                    },
+                    'required' : [
+                        "fechaInicio",
+                        "fechaFin"
+                    ]
+                }
+            },
+            'required' : [
+                'autenticacion',
+                'data'
+            ]
+        }
+        validate(peticion ,schema)        
+    except ValidationError as e:
+        error   = e.message
+        success = False
+    except:
+        error = 'Error desconocido-R001'
+        success = False
+
+    respuestaRaw = { 'success'        : success,
+                     'error'          : error}    
+    return respuestaRaw
+#==============================================================
+
+
+#--------------------------------------------------------------
+def wsReporteEstadisticasVehiculoPorDia(request):
+    respuestaRaw = {'success'        : False,
+                    'data'           : { }    }
+
+    validacionProtocolo = validarProtocoloPeticion(request)
+    if not validacionProtocolo['success']:
+        return responder(validacionProtocolo)
+
+    requestRaw  = request.POST['request']
+    peticion    = json.loads(requestRaw)
+
+    validacionPeticion = validacionWsReporteEstadisticasVehiculoPorDia(peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPeticion)
+
+    validacionPermisos = permisos.validacionPermisos("wsReporteEstadisticasVehiculoPorDia",peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPermisos)
+
+    respuestaRaw = {}#alarmas.listarAlarmas(peticion)
+    
+    return responder(respuestaRaw)
+
+
+def validacionWsReporteEstadisticasVehiculoPorDia(peticion):
+    success = True
+    error   = ''    
+    try:                
+        schema = {
+            'type'        : 'object',
+            'properties'  : {
+                "autenticacion" : {
+                    'type'        : 'object',
+                    'properties'  : {
+                        'usuario' : { 'type' : 'string' },
+                        'token'   : { 'type' : 'string' },
+                    },
+                    'required' : [
+                        'usuario',
+                        'token'
+                    ]
+                },
+                'data': {
+                    'type'       : 'object',
+                    'properties' : {
+                        "fechaInicio" : { 'type' : 'string'},
+                        "fechaFin"    : { 'type' : 'string'},
+                        "idVehiculo"  : { 'type' : 'string' }
+                    },
+                    'required' : [
+                        "fechaInicio",
+                        "fechaFin",
+                        "idVehiculo"
+                    ]
+                }                
+            },
+            'required' : [
+                'autenticacion',
+                'data'
+            ]
+        }
+        validate(peticion ,schema)        
+    except ValidationError as e:
+        error   = e.message
+        success = False
+    except:
+        error = 'Error desconocido-R001'
+        success = False
+
+    respuestaRaw = { 'success'        : success,
+                     'error'          : error}    
+    return respuestaRaw
+#==============================================================
+
+
+#--------------------------------------------------------------
+def wsReporteParadasVehiculo(request):
+    respuestaRaw = {'success'        : False,
+                    'data'           : { }    }
+
+    validacionProtocolo = validarProtocoloPeticion(request)
+    if not validacionProtocolo['success']:
+        return responder(validacionProtocolo)
+
+    requestRaw  = request.POST['request']
+    peticion    = json.loads(requestRaw)
+
+    validacionPeticion = validacionWsReporteParadasVehiculo(peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPeticion)
+
+    validacionPermisos = permisos.validacionPermisos("wsReporteParadasVehiculo",peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPermisos)
+
+    respuestaRaw = {}#alarmas.listarAlarmas(peticion)
+    
+    return responder(respuestaRaw)
+
+
+def validacionWsReporteParadasVehiculo(peticion):
+    success = True
+    error   = ''    
+    try:                
+        schema = {
+            'type'        : 'object',
+            'properties'  : {
+                "autenticacion" : {
+                    'type'        : 'object',
+                    'properties'  : {
+                        'usuario' : { 'type' : 'string' },
+                        'token'   : { 'type' : 'string' },
+                    },
+                    'required' : [
+                        'usuario',
+                        'token'
+                    ]
+                },
+                'data': {
+                    'type'       : 'object',
+                    'properties' : {
+                        "fechaInicio" : { 'type' : 'string'},
+                        "fechaFin"    : { 'type' : 'string'},
+                        "vehiculos"   : { 'type' : 'array' }
+                    },
+                    'required' : [
+                        "fechaInicio",
+                        "fechaFin"
+                    ]
+                }                
+            },
+            'required' : [
+                'autenticacion',
+                'data'
+            ]
+        }
+        validate(peticion ,schema)        
+    except ValidationError as e:
+        error   = e.message
+        success = False
+    except:
+        error = 'Error desconocido-R001'
+        success = False
+
+    respuestaRaw = { 'success'        : success,
+                     'error'          : error}    
+    return respuestaRaw
+#==============================================================
+
+#--------------------------------------------------------------
+def wsReporteGraficoVehiculosPorEstadistica(request):
+    respuestaRaw = {'success'        : False,
+                    'data'           : { }    }
+
+    validacionProtocolo = validarProtocoloPeticion(request)
+    if not validacionProtocolo['success']:
+        return responder(validacionProtocolo)
+
+    requestRaw  = request.POST['request']
+    peticion    = json.loads(requestRaw)
+
+    validacionPeticion = validacionWsReporteGraficoVehiculosPorEstadistica(peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPeticion)
+
+    validacionPermisos = permisos.validacionPermisos("wsReporteGraficoVehiculosPorEstadistica",peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPermisos)
+
+    respuestaRaw = {}#alarmas.listarAlarmas(peticion)
+    
+    return responder(respuestaRaw)
+
+
+def validacionWsReporteGraficoVehiculosPorEstadistica(peticion):
+    success = True
+    error   = ''    
+    try:                
+        schema = {
+            'type'        : 'object',
+            'properties'  : {
+                "autenticacion" : {
+                    'type'        : 'object',
+                    'properties'  : {
+                        'usuario' : { 'type' : 'string' },
+                        'token'   : { 'type' : 'string' },
+                    },
+                    'required' : [
+                        'usuario',
+                        'token'
+                    ]
+                },
+                'data': {
+                    'type'       : 'object',
+                    'properties' : {
+                        "fechaInicio"     : { 'type' : 'string'},
+                        "fechaFin"        : { 'type' : 'string'},
+                        "vehiculos"       : { 'type' : 'array' },
+                        "tipoEstadistica" : { 'type' : 'string'} 
+                    },
+                    'required' : [
+                        "fechaInicio",
+                        "fechaFin",
+                        "tipoEstadistica"
+                    ]
+                }                
+            },
+            'required' : [
+                'autenticacion',
+                'data'
+            ]
+        }
+        validate(peticion ,schema)        
+    except ValidationError as e:
+        error   = e.message
+        success = False
+    except:
+        error = 'Error desconocido-R001'
+        success = False
+
+    respuestaRaw = { 'success'        : success,
+                     'error'          : error}    
+    return respuestaRaw
+#==============================================================
+def wsReporteGraficoVehiculoEstadisticaPorFecha(request):
+    respuestaRaw = {'success'        : False,
+                    'data'           : { }    }
+
+    validacionProtocolo = validarProtocoloPeticion(request)
+    if not validacionProtocolo['success']:
+        return responder(validacionProtocolo)
+
+    requestRaw  = request.POST['request']
+    peticion    = json.loads(requestRaw)
+
+    validacionPeticion = validacionWsReporteGraficoVehiculoEstadisticaPorFecha(peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPeticion)
+
+    validacionPermisos = permisos.validacionPermisos("wsReporteGraficoVehiculoEstadisticaPorFecha",peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPermisos)
+
+    respuestaRaw = {}#alarmas.listarAlarmas(peticion)
+    
+    return responder(respuestaRaw)
+
+
+def validacionWsReporteGraficoVehiculoEstadisticaPorFecha(peticion):
+    success = True
+    error   = ''    
+    try:                
+        schema = {
+            'type'        : 'object',
+            'properties'  : {
+                "autenticacion" : {
+                    'type'        : 'object',
+                    'properties'  : {
+                        'usuario' : { 'type' : 'string' },
+                        'token'   : { 'type' : 'string' },
+                    },
+                    'required' : [
+                        'usuario',
+                        'token'
+                    ]
+                },
+                'data': {
+                    'type'       : 'object',
+                    'properties' : {
+                        "fechaInicio"     : { 'type' : 'string'},
+                        "fechaFin"        : { 'type' : 'string'},
+                        "idVehiculo"      : { 'type' : 'string'},
+                        "tipoEstadistica" : { 'type' : 'string'} 
+                    },
+                    'required' : [
+                        "fechaInicio",
+                        "fechaFin",
+                        "idVehiculo",
+                        "tipoEstadistica"
+                    ]
+                }                
+            },
+            'required' : [
+                'autenticacion'
+            ]
+        }
+        validate(peticion ,schema)        
+    except ValidationError as e:
+        error   = e.message
+        success = False
+    except:
+        error = 'Error desconocido-R001'
+        success = False
+
+    respuestaRaw = { 'success'        : success,
+                     'error'          : error}    
+    return respuestaRaw
+#==============================================================

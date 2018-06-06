@@ -1,0 +1,23 @@
+{
+    "ws"         : "http://localhost/ws/enviarRuta",
+    "idVehiculo" : "20160302",
+    "ping"       : "1",
+    "ruta" : [
+	{	    
+	    "lat" : "3.407611",
+	    "lon" : "-76.542731",	    	    
+	    "velocidad" : "20"
+	    
+	},
+	{	    
+	    "lat" : "3.426270",
+	    "lon" : "-76.537475",	    	    
+	    "velocidad" : "20"
+	},
+	{	    
+	    "lat" : "3.413344",
+	    "lon" : "-76.528698",	    	    
+	    "velocidad" : "1"
+	}	
+    ]
+}

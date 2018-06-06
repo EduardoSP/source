@@ -1,0 +1,452 @@
+#Documento  personal medico
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+   "activo": true,
+   "tipoDato": "personalMedico",
+   "creadoEn": "12/03/2016, 08:00am",
+   "modificadoEn": "13/03/2016, 08:00am",
+   "modificadoPor": "Pablo Solarte",
+   "nombres": "Juan Pablo Alboran",
+   "identificacion": 1236584,
+   "titulo": 1236584,
+   "correo": "pablo@gmail.com",
+   "telefono": "4278541",
+   "loginUsuario": "cvd1236584",
+   "contrasena": 1236584,
+}
+
+#Documento  Equipo de emergencia
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+   "activo": true,
+	"tipoDato": "equiposEmergencia",
+	"creadoEn": "12/03/2016, 08:00am",
+	"modificadoEn": "13/03/2016, 08:00am",
+	"modificadoPor": "Pablo Solarte",
+	"nombre": "Trauma",
+	"roles": ["ca759f5632ec30e319570ba94b000743"]
+}
+
+
+{
+   "_id": "_design/equiposEmergencia",
+   "_rev": "1-aca6ab83e43bbcf3b7a50bcaeab425c4",
+   "views": {
+       "equiposEmergencia": {
+           "map": "function(doc){if(doc.tipoDato == \"equiposEmergencia\") { emit([doc._id, doc.nombre], null );} }"
+       }
+   }
+}
+
+
+#Documento  Rol de equipos
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+  	"activo": true,
+	"tipoDato": "roles",
+	"creadoEn": "12/03/2016, 08:00am",
+	"modificadoEn": "13/03/2016, 08:00am",
+	"modificadoPor": "Pablo Solarte",
+	"nombre": "Trauma"
+}
+
+{
+   "_id": "_design/rolesEquipo",
+   "_rev": "1-aca6ab83e43bbcf3b7a50bcaeab425c4",
+   "views": {
+       "roles": {
+           "map": "function(doc){if(doc.tipoDato == \"roles\") { emit([doc._id, doc.nombre], null );} }"
+       }
+   }
+}
+
+#Documento  personal medico
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+   "activo": true,
+   "tipoDato": "personalMedico",
+   "creadoEn": "12/03/2016, 08:00am",
+   "modificadoEn": "13/03/2016, 08:00am",
+   "modificadoPor": "Pablo Solarte",
+   "nombres": "Juan Pablo Alboran",
+   "identificacion": 1236584,
+   "titulo": 1236584,
+   "correo": "pablo@gmail.com",
+   "telefono": "4278541",
+   "loginUsuario": "cvd1236584",
+   "contrasena": 1236584,
+}
+
+
+{
+   "_id": "_design/personalMedico",
+   "_rev": "1-aca6ab83e43bbcf3b7a50bcaeab425c4",
+   "views": {
+       "personalMedico": {
+           "map": "function(doc){if(doc.tipoDato == \"personalMedico\") { emit([doc._id, doc.nombres, doc.titulo], null );} }"
+       },
+       "personalPorTitulo": {
+           "map": "function(doc){if(doc.tipoDato == \"personalMedico\") { emit([doc._id, doc.titulo], null );} }"
+       },
+   }
+}
+
+#Documento  Jefe del servicio de urgencias
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+   "activo": true,
+   "tipoDato": "jefeUrgencias",
+   "creadoEn": "2016-03-24T08:07:19Z",
+   "modificadoEn": "2016-03-26T15:07:19Z",
+   "modificadoPor": "Andrea Palomino",
+   "nombres": "Oscar Salcedo",
+   "identificacion": 6523148,
+   "titulo": "Enfermero Jefe",
+   "correo": "oscar@gmail.com",
+   "telefono": "3256589",
+   "loginUsuario": "huv3256589",
+   "contrasena": 123456,
+}
+
+
+{
+   "_id": "_design/jefeUrgencias",
+   "_rev": "1-aca6ab83e43bbcf3b7a50bcaeab425c4",
+   "views": {
+       "jefeUrgencias": {
+           "map": "function(doc){if(doc.tipoDato == \"jefeUrgencias\") { emit([doc._id, doc.nombres, doc.titulo], null );} }"
+       },
+       "jefeUrgenciasPorTitulo": {
+           "map": "function(doc){if(doc.tipoDato == \"jefeUrgencias\") { emit([doc._id, doc.titulo], null );} }"
+       }
+   }
+}
+
+
+#Documento  Operadores- central de referencia 
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+   "activo": true,
+   "tipoDato": "operadoresCentralReferencia",
+   "creadoEn": "2016-03-24T08:07:19Z",
+   "modificadoEn": "2016-03-26T15:07:19Z",
+   "modificadoPor": "Andrea Palomino",
+   "nombres": "Omar Agudelo",
+   "identificacion": 4523698,
+   "titulo": "Auxiliar quirurgico",
+   "correo": "omar@gmail.com",
+   "telefono": "5623214",
+   "loginUsuario": "huv5623214",
+   "contrasena": 123456,
+}
+
+{
+   "_id": "_design/operadoresCentralReferencia",
+   "_rev": "1-aca6ab83e43bbcf3b7a50bcaeab425c4",
+   "views": {
+       "operadoresCentralReferencia": {
+           "map": "function(doc){if(doc.tipoDato == \"operadoresCentralReferencia\") { emit([doc._id, doc.nombres, doc.titulo], null );} }"
+       },
+       "operadoresCentralReferenciaPorTitulo": {
+           "map": "function(doc){if(doc.tipoDato == \"operadoresCentralReferencia\") { emit([doc._id, doc.titulo], null );} }"
+       }
+   }
+}
+
+#Documento  Operadores- recepcion de urgencias 
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+   "activo": true,
+   "tipoDato": "operadoresRecepcionUrgencias",
+   "creadoEn": "2016-03-24T08:07:19Z",
+   "modificadoEn": "2016-03-26T15:07:19Z",
+   "modificadoPor": "Andrea Palomino",
+   "nombres": "Antonio Palacios",
+   "identificacion": 85963,
+   "titulo": "Auxiliar quirurgico",
+   "correo": "antonio@gmail.com",
+   "telefono": "4523612",
+   "loginUsuario": "huv85963",
+   "contrasena": 123456,
+}
+
+{
+   "_id": "_design/operadoresRecepcionUrgencias",
+   "_rev": "1-aca6ab83e43bbcf3b7a50bcaeab425c4",
+   "views": {
+       "operadoresRecepcionUrgencias": {
+           "map": "function(doc){if(doc.tipoDato == \"operadoresRecepcionUrgencias\") { emit([doc._id, doc.nombres, doc.titulo], null );} }"
+       },
+       "operadoresRecepcionUrgenciasPorTitulo": {
+           "map": "function(doc){if(doc.tipoDato == \"operadoresRecepcionUrgencias\") { emit([doc._id, doc.titulo], null );} }"
+       }
+   }
+}
+
+#Documento  asignacion
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+   "activo": true,
+   "tipoDato": "asignacion",
+   "creadoEn": "12/03/2016, 08:00am",
+   "modificadoEn":"13/03/2016, 08:00am",
+   "modificadoPor": "Pablo Solarte",
+   "fecha": "16/03/2016, 08:00am",
+   "idTurno": "ca759f5632ec30e319570ba94b005dbf",
+   "idRol": "ca759f5632ec30e319570ba94b000743",
+   "idPersonal": "ca759f5632ec30e319570ba94b003e56",
+}
+
+{
+   "_id": "_design/asignacion",
+   "_rev": "1-aca6ab83e43bbcf3b7a50bcaeab425c4",
+   "views": {
+       "asignacion": {
+           "map": "function(doc){if(doc.tipoDato == \"asignacion\") { emit([doc._id], null );} }"
+       },
+        "asignacionPorFecha": {
+           "map": "function(doc){ if(doc.tipoDato == \"asignacion\" ) { emit([ doc.idTurno, doc.fecha ], null );} }"
+       }
+       "asignacionPorRol": {
+           "map": "function(doc){ if(doc.tipoDato == \"asignacion\" ) { emit([ doc.idRol, doc.fecha ], null );} }"
+       }
+       
+   }
+}
+
+#Documento  turno
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+   "activo": true,
+   "tipoDato": "turnos",
+   "creadoEn": "12/03/2016, 08:00am",
+   "modificadoEn": "13/03/2016, 08:00am",
+   "modificadoPor": "Pablo Solarte",
+   "nombre": "T1",
+   "horaInicio": "250",
+   "horaFin": "320",
+}
+
+{
+   "_id": "_design/turnos",
+   "_rev": "1-aca6ab83e43bbcf3b7a50bcaeab425c4",
+   "views": {
+       "turno": {
+           "map": "function(doc){if(doc.tipoDato == \"turnos\") { emit([doc._id, doc.nombre, doc.horaInicio, doc.horaFin], null );} }"
+       },
+   }
+}
+
+#Documento  administradores
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+   "activo": true,
+   "tipoDato": "administradores",
+   "creadoEn": "12/03/2016, 08:00am",
+   "modificadoEn": "13/03/2016, 08:00am",
+   "modificadoPor": "Pablo Solarte",
+   "nombres": "Juan Pablo Alboran",
+   "identificacion": 1236584,
+   "correo": "pablo@gmail.com",
+   "telefono": "4278541",
+   "loginUsuario": "cvd1236584",
+   "contrasena": 1236584,
+}
+
+{
+   "_id": "_design/administradores",
+   "_rev": "1-aca6ab83e43bbcf3b7a50bcaeab425c4",
+   "views": {
+       "administradores": {
+           "map": "function(doc){if(doc.tipoDato == \"administradores\") { emit([doc._id, doc.nombres, doc.correo], null );} }"
+       }
+       
+   }
+}
+
+
+#Documento  clinicas
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+   "activo": true,
+   "tipoDato": "clinicas",
+   "creadoEn": "2016-03-20T08:07:19Z",
+   "modificadoEn": "2016-03-21T08:07:19Z",
+   "modificadoPor": "Pablo Solarte",
+   "nombre": "Juan Pablo Alboran",
+   "telefono": "4278541",
+   "direccion": "cra 5a # 89-45"
+
+}
+
+{
+   "_id": "_design/clinicas",
+   "_rev": "1-aca6ab83e43bbcf3b7a50bcaeab425c4",
+   "views": {
+       "clinicas": {
+           "map": "function(doc){if(doc.tipoDato == \"clinicas\") { emit([doc._id, doc.nombre, doc.direccion], null );} }"
+       }
+       
+   }
+}
+
+#Documento  Ingresos
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+   "activo": true,
+   "tipoDato": "ingresos",
+   "creadoEn": "2016-03-18T08:07:19Z",
+   "modificadoEn":"2016-03-20T14:07:19Z",
+   "modificadoPor": "Juan Vargas",
+   "fechaHoraIngreso": "2016-03-21T08:07:19Z",
+   "timepoEstimadoLlegadaClinica": "200",
+   "tipoIngreso": "clinica",
+   "idClinica": "ca759f5632ec30e319570ba94b009cee",
+   "genero": "m",
+   "edad": 42,
+   "diagnostico": "paciente con un golpe en la cabeza, ha perdido mucha sangre",
+   "estadoingreso": "registrado",
+   "equiposEncargados": [ "ca759f5632ec30e319570ba94b002042"
+   			],
+   "ta": "130/92",
+   "fc": "66",
+   "fr": "18",
+   "llegaraEn": "numero de minutos",
+   "numeroMinutos": "520"
+}
+
+{
+   "_id": "_design/ingresos",
+   "_rev": "1-aca6ab83e43bbcf3b7a50bcaeab425c4",
+   "views": {
+       "ingresos": {
+           "map": "function(doc){if(doc.tipoDato == \"ingresos\") { emit([doc._id, doc.tipoIngreso, doc.edad], null );} }"
+       },
+        "ingresosPorFecha": {
+           "map": "function(doc){ if(doc.tipoDato == \"ingresos\" ) { emit([ doc._id, doc.fechaHoraIngreso ], null );} }"
+       }
+   }
+}
+
+#Documento  presencia-equipos
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+   "activo": true,
+   "tipoDato": "presenciaEquipos",
+   "creadoEn": "2016-03-22T08:07:19Z",
+   "modificadoEn":"2016-03-24T11:07:19Z",
+   "modificadoPor": "Alberto Diaz",
+   "idEquipo": "ca759f5632ec30e319570ba94b002042",
+   "idPersonalMedico": "ca759f5632ec30e319570ba94b003e56",
+   "estado": "presente",
+   
+}
+
+{
+   "_id": "_design/presenciaEquipos",
+   "_rev": "1-aca6ab83e43bbcf3b7a50bcaeab425c4",
+   "views": {
+       "presenciaEquipos": {
+           "map": "function(doc){if(doc.tipoDato == \"presenciaEquipos\") { emit([doc._id], null );} }"
+       },
+        "presenciaEquiposPorEquipo": {
+           "map": "function(doc){ if(doc.tipoDato == \"presenciaEquipos\" ) { emit([ doc._id, doc.idEquipo, doc.estado ], null );} }"
+       }
+   }
+}
+
+
+#Documento  beacons
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+   "activo": true,
+   "tipoDato": "beacons",
+   "creadoEn": "2016-03-19T06:07:19Z",
+   "modificadoEn":"2016-03-21T11:07:19Z",
+   "modificadoPor": "Alberto Diaz",
+   "nombre": "Beacon sala urgencias"
+}
+
+{
+   "_id": "_design/beacons",
+   "_rev": "1-aca6ab83e43bbcf3b7a50bcaeab425c4",
+   "views": {
+       "beacons": {
+           "map": "function(doc){if(doc.tipoDato == \"beacons\") { emit([doc._id, doc.nombre], null );} }"
+       }
+
+   }
+}
+
+#Documento  checkin
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+   "activo": true,
+   "tipoDato": "checkin",
+   "creadoEn": "2016-03-19T06:07:19Z",
+   "modificadoEn":"2016-03-21T11:07:19Z",
+   "modificadoPor": "Alberto Diaz",
+   "fechaHora": "2016-03-28T15:07:19Z",
+   "idpersonalMedico": "ca759f5632ec30e319570ba94b003e56",
+   "idBeacon": "ca759f5632ec30e319570ba94b013dc4"
+}
+
+{
+   "_id": "_design/checkins",
+   "_rev": "1-aca6ab83e43bbcf3b7a50bcaeab425c4",
+   "views": {
+       "checkin": {
+           "map": "function(doc){if(doc.tipoDato == \"checkin\") { emit([doc._id, doc.nombre], null );} }"
+       },
+       "checkinPorFecha": {
+           "map": "function(doc){ if(doc.tipoDato == \"checkin\" ) { emit([ doc._id, doc.fechaHora], null );} }"
+       },
+       "checkinPorBeacon": {
+           "map": "function(doc){ if(doc.tipoDato == \"checkin\" ) { emit([ doc._id, doc.idBeacon], null );} }"
+       }
+
+   }
+}
+
+#Documento  actividad
+{
+   "_id": "0a8bbd5384b039effe5b731acb0054e7",
+   "_rev": "1-731b443506e69608ebdb946e3b2f32c0",
+   "activo": true,
+   "tipoDato": "actividad",
+   "creadoEn": "2016-03-19T06:07:19Z",
+   "modificadoEn":"2016-03-21T11:07:19Z",
+   "modificadoPor": "Alberto Diaz",
+   "fechaHora": "2016-03-28T15:07:19Z",
+   "idUsuario": "ca759f5632ec30e319570ba94b00c059",
+   "tipoActividad": "registro de equipo de emergencia",
+   "parametros": ""
+}
+
+{
+   "_id": "_design/actividades",
+   "_rev": "1-aca6ab83e43bbcf3b7a50bcaeab425c4",
+   "views": {
+       "actividad": {
+           "map": "function(doc){if(doc.tipoDato == \"actividad\") { emit([doc._id, doc.tipoActividad], null );} }"
+       },
+       "actividadPorFecha": {
+           "map": "function(doc){ if(doc.tipoDato == \"actividad\" ) { emit([ doc._id, doc.fechaHora], null );} }"
+       }
+   }
+}

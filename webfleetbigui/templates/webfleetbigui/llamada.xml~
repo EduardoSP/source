@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Pause length="3" />
+  <Say voice="alice" language="es-ES">    
+    Estimado beibi, nos comunicamos desde la plataforma
+  </Say>
+  <Say voice="alice" language="es-ES">
+    Flit biai.    
+  </Say>
+  <Pause length="3" />
+  <Say voice="alice" language="es-ES">    
+    Le notificamos que el vehículo con placa {{placa|safe}} ha activado el botón de pánico.
+  </Say>
+  <Pause length="3" />
+  <Say voice="alice" language="es-ES">    
+    Repetimos. El vehículo con placa {{placa|safe}} ha activado el botón de pánico.
+  </Say>
+   <Say voice="alice" language="es-ES">    
+    Te ama mostropi.
+  </Say>
+</Response>

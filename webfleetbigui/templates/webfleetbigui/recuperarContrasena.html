@@ -1,0 +1,266 @@
+{% extends "webfleetbigui/base.html" %}
+{% load staticfiles %}
+{% block titulo %}FleetBi-RecuperarContrasena{% endblock %}
+
+{% block codigoPrincipal %}
+<!-- <link hreSf="{% static "css/login.css" %}"  rel="stylesheet">
+ -->
+<!-- Estilos -->
+	<!-- <link href="{% static "bootstrap/css/bootstrap.min.css" %}"  rel="stylesheet"> -->
+
+
+    <link href="{% static "css/base.css" %}"  rel="stylesheet">       
+
+	<style>	
+@media (min-width:500px)  {
+	#divFormularioPrincipal{
+		position:absolute;
+		top: 0px;
+		left:0px;
+		display:flex;
+		justify-content:center;
+		align-items:center;
+		width:100%;
+		height:100%;
+	}
+}
+
+@media (max-width:499px)  {
+	
+	#divFormularioPrincipal{
+		
+	}
+}
+
+	</style>
+	
+	<!-- Bibliotecas -->
+    <script src="{% static "js/jquery.js"									%}"></script>
+    
+    <script src="{% static "ladda/js/spin.min.js" 							%}"></script>
+    <script src="{% static "ladda/js/ladda.min.js" 							%}"></script>
+    <script src="{% static "js/configuracion.js" 							%}"></script>
+    <script src="{% static "notifit/js/notifIt.js" 							%}"></script>
+    <script src="{% static "material/js/ripples.min.js" 					%}"></script>
+    <script src="{% static "material/js/material.min.js"					%}"></script>
+	<script src="{% static "validatorNuevo/validator.js" %}"></script>
+	<script src="{% static "bootstrap/js/bootstrap.min.js" 					%}"></script>
+<script>
+
+var tenant = "{{tenant}}";
+var usuarioContext  = "{{usuario}}";
+var esValidoContext = {{ esValido}};
+
+var urlsLogin = { //Listado de urls que se deben acceder despues de un acceso exitoso.
+
+    "adminTenant"             		 : "{% url 'adminVistaGeneral' tenant=tenant  %}",
+    "superAdministrador"		     : "{% url 'superAdministradorTenants'  tenant=tenant %}",
+};
+
+var perfil;
+$(document).ready(function() {	
+    $('#usuarioLogin').val(usuarioContext);
+    if(esValidoContext){
+	$('#panelMensajeCorrecto').show();
+    }else{
+	$('#panelMensajeError').show();
+    }
+	
+	
+    $(document).on('click', '#olvideContrasena', function(){
+	$('#formularioRecuperarContrasena').modal('show');
+    });
+
+    $(document).on('click', '#btnIngresar', function(){
+    	if (perfil == "generadorCarga"){
+    		var url 				= urlAccesoGeneradorCarga;
+    	}else{
+    		var url 				= "http://satelital.fleetbi.co";
+    	}
+    	window.location.href 		= url;
+    });
+
+
+	$('#formLogin').validator().on('submit', function (e) {
+	  if (e.isDefaultPrevented()) {
+		notif({
+                msg     : "Invalido campo",
+                type    : "error",
+                position: "center"
+            });
+	  } else {
+	    autenticarUsuarioLogin();
+	    //alert("prueba");
+	    e.preventDefault();
+	  }
+	});    
+
+    
+});
+
+function autenticarUsuarioLogin(){
+    var autenticar          = new Object();	
+    autenticar.token 	    = "{{token}}";
+    autenticar.contrasena   = $('#formContrasena').val();
+    autenticar.tenant	    = tenant;
+
+    var jsonsample          = JSON.stringify(autenticar);
+    var l = Ladda.create(document.querySelector('#formLogin'));
+    l.start();
+    var request = $.ajax({
+	type    : "POST",
+	url	: "{% url 'wsCambiarContrasena' %}",
+	data	: { request: jsonsample },
+	dataType: "json"
+    });
+    request.done(function(respuesta){
+	l.stop();
+
+	if(respuesta.success){
+
+		var login	= $('#usuarioLogin').val();
+		var token 	= respuesta.token;
+		perfil  = respuesta.perfil;
+		var nombreUsuario = respuesta.usuario;
+		var nombreTennant = respuesta.tenant;
+		/*
+		config.setLogueado(true);
+		config.setUsuarioLogin($('#usuarioLogin').val());
+		config.setNombreUsuario(nombreUsuario);
+		config.setToken(respuesta.token);
+		config.setPerfilUsuario(perfil);
+		config.setTennant(nombreTennant);
+		
+	    notif({
+ 		msg     : "logueado corrrectamente",
+  		type	: "success",
+  		position: "center"
+	    });
+        var urlLogin 		= urlsLogin[respuesta.perfil];
+	    window.location.href 	= urlLogin;
+	   */
+		notif({
+ 		msg     : "Información actualizada",
+  		type	: "success",
+  		position: "center"
+	    });
+		//window.location.href 	= "{% url 'loginUnificado' %}";
+		$('#panelMensajeCorrecto').hide();
+		$('#panelMensajeIngreso').show();
+	}else{
+	    notif({
+ 		msg	: "Error al cambiar la clave",
+  		type	: "error",
+  		position: "center"
+	    });
+	}
+    });
+    request.fail(function(jqXHR, textStatus){
+	l.stop();
+	notif({
+ 	    msg		: "Error de conexión, verfica tu conexión a internet.",
+  	    type	: "error",
+  	    position: "center"
+	});
+    });
+}
+
+
+</script>
+{% endblock %}
+
+{% block contenido %}
+<body>
+  <div > </div>
+  
+  <div id="divFormularioPrincipal" style="">
+    <div>
+	  <div style="text-align:center; margin-bottom:2em;">
+		<br>
+		<br>
+		<br>
+		<img style="max-width: 430px; width: 100%;" src="{% static "images/logoSloganRojo.png" %}" />
+	  </div>
+      <div class="login-panel panel panel-default shadow-z-3" style="width:100%; height:60%;">
+		<div class="panel-heading">
+		  <h3 id="tituloLogin" class="panel-title"></h3>
+		</div>
+		<div class="panel-body">
+
+
+		  <!-- Div de mensaje de error ------------------------------------------------------>
+		  <div id="panelMensajeError" style="display: none;">
+			<div class="">
+			  <label style="font-size: 16px; padding: 1em;"> Recuperación de contraseña caducada</label>
+			</div>
+			<div class="">
+			  <p style="margin: 0px !important;     padding-left: 1em; padding-right: 1em;">Este enlace de recuperación de contraseña ya fue usado. Ingresa de nuevo </p>
+			</div>
+		  </div>
+
+
+		  <!-- Div de mensaje de ingreso ---------------------------------------------------- -->
+		  <div id="panelMensajeIngreso" style="display: none;">
+			<div class="">
+			  <label style="font-size: 16px; padding: 1em;"> Contraseña actualizada</label>
+			</div>
+			<div class="">
+			  <p style="margin: 0px !important;     padding-left: 1em; padding-right: 1em;">Por favor ingrese con la nueva contraseña registrada.</p>
+			</div>
+			<div style="text-align: center;">
+			  <a class="btn btn-raised btn-success"  id="btnIngresar" role="button">Ingresar</a>
+			</div>
+		  </div> 
+
+
+		  <!-- Div de mensaje de Correcto ------------------------------------------------------>
+		  <div id="panelMensajeCorrecto" style="display: none;">
+			<div class="">
+			  <label style="font-size: 16px; padding: 1em;">Recupera tu cuenta </label>
+			</div>
+			<div class="">
+			  <p style="margin: 0px !important;     padding-left: 1em; padding-right: 1em;">Para recuperar tu cuenta debes verificar primero el nombre de usuario o correo electrónico que aparece, </p>
+			  <p     style="padding-left: 1em; padding-right: 1em;"> y despúes debes ingresar una nueva contraseña.</p>
+			</div>
+			
+			<form data-toggle="validator" role="form" id="formLogin">
+			  <div class="row">
+				<div class="col-md-6 col-md-offset-1">
+				  <div class="form-group">
+					<label>Nombre de usuario</label>
+					<div class="row">
+					  <!-- <div class="col-md-1" style="margin-top: 0.7em;">
+						   <span id="nombreTennant"> </span>
+					  </div> -->
+					  <div class="col-md-11">
+						<input id="usuarioLogin" name="usuarioLogin" type="text" class="form-control formLogin" disabled="true"/>
+					  </div>
+					</div>
+					<div class="help-block with-errors"></div>
+				  </div>
+				  <div class="form-group">
+					<label >Contraseña </label> 
+					<div>
+					  <input style="margin-bottom: 0.5em;" type="password" id="formContrasena" class="form-control" placeholder="Contraseña" id="formContrasena" name="formContrasena" required>
+					</div>
+					<div>
+					  <input  type="password" id="formConfirmarContrasena" data-match="#formContrasena" data-match-error="Las contraseñas no coinciden." class="form-control" placeholder="Confirmar contraseña" name="formConfirmarContrasena" required>
+					  <div class="help-block with-errors"></div>
+					</div>
+				  </div>
+				  
+				</div>
+			  </div>			  			  
+			  <button id="formLogin" type="submit" class="btn btn-raised btn-success  positionBoton enviarAdministrador">
+				Guardar Datos
+			  </button>
+			</form>
+		  </div>
+		  
+		</div>
+      </div>
+    </div>
+  </div>
+
+</body>
+{% endblock %}

@@ -1,0 +1,95 @@
+# -*- coding: utf-8 -*-
+from django.shortcuts           import render
+from django.http                import HttpResponse
+import json
+from ProtocoloComunicacion      import responder, validarProtocoloPeticion
+from permisos                   import permisos
+from jsonschema                 import validate, ValidationError
+import logging
+
+# wsListadoAlarmasCadenaFrio
+# wsListadoPuntosCadenaFrio
+# wsActualizarAlarmaCadenaFrio
+# wsListadoVehiculosCadenaFrio
+# wsReporteTemperaturaVehiculos
+
+
+#--------------------------------------------------------------
+def wsListadoAlarmasCadenaFrio(request):
+    respuestaRaw = {'success'        : False,
+                    'data'           : { }    }
+
+    validacionProtocolo = validarProtocoloPeticion(request)
+    if not validacionProtocolo['success']:
+        return responder(validacionProtocolo)
+
+    requestRaw  = request.POST['request']
+    peticion    = json.loads(requestRaw)
+
+    validacionPeticion = validacionWslistarMapaVehiculos(peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPeticion)
+
+    validacionPermisos = permisos.validacionPermisos("wslistarMapaVehiculos",peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPermisos)
+
+    respuestaRaw = vehiculos.listarMapaVehiculos(peticion)
+    #---Evalua si la solicitud es de un generador de carga-----------
+    codigoAcceso = peticion["autenticacion"].get("codigoAcceso","None")
+    if(codigoAcceso != "None"):
+        #envia un codigo de acceso. La peticion es de un generador de carga
+        #consulto los vehiculos habilitados con ese codigo de acceso
+        dataRaw = []
+        listaVehiculosActivados = generadoresCarga.buscarVehiculosActivados(peticion)
+        i = 0
+        for vehiculo in listaVehiculosActivados:
+            for i in range(0, len(respuestaRaw["data"])):
+                if vehiculo == respuestaRaw["data"][i]["idVehiculo"]:
+                    #print respuestaRaw["data"][i]
+                    dataRaw.append(respuestaRaw["data"][i])
+        respuestaRaw = {
+            'success' : True,
+            'data'    : dataRaw
+        }        
+        return responder(respuestaRaw)
+    #---------------------------------------------------------------
+    else:
+        return responder(respuestaRaw)
+
+
+def validacionWslistarMapaVehiculos(peticion):
+    success = True
+    error   = ''    
+    try:                
+        schema = {
+            'type'   	  : 'object',
+            'properties'  : {
+                "autenticacion" : {
+                    'type'   	  : 'object',
+                    'properties'  : {
+                        'usuario' : { 'type' : 'string' },
+                        'token'   : { 'type' : 'string' },
+                    },
+                    'required' : [
+                        'usuario',
+                        'token'
+                    ]
+                }                
+            },
+            'required' : [
+                'autenticacion'
+            ]
+        }
+        validate(peticion ,schema)        
+    except ValidationError as e:
+        error   = e.message
+        success = False
+    except:
+        error = 'Error desconocido-R001'
+        success = False
+
+    respuestaRaw = { 'success'        : success,
+                     'error'          : error}    
+    return respuestaRaw
+#===============================================================================

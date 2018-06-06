@@ -1,0 +1,69 @@
+# -*- coding: utf-8 -*-
+from django.core.management.base import NoArgsCommand
+from django.core.management.base import BaseCommand, CommandError
+from django.conf                 import settings
+import json
+import couchdb
+import logging
+from datetime                    import datetime
+
+class Command(BaseCommand):
+    help = 'Gestiona los tenants en la plataforma'
+
+    def add_arguments(self, parser):
+        parser.add_argument('--accion', type=str, help=u"crear|actualizar : indica si debe crear o actualizar un tenant")
+        parser.add_argument('--nombre', type=str, help=u"Nombre completo de la institución")
+        parser.add_argument('--codigo', type=str, help=u"código solo minúsculas sin caracteres extraños.")
+
+    def handle(self, *args, **options):
+        couch 	= couchdb.Server(url=settings.COUCHDB_URL)
+        db 	= couch[settings.BASEDB]
+
+        accion = options["accion"]
+
+        print options
+        print "Accion {}".format(accion)
+        
+        if accion == "crear":
+
+            existeDB = existeDb(options["codigo"], couch)
+
+            if existeDB:
+                print u"Error, el tenant ya existe"
+                return False
+
+
+            
+            doc = {
+                "tipoDato" : "tenant",
+                "estado"   : "activo",
+                "nombre"   : options["nombre"].encode('utf8'),
+                "codigo"   : options["codigo"]
+            }
+
+            db.save(doc)
+
+            couch.create( u'{}{}'.format(settings.BASEDB, options["codigo"]) )        
+            #db = couch[ options["codigo"]]
+
+            print "Tenant creado"
+            #return True 
+
+def existeDb(codigoBase, couch):
+    resultado = True
+    
+    #couch  = couchdb.Server(url=settings.COUCHDB_URL)
+
+    #Cuando se trata de un usuario "admxxx" es un admin y se le tre la
+    #base de datos de administracion, es solo el de BASEBD
+
+    base   =  u'{}{}'.format(settings.BASEDB, codigoBase)
+    
+    try:
+        db = couch[base]
+    except:
+        resultado = False
+        
+    return resultado
+
+        

@@ -1,0 +1,48 @@
+# -*- coding: utf-8 -*-
+from django.core.management.base import NoArgsCommand
+from django.conf                 import settings
+#from webbiodws.models            import *
+import json
+from django.conf                 import settings
+from datetime                    import datetime,timedelta
+import urllib2
+import logging
+import couchdb
+import requests
+import json
+from dateutil import parser
+import time
+from collections import deque
+import math
+#from ws.serviciosweb.conexion import conexion
+
+#Variables de configuracion:
+
+PAR_MINUTOSMINIMODETECCION = 0 #Número de minito mínimos antes de detectar que el vehículo está en ruta
+PAR_PUNTOSMINIMOSDETECCION = 2 #Número de puntos detectados en ruta.
+PAR_PORCENTAJEMINIMOPUNTOSDETECCION = 0.50 #Relación entre puntos detectados y puntos no detectados
+PAR_PUNTOSBUFFERREVISION   = 10 #Número de puntos que quedan en el buffer según la operacion
+PAR_DISTANCIADETECCIONCERCANIA     = 0.0001 #Distancia máxima en la cual se detecta que un punto está cerca de una ruta.
+PAR_DISTANCIADETECCIONINICIORUTA   = 0.004 #Distancia que debe recocorrer el vehiculo para detecta el inicio de ruta
+
+PAR_MINUTOSENTREINFRACCIONESVELOCIDAD   = 15 # Numero de minutos entre infraccion e infraccion
+
+class Command(NoArgsCommand):
+
+    def handle_noargs(self, **options):
+        
+        couch      = couchdb.Server(url=settings.COUCHDB_URL)
+        base       = settings.BASEDB
+        db         = couch[base]
+        dbsTenants = [] #Guarda una reerencia a todas las conexiones de los tenants
+
+        filas = db.view(
+            '_design/tenantPorTenant/_view/tenantPorTenant',
+            include_docs  = True
+        )
+
+        or fila in filas:
+            docTenant = fila.doc
+            dbTenant  = couch[u"{}{}".format(settings.BASEDB, docTenant.get("urlTenant",""))]
+
+            print u"Tenant {}".format(docTenant.get("urlTenant", ""))

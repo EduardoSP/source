@@ -1,0 +1,6 @@
+db.sqlite3
+*.pyc
+webbiodws/migrations/*
+*.sqlite3
+.DS_Store
+nohup.out

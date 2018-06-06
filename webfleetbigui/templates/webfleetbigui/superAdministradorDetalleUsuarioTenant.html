@@ -1,0 +1,343 @@
+{% extends "webfleetbigui/baseSuperAdministrador.html" %}
+{% load staticfiles %}
+{% block titulo %}Admin-Detalle Usuario{% endblock %}
+
+{% block codigoPrincipal %}
+<!-- Estilos -->
+<link href="{% static "sbadmin/css/plugins/dataTables.bootstrap.css" %}"  rel="stylesheet">
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "datetimepicker/css/bootstrap-datetimepicker.min.css" %}"           rel="stylesheet">
+<link href="{% static "bootstrapSwitch/css/bootstrap-switch.min.css" %}"           rel="stylesheet">
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<!-- <link href="{% static "validator/css/bootstrapValidator.min.css" %}" rel="stylesheet" type="text/css"> -->
+<link href="{% static "css/base.css" %}"  rel="stylesheet">
+
+<!-- Bibliotecas -->
+<script src="{% static "sbadmin/js/plugins/dataTables/jquery.dataTables.js"     %}"></script>
+<script src="{% static "sbadmin/js/plugins/dataTables/dataTables.bootstrap.js"  %}"></script>
+<script src="{% static "moment/moment-with-locales.js"      %}"></script>
+<script src="{% static "datetimepicker/js/bootstrap-datetimepicker.min.js"      %}"></script>
+<!-- <script src="{% static "archivo/bootstrap-filestyle.min.js" %}"></script> -->
+<script src="{% static "select/js/bootstrap-select.min.js" %}"></script>
+<script src="{% static "mustache/mustache.js"                                   %}"></script>
+<script src="{% static "validatorNuevo/validator.js" %}"></script>
+<!-- <script src="{% static "validator/js/language/es_ES.js" %}"></script> -->
+<script src="{% static "bootstrapSwitch/js/bootstrap-switch.min.js" %}"></script>
+
+{% verbatim %}{% endverbatim %}
+
+
+<script>
+var idEquipo;
+function traerDatosAdministrador(){
+	var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'   :"{{tenant}}",
+                                              
+                                            },
+                        'data'         : { 
+                        					'id': "{{idUsuario}}",
+                        					'idTenant': "{{idTenant}}",
+                        				 }
+                      };
+    bloquearTodo();
+    var request = $.ajax({
+		            type        : "POST",
+		            url         : "{% url 'wsDetalleUsuarioAdminTenant' %}",
+		            data        : {
+                        request :  JSON.stringify(peticion)
+                    },
+		            dataType    : "json"
+
+		        }).done(function(respuesta){
+                	if (respuesta.success){
+
+                        cargarDatosDetalleAdministrador(respuesta.data);
+                       }
+                       else{
+                       	notif({
+                            msg     : respuesta.mensaje,
+                            type    : "error",
+                            position: "center"
+                        });
+                       }
+                }).fail(function(jqXHR, textStatus){
+                    notif({
+                        msg     : "Falló la conexión",
+                        type    : "error",
+                        position: "center"
+                    });
+                }).always(function(){
+                	desbloquearTodo();
+                });
+}
+
+function cargarDatosDetalleAdministrador(data){
+	//DATOS GENERALES
+	$('#textoNombre')		.text(data.nombres);
+   
+	//idEquipo				= data.idEquipo;
+	
+	$('#formNombre')		.val(data.nombres);
+    $('#formLogin')			.val(data.loginUsuario);
+    $('#formIdentificacion').val(data.identificacion);
+    $('#formTelefono')		.val(data.telefono);
+    $('#formCorreo')		.val(data.correo);
+    
+    $('#formNombre')		.text(data.nombres);
+    $('#formLogin')			.text(data.loginUsuario);
+    $('#formIdentificacion').text(data.identificacion);
+    $('#formTelefono')		.text(data.telefono);
+    $('#formCorreo')		.text(data.correo);
+    
+    
+    $('input[name="my-checkbox"]').bootstrapSwitch('readonly', false);
+	if(data.activo){
+	    $('input[name="my-checkbox"]').bootstrapSwitch('state',true);
+	}else{
+	    $('input[name="my-checkbox"]').bootstrapSwitch('state',false);
+	}
+    
+    $('#nombreTennant')		.text(data.urlTenant); 
+  
+}
+
+
+function enviarAdministrador(){
+    var nombre	          			= $('#formNombre')			.val();
+    var loginusuario           		= $('#formLogin')			.val();
+    var contrasena           		= $('#formContrasena')		.val();
+    var identificacion           	= $('#formIdentificacion')	.val();
+    var correo           			= $('#formCorreo')			.val();
+    var telefono           			= $('#formTelefono')		.val();
+    var estadoCliente           	= $('input[name="my-checkbox"]').bootstrapSwitch('state');
+    
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'   : "{{tenant}}",
+                                                      
+                                         },
+                        'data'         : {  
+                        					'id'  		: "{{idUsuario}}",
+		                        			'idTenant'	: "{{idTenant}}",
+		                        		    'nombres'  		: nombre,
+											"correo" 		: correo,
+											"loginUsuario": loginusuario,
+											"activo"	: estadoCliente,
+											"identificacion": identificacion,
+											"telefono" 		: telefono,
+											"contrasena" 	: contrasena
+		                        		    
+		                        		 }
+                      };
+
+                 
+                      
+    bloquearTodo();
+    var request = $.ajax({
+	type        : "POST",
+	url         : "{% url 'wsEditarUsuarioAdminTenant' %}",
+	data        : {
+            request :  JSON.stringify(peticion)
+        },
+	dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+    		notif({
+                msg     : "El usuario se editó exitosamente",
+                type    : "success",
+                multiline: true,
+                position: "center"
+        	});
+        	var idTenant = "{{idTenant}}";
+        setTimeout(function() { window.location.href 	= "{% url 'superAdministradorDetalleTenant' tenant=tenant idTenant=idTenant %}";
+				  }, 
+		       3000);	
+        
+        }
+        else{
+        	var mensaje = "";
+        	if(respuesta.data.existeUsuario && respuesta.data.existeCorreo){
+        		mensaje = "El usuario y el correo ya existen"
+        	}
+        	else{
+	        	if(respuesta.data.existeUsuario){
+	        		mensaje = "El usuario ya existe"
+	        	}
+	        	if(respuesta.data.existeCorreo){
+	        		mensaje = "El correo ya existe"
+	        	} 
+
+        	}
+
+            notif({
+                msg     : mensaje,
+                type    : "error",
+                position: "center"
+            });
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        desbloquearTodo();
+    });
+}
+
+
+
+
+
+//Bloquea toda la interfaz para que no hagan nada.
+function bloquearTodo(){
+    $("input")		.prop('disabled', true);
+    //$("select")		.prop('disabled', true);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', true);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', true);
+}
+
+//desloquea toda la interfaz para que haga algo.
+function desbloquearTodo(){
+    $("input")      .prop('disabled', false);
+    $("select")     .prop('disabled', false);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', false);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', false);
+}
+
+
+// === Document ready!!! =======================================================
+$(document).ready(function() {
+  	traerDatosAdministrador();
+	//$('#nombreTennant')			.text(config.getTennant);
+	$('#formContrasena')				.hide();
+    $('#formConfirmarContrasena')		.hide();
+	
+	$(document).on('click', '#cambiarContrasena', function(){
+		$('#formContrasena')				.show();
+		$('#formConfirmarContrasena')		.show();
+    });
+	
+	$('#formularioCrearAdministrador').validator().on('submit', function (e) {
+	  if (e.isDefaultPrevented()) {
+		notif({
+                msg     : "Invalido campo",
+                type    : "error",
+                position: "center"
+            });
+	  } else {
+	    enviarAdministrador();
+	    e.preventDefault();
+	  }
+	});
+});
+// --- End document ready ------------------------------------------------------
+
+
+</script>
+{% endblock %}
+
+{% block contenido %}
+<body>
+	
+	<div id="page-wrapper" style="  margin: 3em; margin-top: 0;">
+	
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <h1 class="">Clientes<small > Detalle usuario <span id="textoNombre"></span> </small></h1>
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	    <!-- /.row -->
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <div class="panel panel-default">
+	                
+	                <!-- /.panel-heading -->
+
+	                <div class="panel-body">
+						<form data-toggle="validator" role="form" id="formularioCrearAdministrador">
+							<div class="row	 iconos">
+							    <div class="col-md-5 col-md-offset-7">
+							      <span id="checkEstado">
+									<input type="checkbox" id="my-checkbox" name="my-checkbox" checked data-on-text="Activo" data-off-text="Inactivo" data-size="mini" data-on-color="success" data-off-color="danger" />
+							
+									<script>
+									  $("[name='my-checkbox']").bootstrapSwitch();
+									</script>
+							      </span>
+							    </div>
+						    </div>
+							<div class="row">
+								<div class="col-md-4">
+									<div class="form-group">
+										<label>Nombres</label>
+										<input id="formNombre" name="formNombre" type="text" class="form-control formNombre" required data-error="Ingrese un nombre ej. Camilo"/>
+										<div class="help-block with-errors"></div>
+									</div>
+									<div class="form-group">
+										<label>Identificación</label>
+										<input id="formIdentificacion" name="formIdentificacion" type="text" class="form-control formIdentificacion" data-error="Ingrese una identificacion ej. 114325635"/>
+										<div class="help-block with-errors"></div>
+									</div>
+									<div class="form-group">
+										<label>Correo</label>
+										<input id="formCorreo" name="formCorreo" type="email" class="form-control formCorreo" required data-error="Ingrese un correo ej. camilo@gmail.com"/>
+										<div class="help-block with-errors"></div>
+									</div>
+									<div class="form-group">
+										<label>Teléfono</label>
+										<input id="formTelefono" name="formTelefono" type="text" class="form-control formTelefono"  data-error="Ingrese un teléfono ej. 3215642"/>
+										<div class="help-block with-errors"></div>
+									</div>
+								</div>
+								<div class="col-md-4 col-md-offset-1">
+									<div class="form-group">
+										<label>LoginUsuario</label>
+										<div class="row">
+											<!-- <div class="col-md-1" style="margin-top: 0.7em;">
+												<span id="nombreTennant"> </span>
+											</div> -->
+											<div class="col-md-11">
+												<input id="formLogin" name="formLogin" type="text" class="form-control formLogin" required data-error="Ingrese un login de usuario ej. Camilo"/>
+											</div>
+										</div>
+										<div class="help-block with-errors"></div>
+									</div>
+									<div class="form-group">
+									    <label >Contraseña </label> <button type="button" class="btn btn-link" style="color: #0086b6;"  id="cambiarContrasena">Cambiar contraseña</button>
+									    <div>
+									      <input style="margin-bottom: 0.5em;" type="password" id="formContrasena" class="form-control" placeholder="Contraseña" id="formContrasena" name="formContrasena">
+									    </div>
+									    <div>
+									      <input  type="password" id="formConfirmarContrasena" data-match="#formContrasena" data-match-error="Las contraseñas no coinciden." class="form-control" placeholder="Confirmar contraseña" name="formConfirmarContrasena">
+									      <div class="help-block with-errors"></div>
+									    </div>
+								  	</div>
+									
+								</div>
+							</div>
+				
+							
+							<button id="enviarAdministrador" type="submit" class="btn btn-raised btn-success  positionBoton enviarAdministrador">
+								Actualizar Usuario
+							</button>
+						</form>
+					</div>
+	                <!-- /.panel-body -->
+	            </div>
+	            <!-- /.panel -->
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	
+	</div>
+<!-- /#page-wrapper -->
+
+</body>
+
+
+{% endblock %}

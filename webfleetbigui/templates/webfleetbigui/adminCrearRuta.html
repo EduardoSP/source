@@ -1,0 +1,1721 @@
+{% extends baseTemplate %}
+{% load staticfiles %}
+{% block titulo %}Rutas{% endblock %}
+
+{% block codigoPrincipal %}
+<!-- Estilos -->
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "css/base.css" %}"  rel="stylesheet">
+<link href="{% static "DataTables/datatables.min.css" %}" rel="stylesheet" type="text/css"  />
+<link href="{% static "datetimepicker/css/bootstrap-datetimepicker.min.css" %}"           rel="stylesheet">
+<link href="{% static "mapsPicker/jquery-gmaps-latlon-picker.css" %}" rel="stylesheet" type="text/css" />
+<link href="{% static "bootstrap-player/css/bootstrap3_player.css" %}" rel="stylesheet" type="text/css" />
+
+<!-- Bibliotecas -->
+<script src="{% static "moment/moment-with-locales.js"      %}"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/noUiSlider/6.2.0/jquery.nouislider.min.js"></script>
+<script src="{% static "DataTables/datatables.min.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapsPicker/jquery-gmaps-latlon-picker.js" %}" ></script>
+<!--<script src="{% static "socketio/socket.io.js" %}"></script>-->
+<script src="{% static "datetimepicker/js/bootstrap-datetimepicker.min.js"      %}"></script>
+<script src="{% static "validatorNuevo/validator.js" %}"></script>
+<script src="{% static "bootstrap-player/js/bootstrap3_player.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mustache/mustache.min.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapaPuntosControl/mapaPuntosControl.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapaLimitesVelocidad/mapaLimitesVelocidad.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapaPuntosInteres/mapaPuntosInteres.js" %}"   type="text/javascript" ></script>
+
+<style>
+
+</style>
+
+{% verbatim %}
+
+<script id="templateOrigenDestino" type="x-tmpl-mustache">
+<tr><td>
+	<img class="filaImagen" src="{{imagen}}"/>
+	<span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong>
+	</span><br/>
+	<span class="filaDireccion">{{direccion}}</span><br/>
+	<span class="filaPosicion small">{{posicion}}</span>
+</td></tr>
+</script>
+
+<script id="templateParadas" type="x-tmpl-mustache">
+<tr><td>
+  <img class="filaImagen" src="{{imagen}}"/>
+  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+	<span class="filaDireccion">{{direccion}}</span><br/>
+	<span class="filaPosicion small">{{posicion}}</span>
+   <div style="text-align:right;"><input type="hidden" class="id"  value="{{id}}"/><a class="eliminarParada" href="#" ><i class="fa fa-times-circle-o"></i> Eliminar</a> </div>
+
+</td></tr>
+</script>
+
+<script id="templatePuntosControl" type="x-tmpl-mustache">
+<tr><td>
+  <img class="filaImagen" src="{{imagen}}"/>
+  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+  <span class="filaDireccion">{{direccion}}</span><br/>
+  <span class="filaPosicion small">{{posicion}}</span>
+   <div style="text-align:right;"><input type="hidden" class="id"  value="{{id}}"/><a class="eliminarPuntoControl" href="#" ><i class="fa fa-times-circle-o"></i> Eliminar</a> </div>
+
+</td></tr>
+</script>
+
+<script id="templateLimiteVelocidadInicial" type="x-tmpl-mustache">
+<tr><td>
+  <img class="filaImagen" src="{{imagen}}"/>
+  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+  <span class="filaDireccion">{{direccion}}</span><br/>
+  <span class="filaPosicion small">{{posicion}}</span>
+</td></tr>
+<tr>
+    <td class="row">
+      <div class="col-md-6 form-group">
+        <label for="exampleInputEmail1">Vel.Cargado</label>
+         <input id="formPuntosVelocidadCarga0" name="formPuntosVelocidadCarga0" value="{{valorCargaInicial}}" required type="text" size="3" class= "form-control formPuntosVelocidad" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;"/>
+        </div>
+        <div class="col-md-6 form-group">
+        <label for="exampleInputEmail1">Vel. Descargado</label>
+        <input id="formPuntosVelocidadDescarga0" name="formPuntosVelocidadDescarga0" value="{{valorDescargaInicial}}" required type="text" size="3" class="form-control formPuntosVelocidadDescarga" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;"/>
+      </div>
+    </td> 
+</tr> 
+</td></tr>
+</script>
+
+<script id="templateLimiteVelocidad" type="x-tmpl-mustache">
+<tr><td>
+  <img class="filaImagen" src="{{imagen}}"/>
+  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+  <span class="filaDireccion">{{direccion}}</span><br/>
+  <span class="filaPosicion small">{{posicion}}</span>
+</td></tr>
+
+<tr>
+    <td class="row">
+      <div class="col-md-6 form-group">
+        <label for="exampleInputEmail1">Vel.Cargado</label>
+         <input id="formPuntosVelocidadCarga{{id}}" name="formPuntosVelocidadCarga{{id}}" value="{{valorCarga}}" required type="text" size="3" class= "form-control formPuntosVelocidad" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;"/>
+        </div>
+        <div class="col-md-6 form-group">
+        <label for="exampleInputEmail1">Vel. Descargado</label>
+        <input id="formPuntosVelocidadDescarga{{id}}" name="formPuntosVelocidadDescarga{{id}}" value="{{valorDescarga}}" required type="text" size="3" class="form-control formPuntosVelocidadDescarga" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;"/>
+      </div>
+    </td> 
+</tr> 
+<br/>
+<tr><td>
+
+   <div style="text-align:right;"><input type="hidden" class="id"  value="{{id}}"/><a class="eliminarLimiteVelocidad" href="#" ><i class="fa fa-times-circle-o"></i> Eliminar</a> </div>
+
+</td></tr>
+</script>
+
+<script id="templateLimiteVelocidadFinal" type="x-tmpl-mustache">
+<tr><td>
+  <img class="filaImagen" src="{{imagen}}"/>
+  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+  <span class="filaDireccion">{{direccion}}</span><br/>
+  <span class="filaPosicion small">{{posicion}}</span>
+</td></tr>
+</script>
+
+
+
+<script id="templatePuntosInteres" type="x-tmpl-mustache">
+
+<tr><td>
+  <img class="filaImagen" src="{{imagen}}"/>
+  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+ </td></tr>
+
+<tr>
+    <td class="row">
+      <div class="col-md-12 form-group">
+        <label for="exampleInputEmail1">Nombre Punto Interes</label>
+              <input id="formNombreInteres{{id}}" name="formNombreInteres{{id}}" value="{{nombre}}" required type="text" class="form-control formNombreInteres" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;">
+        </div>
+    </td> 
+</tr> 
+
+<tr><td>
+
+  <span class="filaDireccion">{{direccion}}</span><br/>
+  <span class="filaPosicion small">{{posicion}}</span>
+   <div style="text-align:right;"><input type="hidden" class="id"  value="{{id}}"/><a class="eliminarPuntoInteres" href="#" ><i class="fa fa-times-circle-o"></i> Eliminar</a> </div>
+
+</td></tr>
+</script>
+
+{% endverbatim %}
+
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Draggable directions</title>
+    <style>
+      #right-panel, #right-panel2, #right-panel3, #right-panel4 {
+        font-family: 'Roboto','sans-serif';
+        line-height: 30px;
+        padding-left: 10px;
+      }
+
+      #right-panel select, #right-panel input, #right-panel2 select, #right-panel2 input, #right-panel3 select, #right-panel3 input, #right-panel4 select, #right-panel4 input{
+        font-size: 15px;
+      }
+
+      #right-panel select, #right-panel2 select, #right-panel3 select, #right-panel4 select   {
+        width: 100%;
+      }
+
+      #right-panel i, #right-panel2 i, #right-panel3 i, #right-panel4 i  {
+        font-size: 12px;
+      }
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map, #map2, #map3, #map4 {
+        height: 100%;
+        float: left;
+        width: 63%;
+        height: 100%;
+      }
+      #right-panel, #right-panel2, #right-panel3, #right-panel4 {
+        float: right;
+        width: 34%;
+        height: 100%;
+      }
+      .panel {
+        height: 100%;
+        overflow: auto;
+      }
+    </style>
+  </head>	
+<script>
+var directionsService;
+var directionsDisplay;
+var bandera= false;
+var puntoIntermedio = []; //lista que se guarda la informacion de las paradas que se enviaran ws
+var map;
+var map2;//map ruta punto control
+var map3;//map limites de velocidad
+var map4;//map puntos interes
+var polyline = null;
+var modoNormal = true;
+var display;
+var puntoInicioCreado 	= false;
+var puntoFinCreado		= false;
+var primeraParada		= true;
+var infowindow 			= null;
+var activoPuntoFin 		= false;
+
+var templateParadas = $('#templateParadas').html();
+Mustache.parse(templateParadas); 
+
+var templatePuntosControl = $('#templatePuntosControl').html();
+Mustache.parse(templatePuntosControl);
+
+var templateLimiteVelocidad = $('#templateLimiteVelocidad').html();
+Mustache.parse(templateLimiteVelocidad); 
+
+var templatePuntosInteres = $('#templatePuntosInteres').html();
+Mustache.parse(templatePuntosInteres); 
+
+var templateOrigenDestino = $('#templateOrigenDestino').html();
+Mustache.parse(templateOrigenDestino); 
+
+var templateLimiteVelocidadInicial = $('#templateLimiteVelocidadInicial').html();
+Mustache.parse(templateLimiteVelocidadInicial); 
+
+var templateLimiteVelocidadFinal = $('#templateLimiteVelocidadFinal').html();
+Mustache.parse(templateLimiteVelocidadFinal); 
+
+function initMap() {
+	$('#contenedorMapa').show();
+    polyline = new google.maps.Polyline({
+      path: [],
+      strokeColor: '#FFFF00',
+      strokeWeight: 3
+ 	 });
+  map = new google.maps.Map(document.getElementById('map'), {
+    zoom: 4,
+    center: {lat:  4.265594 , lng: -74.387341}  // Colombia 
+  });
+
+  directionsService = new google.maps.DirectionsService;
+  directionsDisplay = new google.maps.DirectionsRenderer({
+    draggable: true,
+    map: map,
+    suppressMarkers : false,
+    preserveViewport : true
+  });
+
+
+  directionsDisplay.addListener('directions_changed', function() {
+  	if(!modoNormal){
+    	pintarPosIniFinal(directionsDisplay.getDirections());
+
+    }else{
+    //Borra iconos ini fin
+	borraIconosPosIniFinal(null);
+	}
+    //Funcion que borra las paradas que no estan dentro de la ruta
+    borrarParadasFueraRuta();
+    var result = directionsDisplay.getDirections();
+    var myRoute = result.routes[0].legs[0];
+    origen = myRoute.start_location;
+    //Iconos Punto Inicial y punt final
+    destino = myRoute.end_location;
+    //===========================================================
+  	buscarDireccionPunto("puntoOrigen", origen.lat(), origen.lng());
+  	
+    if(activoPuntoFin){
+	  	buscarDireccionPunto("puntoDestino", destino.lat(), destino.lng());
+
+
+  	}
+    //===========================================================
+
+
+  });
+
+  google.maps.event.addListener(map, "rightclick", function(event) {
+	    if(!modoNormal){/*
+          	puntoIntermedio.push({location: {lat: lat, lng: lng}});*/
+          	//Inicio Establece si el punto es de carga o descarga
+          		verificarTipoParada(event);
+         	//Fin Establece si el punto es de carga o descarga
+          	//convierte la linea de color azul
+          	modoNormal = true;
+          	directionsDisplay.setMap(map);
+          	polyline.setMap(null);
+          	//Borra iconos ini fin
+          	borraIconosPosIniFinal(null);
+			
+	    }else{
+	    	
+		    	if(!puntoInicioCreado || !puntoFinCreado){
+					if(infowindow != null){
+						infowindow.close();
+					}
+				    var latitud = parseFloat(event.latLng.lat().toFixed(4));
+				    var longitud = parseFloat(event.latLng.lng().toFixed(4));
+				    if(!puntoFinCreado && puntoInicioCreado){
+				    	destino = {lat: latitud, lng: longitud};
+				    	var contentString = '<a href='+'javascript:puntoFin();'+'>Crear punto Fin aquí</a>';
+				    	//puntoFinCreado = true;
+				    			
+				    }
+				    if(!puntoInicioCreado){
+				    	origen  = {lat: latitud, lng: longitud};
+				    	destino = {lat: latitud, lng: longitud};
+				    	var contentString = '<a href='+'javascript:puntoInicio();'+'>Crear punto Inicio aquí</a>';
+				    }
+				    
+				    infowindow = new google.maps.InfoWindow({
+					content: contentString
+				    });	   
+				    var a = new google.maps.MVCObject();
+				    a.setValues({position: event.latLng });
+				    infowindow.open(map,a);
+
+				}else{
+		          //Borra iconos ini fin
+		          borraIconosPosIniFinal(null);
+				}
+
+		}
+		
+	});
+
+}
+
+function pDistance(x, y, x1, y1, x2, y2) {
+//latitudParada, longitudParada, latitud punto inicio, lng punto inicio, lat punto inicio, lng punto fin
+//https://stackoverflow.com/a/6853926
+//evalua el punto mas cercano en una ruta. Retorna la distancia y el punto en X y en Y(Latitud, longitud)
+  var informacion = [];
+  var A = x - x1;
+  var B = y - y1;
+  var C = x2 - x1;
+  var D = y2 - y1;
+  var dot = A * C + B * D;
+  var len_sq = C * C + D * D;
+  var param = -1;
+  if (len_sq != 0) //in case of 0 length line
+      param = dot / len_sq;
+
+  var xx, yy;
+
+  if (param < 0) {
+    xx = x1;
+    yy = y1;
+  }
+  else if (param > 1) {
+    xx = x2;
+    yy = y2;
+  }
+  else {
+    xx = x1 + param * C;
+    yy = y1 + param * D;
+  }
+
+  var dx = x - xx;
+  var dy = y - yy;
+  distancia = Math.sqrt(dx * dx + dy * dy);
+  puntoX 	= xx;
+  puntoY	= yy;
+  informacion.push(distancia);
+  informacion.push(puntoX);
+  informacion.push(puntoY);
+  return informacion;	
+}
+
+
+function evaluarPosicionParada(latitudParada, longitudParada){
+	var segmentoUnificado=[];
+	var distancia 	= 99999999;
+	var x 			= 0;
+	var y 			= 0;
+	var informacion = null;
+	var legs 	= directionsDisplay.getDirections().routes[0].legs;
+	//ciclo para obtener los puntos de la ruta
+    for (i=0;i<legs.length;i++) {
+        var steps = legs[i].steps;
+        for (j=0;j<steps.length;j++) {
+          var nextSegment = steps[j].path;
+          for (k=0;k< nextSegment.length-1;k++) {
+          	//segmentoUnificado.push(nextSegment[k]);
+      			latPrimera = nextSegment[k].lat();
+      			lngPrimera = nextSegment[k].lng();
+      			latSegundo = nextSegment[k+1].lat();
+      			lngSegundo = nextSegment[k+1].lng();
+      			informacion = pDistance(latitudParada, longitudParada, latPrimera, lngPrimera, latSegundo, lngSegundo);
+        			if(informacion[0]< distancia){
+        				distancia 	= informacion[0];
+        				x 			= informacion[1];
+        				y 			= informacion[2];
+        			}
+
+          }
+        }
+    }
+
+	return [distancia, x, y];
+
+}
+
+function puntoCarga(lat, lng){
+	var posicion = null;
+	posicion = evaluarPosicionParada(lat, lng);
+	//listaTipoParadas.push("Carga");
+  //puntoIntermedio.push({location: {lat: posicion[1], lng: posicion[2], tipoCarga: "Carga"}});
+	infowindow.close();
+/*	makeMarkerPuntosIntermedios({lat: posicion[1], lng: posicion[2]}, "{% static 'images/cargaPin.png' %}", "Carga");*/
+	buscarDireccionPunto("puntoCarga", posicion[1], posicion[2]);
+
+}
+
+function puntoDescarga(lat, lng){
+  var posicion = null;
+  posicion = evaluarPosicionParada(lat, lng);
+	//listaTipoParadas.push("Descarga");
+  //puntoIntermedio.push({location: {lat: posicion[1], lng: posicion[2], tipoCarga: "Descarga"}});
+	infowindow.close();
+/*	makeMarkerPuntosIntermedios({lat: posicion[1], lng: posicion[2]}, "{% static 'images/descargaPin.png' %}", "Descarga")*/
+	buscarDireccionPunto("puntoDescarga", posicion[1], posicion[2]);
+
+}
+
+var listaTipoParadas 		= [];
+function verificarTipoParada(event){
+    var lat = event.latLng.lat();
+    var lng = event.latLng.lng();
+	//funcion que verifica la parada si es de carga o descarga
+	if(infowindow != null){
+		infowindow.close();
+	}
+	var contentString = '<a href='+'javascript:puntoCarga('+lat+','+lng+');'+'>Carga</a></br><a href='+'javascript:puntoDescarga('+lat+','+lng+');'+'>Descarga</a>';
+    infowindow = new google.maps.InfoWindow({
+	content: contentString
+    });	   
+    var a = new google.maps.MVCObject();
+    a.setValues({position: event.latLng });
+    infowindow.open(map,a);
+
+}
+
+var origen;
+var destino;
+function displayRoute(origin, destination, service, display, puntoIntermedio) {
+  service.route({
+    origin: origin,
+    destination: destination,
+    //puntos intermedios
+    waypoints: puntoIntermedio,
+    travelMode: 'DRIVING',
+    //evita peajes
+    avoidTolls: false
+  }, function(response, status) {
+    if (status === 'OK') {
+          display.setDirections(response);
+         }else {
+          	puntoInicioCreado 	= false;
+			puntoFinCreado		= false;         	
+    		notif({
+                msg     : "Por favor crear de nuevo los puntos",
+                type    : "warning",
+                multiline: true,
+                position: "center"
+        	});
+
+        		setTimeout(function() { 
+        			location.reload(); 
+				  }, 
+		       1000);
+
+        }
+    });
+}
+
+var markersIniFin = [];
+function makeMarker( position, icon, title ) {
+ var marker = new google.maps.Marker({
+  position: position,
+  map: map,
+  icon: icon,
+  title: title
+ });
+ markersIniFin.push(marker);
+}
+
+
+var markerPuntosIntermedios = [];
+function makeMarkerPuntosIntermedios( position, icon, title, idMarkerIntermedio ) {		
+ var marker = new google.maps.Marker({
+  position : position,
+  map      : map,
+  icon     : icon,
+  title    : title,
+  type     : "Parada",
+  id       : idMarkerIntermedio
+ });
+markerPuntosIntermedios.push(marker);
+
+}
+
+
+// Sets the map on all markers in the array.
+function borraIconosPosIniFinal(map) {
+  for (var i = 0; i < markersIniFin.length; i++) {
+    markersIniFin[i].setMap(map);
+  }
+}
+
+function pintarPosIniFinal(result){
+    borraIconosPosIniFinal(null); 
+    var myRoute = result.routes[0].legs[0];
+    origen = myRoute.start_location;
+    //Iconos Punto Inicial y punt final
+    destino = myRoute.end_location;
+    makeMarker( origen, "{% static 'images/origenPin.png' %}", "Origen" );
+    makeMarker( destino, "{% static 'images/destinoPin.png' %}", 'Destino' );	      
+}
+
+function puntoInicio(){
+	puntoInicioCreado = true;
+	infowindow.close();
+	//pinta lado derecho punto inicial
+	buscarDireccionPunto("puntoOrigen", origen.lat, origen.lng);
+
+	displayRoute(origen, destino, 
+		directionsService,
+		directionsDisplay, puntoIntermedio);
+}
+
+
+function puntoFin(){
+	activoPuntoFin = true;
+	puntoFinCreado = true;
+	infowindow.close();
+	buscarDireccionPunto("puntoDestino", destino.lat, destino.lng);
+	//pinta lado derecho punto inicial
+	
+	displayRoute(origen, destino, 
+		directionsService,
+		directionsDisplay, puntoIntermedio);
+	$('#activarParadas').attr("disabled", false);
+}
+
+
+//funciones que pintan los puntos en el panel derecho
+function pintarPanelOrigen(latitud, longitud, direccion){
+	$("#right-panel-tableOrigenDestino").empty();
+	var filaRenderizadaOrigen = Mustache.render(templateOrigenDestino, 
+		{
+			imagen    : "{% static 'images/origenCirculo.png' %}",
+			titulo    : "Punto Origen",
+			direccion : direccion,
+			posicion  : "["+latitud+", "+longitud+"]",
+		    lat       : latitud,
+		    lng       : longitud
+		}
+	);
+	$("#right-panel-tableOrigenDestino").append(filaRenderizadaOrigen);
+
+	if(activoPuntoFin){
+		// si el usuario a definido el punto final
+	  	var filaRenderizadaDestino = Mustache.render(templateOrigenDestino, 
+	  		{
+	  			imagen   : "{% static 'images/destinoCirculo.png' %}",
+	  			titulo    : "Punto Destino",
+	  			direccion : direccionDestino,
+	  			posicion  : "("+destino.lat()+", "+destino.lng()+")",
+          lat       : destino.lat(),
+          lng       : destino.lng()
+	  		}
+	  		);
+		$("#right-panel-tableOrigenDestino").append(filaRenderizadaDestino);
+	}
+
+}
+
+function pintarPanelDestino(latitud, longitud, direccion){
+	$("#right-panel-tableOrigenDestino").empty();
+	//punto origen
+	var filaRenderizadaOrigen = Mustache.render(templateOrigenDestino, 
+		{
+			imagen    : "{% static 'images/origenCirculo.png' %}",
+			titulo    : "Punto Origen",
+			direccion : direccionOrigen,
+			posicion  : "("+origen.lat()+", "+origen.lng()+")",
+      		lat       : origen.lat(),
+      		lng       : origen.lng()
+		}
+	);
+	$("#right-panel-tableOrigenDestino").append(filaRenderizadaOrigen);
+	//punto Destino
+  	var filaRenderizadaDestino = Mustache.render(templateOrigenDestino, 
+  		{
+  			imagen   : "{% static 'images/destinoCirculo.png' %}",
+  			titulo    : "Punto Destino",
+  			direccion : direccion,
+  			posicion  : "("+latitud+", "+longitud+")",
+        	lat       : latitud,
+        	lng       : longitud
+  		}
+  		);
+	$("#right-panel-tableOrigenDestino").append(filaRenderizadaDestino);
+}
+
+function pintarPanelCarga(latitud, longitud, direccion, idCarga){
+	var filaRenderizada = Mustache.render(templateParadas, 
+		{
+      id        : idCarga,
+			imagen    : "{% static 'images/cargaCirculo.png' %}",
+			titulo    : "Parada de Carga",
+			direccion : direccion,
+			posicion  : "("+latitud+", "+longitud+")",
+      lat       : latitud,
+      lng       : longitud
+		}
+		);
+	$("#right-panel-table").append(filaRenderizada);
+}
+
+function pintarPanelDescarga(latitud, longitud, direccion, idCarga){
+  	var filaRenderizada = Mustache.render(templateParadas, 
+  		{
+        id        : idCarga,
+  			imagen    : "{% static 'images/descargaCirculo.png' %}",
+  			titulo    : "Parada de Descarga",
+  			direccion : direccion,
+  			posicion  : "("+latitud+", "+longitud+")",
+        lat       : latitud,
+        lng       : longitud
+  		}
+  		);
+  	$("#right-panel-table").append(filaRenderizada);
+
+}
+
+//--------------------------------------------------------------------------------------
+//Inicio web services
+//se utilizan cuando se actualiza una direccion para actualizar la otra direccion
+//ej:actualizo direccion origen entonces se utiliza la variable direccionDestino
+var direccionOrigen;
+var direccionDestino;
+function buscarDireccionPunto(tipoPunto, latitud, longitud){
+	//funcion que pinta las direcciones
+	// tipoPunto es: puntoOrigen, puntoDestino, puntoCarga, puntoDescarga, puntoControl
+	latitud  = latitud.toString();
+	longitud = longitud.toString();
+	var lat1 = latitud.split(".")[0];
+    var lat2 = latitud.split(".")[1];
+    var lng1 = longitud.split(".")[0];
+    var lng2 = longitud.split(".")[1];
+	nuevaLatitud  	= lat1+"."+lat2.substring(0,3);
+	nuevaLongitud 	= lng1+"."+lng2.substring(0,3);
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                            
+                                         },
+                        'data'         : {  
+		                        			'latitud'  	: nuevaLatitud,
+		                        			'longitud'  : nuevaLongitud
+		                        		 }
+	
+                      };
+    //bloquearTodo();
+    var request = $.ajax({
+	type        : "POST",
+	url         : "{% url 'wsBuscarDireccion' %}",
+	data        : {
+            request :  JSON.stringify(peticion)
+        },
+	dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+        	direccion = respuesta.direccion;
+        	if(tipoPunto == "puntoOrigen"){
+        		direccionOrigen = direccion;
+        		pintarPanelOrigen(latitud, longitud, direccion);
+        	}
+        	if(tipoPunto == "puntoDestino"){
+        		direccionDestino = direccion;
+        		pintarPanelDestino(latitud, longitud, direccion);
+        	}
+        	if(tipoPunto == "puntoCarga"){
+        		//pintarPanelCarga(latitud, longitud, direccion);	
+            AsignarDireccionPuntoCarga(latitud, longitud, direccion, "Carga");
+        	}
+        	if(tipoPunto == "puntoDescarga"){
+        		//pintarPanelDescarga(latitud, longitud, direccion);
+            AsignarDireccionPuntoCarga(latitud, longitud, direccion, "Descarga");
+        	}
+          if(tipoPunto == "puntoControl"){
+            AsignarDireccionPuntoControl(latitud, longitud, direccion);
+          }
+          if(tipoPunto == "puntoLimiteVelocidad"){
+            AsignarDireccionLimiteVelocidad(latitud, longitud, direccion);
+          }
+          if(tipoPunto == "puntoInteres"){
+            AsignarDireccionPuntoInteres(latitud, longitud, direccion);
+          }
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        //desbloquearTodo();
+    });
+}
+
+
+function ordenarPuntosParadasLinea(){
+  var listaPuntoParadasOrdenadosTemp = [];
+  //agrega el punto al final de la lista
+  var legs  = directionsDisplay.getDirections().routes[0].legs;
+  //ciclo para obtener los puntos de la ruta
+    for (i=0;i<legs.length;i++) {
+        var steps = legs[i].steps;
+        for (j=0;j<steps.length;j++) {
+          var nextSegment = steps[j].path;
+          for (k=0;k< nextSegment.length-1;k++) {
+            //--------punto inicial y final de los segmentos de la linea
+            latPrimera = nextSegment[k].lat();
+            lngPrimera = nextSegment[k].lng();
+            latSegundo = nextSegment[k+1].lat();
+            lngSegundo = nextSegment[k+1].lng();
+
+            var listaPuntosParadaEnLineaEncontrados = [];
+            for (var i = 0; i < puntoIntermedio.length; i++) {
+
+              //punto esta en el segemento
+              if(puntoIntermedio[i] != null){
+                var estaEnLinea = evaluarPuntoEnLinea(puntoIntermedio[i].location.lat, puntoIntermedio[i].location.lng, latPrimera, lngPrimera, latSegundo, lngSegundo);
+                if(estaEnLinea){
+                  listaPuntosParadaEnLineaEncontrados.push(puntoIntermedio[i]);
+                  puntoIntermedio.splice(i, 1);
+                  i--;
+                }
+
+              }
+              
+            }  
+
+            if(listaPuntosParadaEnLineaEncontrados.length == 1){
+              listaPuntoParadasOrdenadosTemp.push(listaPuntosParadaEnLineaEncontrados[0]);
+
+            }else if (listaPuntosParadaEnLineaEncontrados.length > 1){
+               listaPuntosParadaEnLineaEncontrados = bubbleSort(listaPuntosParadaEnLineaEncontrados, latPrimera, lngPrimera);
+               
+               for (var i = 0; i < listaPuntosParadaEnLineaEncontrados.length; i++) {
+                     listaPuntoParadasOrdenadosTemp.push(listaPuntosParadaEnLineaEncontrados[i]);
+               }
+
+            }
+
+
+          }
+
+        }
+
+    }
+    puntoIntermedio = listaPuntoParadasOrdenadosTemp;
+
+}
+
+function pintarPanelListaOrdenadaParadas(){
+  //borrar panel
+  $("#right-panel-table").empty();
+  for (var i = 0; i < puntoIntermedio.length; i++) {
+    posicion = evaluarPosicionParada(puntoIntermedio[i].location.lat, puntoIntermedio[i].location.lng);
+    var numParada = i+1;
+    if(puntoIntermedio[i].location.tipoCarga == "Carga"){
+        //marker parada Carga, y panel
+        makeMarkerPuntosIntermedios({lat: posicion[1], lng: posicion[2]}, "{% static 'images/cargaPin.png' %}", "Punto Carga "+numParada,i);
+        pintarPanelPuntoCarga(puntoIntermedio[i].location.lat, puntoIntermedio[i].location.lng, puntoIntermedio[i].location.direccion, i);
+    }else{
+        //marker parada Descarga, y panel
+        makeMarkerPuntosIntermedios({lat: posicion[1], lng: posicion[2]}, "{% static 'images/descargaPin.png' %}", "Punto descarga "+numParada,i);
+        pintarPanelPuntoDescarga(puntoIntermedio[i].location.lat, puntoIntermedio[i].location.lng, puntoIntermedio[i].location.direccion, i);
+    }
+
+  }
+}
+
+
+
+function AsignarDireccionPuntoCarga(latitud, longitud, direcc, tipoCarga){
+  if(tipoCarga == "Carga"){
+    puntoIntermedio.push({location: {lat: latitud, lng: longitud, tipoCarga: "Carga"}});
+  }else{
+    puntoIntermedio.push({location: {lat: latitud, lng: longitud, tipoCarga: "Descarga"}});
+  }
+  ordenarPuntosParadasLinea();
+  pintarPanelListaOrdenadaParadas();
+}
+
+var idPuntosRutaDefinida; // variable global que obtiene el id de la ruta para que sea guardado con los pasos siguientes
+var idRuta;
+function enviarRuta(){
+	var puntosRuta    = [];
+	var puntosParadas = [];
+	var legs = directionsDisplay.getDirections().routes[0].legs;
+	//ciclo para obtener los puntos de la ruta
+    for (i=0;i<legs.length;i++) {
+        var steps = legs[i].steps;
+        for (j=0;j<steps.length;j++) {
+          var nextSegment = steps[j].path;
+          for (k=0;k<nextSegment.length;k++) {
+            puntosRuta.push([nextSegment[k].lat() ,nextSegment[k].lng()]);
+          }
+        }
+    }
+    //puntos posicion inicio posicion fin
+    var legs = directionsDisplay.getDirections().routes[0].legs[0]
+    var latOrigen  = legs.start_location.lat();
+    var lngOrigen  = legs.start_location.lng();
+    var latDestino = legs.end_location.lat();
+    var lngDestino = legs.end_location.lng();
+    //puntos obtener puntos paradas
+    for(var i = 0; i < puntoIntermedio.length; i++){
+    	//[[puntoIntermedio[i].location.lat, puntoIntermedio[i].location.lng, "Carga"],[puntoIntermedio[i].location.lat, puntoIntermedio[i].location.lng, "Descarga"]]
+    	if(puntoIntermedio[i] != null){
+    		puntosParadas.push([puntoIntermedio[i].location.lat, puntoIntermedio[i].location.lng ,puntoIntermedio[i].location.tipoCarga]);		
+    	}
+    	
+    }
+
+    // julian ***********************************************************************
+    var direcciones    = directionsDisplay.getDirections();
+    var waypointsmaps  = []; 
+    var waypoints_result;
+
+    try {
+      waypoints_result = direcciones.request.waypoints;
+    }
+    catch(err) {
+      waypoints_result = "";
+    }
+
+    for (i = 0; i < waypoints_result.length; i++) {
+      lat = waypoints_result[i].location.lat();
+      lng = waypoints_result[i].location.lng();
+      waypointsmaps.push ([lat,lng]);
+    }
+    // julian ***********************************************************************
+
+    var nombreRuta = $('#formNombreRuta').val();
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                            
+                                         },
+                        'data'         : {  
+		                        			 'nombreRuta'      : nombreRuta,
+		                        			 'origen'          : [latOrigen, lngOrigen],
+		                        			 'destino'		     : [latDestino, lngDestino],
+		                        			 'direccionOrigen' : direccionOrigen,
+		                        			 'direccionDestino': direccionDestino,
+
+                                   'waypointsmaps'    : waypointsmaps,
+											             'puntosRuta'  	    : puntosRuta,
+											             'puntosParadas'	  : puntosParadas
+		                        		 }
+	
+                      };
+    //bloquearTodo();
+    var request = $.ajax({
+	type        : "POST",
+	url         : "{% url 'wsCrearRuta' %}",
+	data        : {
+            request :  JSON.stringify(peticion)
+        },
+	dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+        	$('#formularioCrearRuta').modal('hide');
+	        notif({
+	            msg     : "Ruta creada",
+	            type    : "success",
+	            position: "center"
+	        });
+          idPuntosRutaDefinida   = respuesta.idDocPuntosDefinicionRuta; // Se le asigna el id de la ruta definida
+          idRuta                 = respuesta.idDocRuta;
+          map2 = new google.maps.Map(document.getElementById('map2'), {
+            zoom: 4,
+            center: {lat:  4.265594 , lng: -74.387341}  // Colombia 
+          });
+          //mapaPuntosControl/mapaPuntosControl.js
+          pintarRutaPuntoControl();
+          //Muestra el segundo tab
+          $('.nav-tabs a[href="#2"]').tab('show');
+          $(".tabPuntosControl").show();
+          $(".contenidoTab2").show();
+          $('#contenedorMapa2').show();
+
+          google.maps.event.trigger(map2, 'resize');
+
+          map2.setZoom(map.getZoom());
+          map2.setCenter(map.getCenter());
+          //agrega el listaner click derecho map2
+          agregarListanerDerechoMap2();
+
+          
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        //desbloquearTodo();
+    });
+}
+
+function enviarPuntosControl(){
+    var listaEnviarPuntosControl = [];
+    for (var i = 0; i < listaPuntosControl.length; i++) {
+      listaEnviarPuntosControl.push([listaPuntosControl[i].location.lat, listaPuntosControl[i].location.lng ,listaPuntosControl[i].location.direccion]);
+    }
+
+    var nombreRuta = $('#formNombreRuta').val();
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                            
+                                         },
+                        'data'         : {  
+                                  'idRuta'            : idRuta,
+                                  'idPuntosRuta'      : idPuntosRutaDefinida,
+                                  'puntosControl'     : listaEnviarPuntosControl
+                                 }
+  
+                      };
+    //bloquearTodo();
+    var request = $.ajax({
+  type        : "POST",
+  url         : "{% url 'wsCrearPuntosControl' %}",
+  data        : {
+            request :  JSON.stringify(peticion)
+        },
+  dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+          $('#formularioCrearRuta').modal('hide');
+          notif({
+              msg     : "Puntos de control creada",
+              type    : "success",
+              position: "center"
+          });
+          limitesVelocidad();
+          
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        //desbloquearTodo();
+    });
+}
+
+function enviarPuntosVelocidad(){
+    var listaEnviarPuntosVelocidad = [];
+
+    primerLimiteInicial.location.velocidadCarga     = $('#formPuntosVelocidadCarga'     + 0 +'').val();
+    primerLimiteInicial.location.velocidadDescarga  = $('#formPuntosVelocidadDescarga'  + 0 +'').val();
+
+    listaEnviarPuntosVelocidad.push([ 
+              primerLimiteInicial.location.lat, 
+              primerLimiteInicial.location.lng,
+              primerLimiteInicial.location.direccion, 
+              primerLimiteInicial.location.velocidadCarga, 
+              primerLimiteInicial.location.velocidadDescarga 
+              ]);
+
+    for (var i = 0; i < listaPuntosLimiteVelocidad.length; i++) {
+      listaEnviarPuntosVelocidad.push([
+                listaPuntosLimiteVelocidad[i].location.lat, 
+                listaPuntosLimiteVelocidad[i].location.lng ,
+                listaPuntosLimiteVelocidad[i].location.direccion, 
+                listaPuntosLimiteVelocidad[i].location.velocidadCarga,  
+                listaPuntosLimiteVelocidad[i].location.velocidadDescarga
+                ]);
+    }
+
+    var nombreRuta = $('#formNombreRuta').val();
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                            
+                                         },
+                        'data'         : {  
+                                  'idRuta'              : idRuta,
+                                  'idPuntosRuta'        : idPuntosRutaDefinida,
+                                  'puntosVelocidad'     : listaEnviarPuntosVelocidad
+                                 }
+                      };
+    //bloquearTodo();
+    var request = $.ajax({
+  type        : "POST",
+  url         : "{% url 'wsCrearPuntosVelocidad' %}",
+  data        : {
+            request :  JSON.stringify(peticion)
+        },
+  dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+          $('#formularioCrearRuta').modal('hide');
+          notif({
+              msg     : "Puntos de velocidad creada",
+              type    : "success",
+              position: "center"
+          });
+          puntosInteres();
+          
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        //desbloquearTodo();
+    });
+}
+
+function enviarPuntosInteres(){
+    var listaEnviarPuntosInteres = [];
+    for (var i = 0; i < listaPuntosInteres.length; i++) {
+      listaEnviarPuntosInteres.push([listaPuntosInteres[i].location.lat, listaPuntosInteres[i].location.lng ,listaPuntosInteres[i].location.direccion, listaPuntosInteres[i].location.nombre]);
+    }
+
+    var nombreRuta = $('#formNombreRuta').val();
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                            
+                                         },
+                        'data'         : {  
+                                  'idRuta'              : idRuta,
+                                  'idPuntosRuta'        : idPuntosRutaDefinida,
+                                  'puntosInteres'       : listaEnviarPuntosInteres
+                                 }
+  
+                      };
+    //bloquearTodo();
+    var request = $.ajax({
+  type        : "POST",
+  url         : "{% url 'wsCrearPuntosInteres' %}",
+  data        : {
+            request :  JSON.stringify(peticion)
+        },
+  dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+          $('#formularioCrearRuta').modal('hide');
+          notif({
+              msg     : "Puntos de interes creado",
+              type    : "success",
+              position: "center"
+          });
+        setTimeout(function() { window.location.href  = "{% url 'adminRutas' tenant=tenant %}"; 
+          }, 
+           2000);
+          
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        //desbloquearTodo();
+    });
+}
+
+
+//--------------------------------------------------------------------------------
+
+function pintarPanelPuntoCarga(latitud, longitud, direccion, id){
+    var numParada = id+1;
+  	var filaRenderizada = Mustache.render(templateParadas, 
+  		{
+  			imagen    : "{% static 'images/cargaCirculo.png' %}",
+  			titulo    : "Parada "+numParada,
+  			direccion : direccion,
+  			posicion  : "("+latitud+", "+longitud+")",
+        lat       : latitud,
+        lng       : longitud,
+        id        : id
+  		}
+  		);
+  	$("#right-panel-table").append(filaRenderizada);
+
+}
+
+function pintarPanelPuntoDescarga(latitud, longitud, direccion, id){
+    numParada = id+1;
+  	var filaRenderizada = Mustache.render(templateParadas, 
+  		{
+  			imagen    : "{% static 'images/descargaCirculo.png' %}",
+  			titulo    : "Parada "+numParada,
+  			direccion : direccion,
+  			posicion  : "("+latitud+", "+longitud+")",
+        lat       : latitud,
+        lng       : longitud,
+        id        : id
+  		}
+  		);
+  	$("#right-panel-table").append(filaRenderizada);	
+
+
+}
+
+function pintarPanelParadas(puntoIntermedio, listaTipoParadas){
+	$("#right-panel-table").empty();	
+	//puntos obtener puntos paradas
+    for(var i = 0; i < puntoIntermedio.length; i++){
+    	//[[puntoIntermedio[i].location.lat, puntoIntermedio[i].location.lng, "Carga"],[puntoIntermedio[i].location.lat, puntoIntermedio[i].location.lng, "Descarga"]]
+    	if(puntoIntermedio[i] != null && listaTipoParadas[i]!= null ){
+    		if(listaTipoParadas[i] == "Carga"){
+    			//pinta el punto de carga panel
+    			pintarPanelPuntoCarga(puntoIntermedio[i]);
+    		}else{
+    			//pinta el punto de descarga panel
+    			pintarPanelPuntoDescarga(puntoIntermedio[i]);
+
+    		}		
+    	}
+    	
+    }
+}
+
+function enfocarPosicion(latitud, longitud){
+  //origen.lat, origen.lng
+	//funcion para enfocar una pocision en el mapa
+	//map.setCenter(origen.lat, origen.lng);
+  map.setCenter({lat: latitud, lng: longitud});
+  map.setZoom(14);
+  if(map2!=null){
+    //enfoca mapa 2
+    map2.setCenter({lat: latitud, lng: longitud});
+    map2.setZoom(14); 
+  }
+  if(map3!=null){
+    //enfoca mapa 3
+    map3.setCenter({lat: latitud, lng: longitud});
+    map3.setZoom(14); 
+  }
+  if(map4!=null){
+    //enfoca mapa 4
+    map4.setCenter({lat: latitud, lng: longitud});
+    map4.setZoom(14); 
+  }
+
+
+}
+
+
+function borrarParadasFueraRuta(){
+  //funcion que borra las paradas que estan fuera de la ruta
+    borrarMarkersMapaParadas();
+    ordenarPuntosParadasLinea();
+    pintarPanelListaOrdenadaParadas();
+
+}
+
+function borrarMarkersMapaParadas(){
+  for (var i = 0; i < markerPuntosIntermedios.length; i++) {
+    markerPuntosIntermedios[i].setMap(null);
+  }
+}
+
+
+//funcion limites de velocidad pestana 3
+function limitesVelocidad(){
+          map3 = new google.maps.Map(document.getElementById('map3'), {
+            zoom: 4,
+            center: {lat:  4.265594 , lng: -74.387341}  // Colombia 
+          });
+          //mapaLimitesVelocidad/mapaLimitesVelocidad.js
+          //pintarRutaLimitesVelocidad();
+          //Muestra el tercer tab
+          $('.nav-tabs a[href="#3"]').tab('show');
+          $(".tabLimitesVelocidad").show();
+          $(".contenidoTab3").show();
+          $('#contenedorMapa3').show();
+
+          google.maps.event.trigger(map3, 'resize');
+
+          map3.setZoom(map.getZoom());
+          map3.setCenter(map.getCenter());
+          //agrega el listaner click derecho map2
+            agregarListanerDerechoMap3();
+}
+
+//funcion puntos de interes pestana 4
+function puntosInteres(){
+          //editando
+          map4 = new google.maps.Map(document.getElementById('map4'), {
+            zoom: 4,
+            center: {lat:  4.265594 , lng: -74.387341}  // Colombia 
+          });
+          //mapaPuntosInteres/mapaPuntosInteres.js
+           pintarRutaPuntosInteres();
+          //Muestra el tab 4
+          $('.nav-tabs a[href="#4"]').tab('show');
+          $(".tabPuntosInteres").show();
+          $(".contenidoTab4").show();
+          $('#contenedorMapa4').show();
+
+          google.maps.event.trigger(map4, 'resize');
+
+          map4.setZoom(map.getZoom());
+          map4.setCenter(map.getCenter());
+          //agrega el listaner click derecho map2
+            agregarListanerDerechoMap4();
+}
+
+
+
+// === Document ready!!! =======================================================
+var oprimidoBotonSiguiente = 0; //variable que almacena los clic dados por el usuario
+var socket = null;
+var pestana1 = true; // pestana definicion rutas con paradas
+var pestana2 = false; // pestana puntos de control
+var pestana3 = false; // pestana limites de velocidad
+var pestana4 = false; // pestana puntos de interes
+$(document).ready(function() {
+
+  
+
+  //$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+  $('#tabPestana1').on('shown.bs.tab', function (e) {
+      //Mapa inicial crear ruta
+      // actualiza el mapa cada vez que se cambia la pestana 
+
+      if(map2 != null){
+          // enfoca el mapa 1 segun el enfoque del mapa 2
+          map.setZoom(map2.getZoom());
+          map.setCenter(map2.getCenter());
+      }
+      if(pestana3 && map3 != null){
+        //enfoca el map 1 segun el enfoque del map 3
+          map.setZoom(map3.getZoom());
+          map.setCenter(map3.getCenter());
+      }
+      if(pestana4 && map4 != null){
+        //enfoca el map 1 segun el enfoque del map 4
+          map.setZoom(map4.getZoom());
+          map.setCenter(map4.getCenter());
+      }
+
+      pestana1 = true; //pestana ruta oprimida
+      pestana2 = false;
+      pestana3 = false;
+      pestana4 = false;
+      
+  });
+
+$('#tabPestana2').on('shown.bs.tab', function (e) {
+      //Puntos de control
+      // actualiza el mapa cada vez que se cambia la pestana 
+      if(pestana1 && map!=null){
+          //google.maps.event.trigger(map, 'resize');
+          map2.setZoom(map.getZoom());
+          map2.setCenter(map.getCenter());
+
+      }
+      if(pestana3 && map3!=null){
+        //enfoca el map 2 segun el enfoque del map 3
+          map2.setZoom(map3.getZoom());
+          map2.setCenter(map3.getCenter());
+      }
+      if(pestana4 && map4!=null){
+        //enfoca el map 2 segun el enfoque del map 4
+          map2.setZoom(map4.getZoom());
+          map2.setCenter(map4.getCenter());
+      }
+      //mapaPuntosControl/mapaPuntosControl.js
+      pintarRutaPuntoControl();
+      pestana1 = false; 
+      pestana2 = true; // pestana punto control oprimida 
+      pestana3 = false;
+      pestana4 = false;
+      
+  });
+
+$('#tabPestana3').on('shown.bs.tab', function (e) {
+      //Limites de velocidad
+      // actualiza el mapa cada vez que se cambia la pestana 
+      if(pestana1 && map!=null){
+          //google.maps.event.trigger(map, 'resize');
+          map3.setZoom(map.getZoom());
+          map3.setCenter(map.getCenter());
+
+      }
+      if(pestana2 && map2!=null){
+          map3.setZoom(map2.getZoom());
+          map3.setCenter(map2.getCenter());
+      }
+
+      if(pestana4 && map4!=null){
+          map3.setZoom(map4.getZoom());
+          map3.setCenter(map4.getCenter());
+      }
+      //mapaLimitesVelocidad/mapaLimitesVelocidad.js
+      pintarRutaLimitesVelocidad();
+      pestana1 = false; 
+      pestana2 = false;  
+      pestana3 = true; //pestana punto control oprimida
+      pestana4 = false;
+      
+  });
+
+
+$('#tabPestana4').on('shown.bs.tab', function (e) {
+      //Puntos de interes
+      // actualiza el mapa cada vez que se cambia la pestana 
+      if(pestana1 && map!=null){
+          //google.maps.event.trigger(map, 'resize');
+          map4.setZoom(map.getZoom());
+          map4.setCenter(map.getCenter());
+
+      }
+      if(pestana2 && map2!=null){
+          map4.setZoom(map2.getZoom());
+          map4.setCenter(map2.getCenter());
+      }
+
+      if(pestana3 && map3!=null){
+          map4.setZoom(map3.getZoom());
+          map4.setCenter(map3.getCenter());
+      }
+
+      //mapaPuntosInteres/mapaPuntosInteres.js"
+      pintarRutaPuntosInteres();
+      pestana1 = false; 
+      pestana2 = false;  
+      pestana3 = false;   
+      pestana4 = true; //pestana puntos de interes
+
+      $('#formInteres').validator().on('submit', function (e) {
+        if (e.isDefaultPrevented()) {
+        notif({
+                    msg     : "Invalido campo interes",
+                    type    : "error",
+                    position: "center"
+                });
+        } else {
+          e.preventDefault();
+        }
+      });
+      
+  });
+
+	$('#activarParadas').attr("disabled", true);
+	$(document).on('click', '#activarParadas', function(){
+	    modoNormal= false;
+	    pintarPosIniFinal(directionsDisplay.getDirections());
+	    directionsDisplay.setMap(null);
+	    if(polyline != null){
+	      polyline.setMap(null);
+	    } 
+
+	    polyline = new google.maps.Polyline({
+	      path: [],
+	      strokeColor: '#FF0000',
+	      strokeWeight: 3
+	    });
+
+	    var bounds = new google.maps.LatLngBounds();
+	    var legs = directionsDisplay.getDirections().routes[0].legs;
+	    for (i=0;i<legs.length;i++) {
+	        var steps = legs[i].steps;
+	        for (j=0;j<steps.length;j++) {
+	          var nextSegment = steps[j].path;
+	          for (k=0;k<nextSegment.length;k++) {
+	            polyline.getPath().push(nextSegment[k]);
+	            bounds.extend(nextSegment[k]);
+	          }
+	        }
+	    }
+	    polyline.setMap(map);
+	    //map.fitBounds(bounds);  
+	    google.maps.event.addListener(polyline, "rightclick", function(event) {
+	      var lat = event.latLng.lat();
+	      var lng = event.latLng.lng();
+	      puntoIntermedio.push({location: {lat: lat, lng: lng}});
+	      verificarTipoParada(event);       
+	      //convierte la linea de color azul
+	      modoNormal = true;
+	      directionsDisplay.setMap(map);
+	      polyline.setMap(null);
+	      borraIconosPosIniFinal(null);
+	                
+	    });
+
+	});
+
+    $(document).on('click', '#crearRuta', function(){
+    	//$('#formularioCrearRuta').modal('show');
+    	var nombreRuta = $('#formNombreRuta').val();
+    	if(nombreRuta.length == 0 || /^\s+$/.test(nombreRuta)){
+			notif({
+	                msg     : "Por favor ingrese el nombre de la ruta",
+	                type    : "warning",
+	                position: "center"
+	            });    		
+    	}else{
+    		if(puntoInicioCreado != false && puntoFinCreado != false){
+          oprimidoBotonSiguiente +=1;
+          if(oprimidoBotonSiguiente == 1){
+            //envia al mapa definicion puntos de control
+    			   enviarRuta();
+          }
+          if(oprimidoBotonSiguiente == 2){
+            //envia al mapa definicion limites de velocidad
+            //limitesVelocidad();
+            enviarPuntosControl();
+          }
+          if(oprimidoBotonSiguiente == 3){
+            //envia al mapa definicion de puntos de interes
+            //envia los puntos de velocidad
+            //limites de velocidad
+            for (var i = 0; i < listaPuntosLimiteVelocidad.length; i++) {
+              var index                     = i +1;
+              var idTextoCarga              = $('#formPuntosVelocidadCarga'+index+'').val();
+              var idTextoDescarga           = $('#formPuntosVelocidadDescarga'+index+'').val();
+              listaPuntosLimiteVelocidad[i] = {
+                      location: {
+                                lat: listaPuntosLimiteVelocidad[i].location.lat, 
+                                lng: listaPuntosLimiteVelocidad[i].location.lng, 
+                                direccion : listaPuntosLimiteVelocidad[i].location.direccion, 
+                                velocidadCarga : idTextoCarga, 
+                                velocidadDescarga : idTextoDescarga
+                              }};
+            }
+
+            enviarPuntosVelocidad(); 
+            //puntosInteres();
+          }
+          if(oprimidoBotonSiguiente == 4){
+          //$('#formInteres').trigger('submit');
+/*          $('#formInteres').validator('validate').has('.has-error').length;
+          $('#formInteres').validator('update');*/
+
+            //puntos de interes
+            for (var i = 0; i < listaPuntosInteres.length; i++) {
+              var idTexto = $('#formNombreInteres'+i+'').val();
+              listaPuntosInteres[i] = {location: {lat: listaPuntosInteres[i].location.lat, lng: listaPuntosInteres[i].location.lng, direccion : listaPuntosInteres[i].location.direccion, nombre : idTexto}}
+            }
+            enviarPuntosInteres();
+
+          }
+
+    		}else{    			
+				notif({
+		                msg     : "Por favor definir el punto de inicio o de fin",
+		                type    : "warning",
+		                position: "center"
+		            });
+    		}
+    	}
+    	
+  
+    });
+
+
+//================Inicio funciones Puntos de control=======================================
+
+    $(document).on('click', '.eliminarPuntoControl', function(e){
+      e.preventDefault();
+      var idPunto   = $(this).parent().find('.id').val();
+      listaPuntosControl.splice(idPunto, 1); // elimina un punto de control en la lista
+       borrarMarkersMapa();
+       pintarPanelListaOrdenada();
+    });
+
+
+//=============Inicio funciones Puntos de paradas=======================================
+    $(document).on('click', '.eliminarParada', function(e){
+      e.preventDefault();
+      var idPunto   = $(this).parent().find('.id').val();
+      puntoIntermedio.splice(idPunto, 1); // elimina un punto de control en la lista
+      borrarMarkersMapaParadas();
+      pintarPanelListaOrdenadaParadas();
+    });
+
+//============Inicio funciones Puntos de limites velocidad=================================
+    $(document).on('click', '.eliminarLimiteVelocidad', function(e){
+      e.preventDefault();
+      var idPunto   = $(this).parent().find('.id').val()-1;
+      //antes de borrar se obtiene los nombres de los datos de los puntos de interes para mantenerlos en el formulario
+      for (var i = 0; i < listaPuntosLimiteVelocidad.length; i++) {
+        var index = i + 1;
+        var valorCarga = $('#formPuntosVelocidadCarga'+index+'').val();
+        var valorDescarga = $('#formPuntosVelocidadDescarga'+index+'').val();
+        listaPuntosLimiteVelocidad[i].location.velocidadCarga = valorCarga;
+        listaPuntosLimiteVelocidad[i].location.velocidadDescarga = valorDescarga;
+
+      }
+
+      listaPuntosLimiteVelocidad.splice(idPunto, 1); // elimina un punto de control en la lista
+      borrarMarkersMapaLimitesVelocidad();
+      ordenarPuntosLineaLimitesVelocidad();
+      pintarPanelListaOrdenadaLimitesVelocidad(true);
+      pintarPanelRangosVelocidad();
+    });
+
+
+//============Inicio funciones Puntos de interes=================================
+    $(document).on('click', '.eliminarPuntoInteres', function(e){
+      e.preventDefault();
+      var cantidadInicialPuntoInteres = listaPuntosInteres.length - 1;
+      var idPunto   = $(this).parent().find('.id').val();
+       
+      //antes de borrar se obtiene los nombres de los datos de los puntos de interes para mantenerlos en el formulario
+      for (var i = 0; i < listaPuntosInteres.length; i++) {
+        var valorTexto = $('#formNombreInteres'+i+'').val();
+        listaPuntosInteres[i].location.nombre = valorTexto;
+
+      }
+      listaPuntosInteres.splice(idPunto, 1);
+
+      borrarMarkersPuntosInteres();
+      pintarPanelListaOrdenadaPuntosInteres(true);
+    });
+    
+
+
+});
+
+// --- End document ready ------------------------------------------------------
+
+</script>
+{% endblock %}
+
+{% block contenido %}<body>
+	
+<div id="page-wrapper" style="  margin: 3em; margin-top: 0;">
+	     <div class="row">
+ 	         <div class="col-lg-12">
+	            <h1 class="">Ruta</h1>
+	         </div>
+        </div>
+          
+  <div class="row">
+	    <div class="col-lg-12">
+       <!-- /.col-lg-12 -->
+        	<div class="panel panel-default">
+      	     <div class="panel-body">
+                  <div class="row" style="margin-top: 1em;">
+                        <div class="col-md-2" style="padding-top: 1.4em;">                
+                            <label style="float: left;">Nombre de la ruta:</label>
+                        </div>               
+                        <div class="col-md-3" style="margin-left: 0; padding-left: 0;"> 
+                                <input id="formNombreRuta" name="formNombreRuta" required="" type="text" class="form-control formNombreRuta" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;">
+                                <div class="help-block with-errors"></div>
+                        </div>                     
+                        <div class="col-md-7">
+                              <button id="crearRuta" type="button" class="btn btn-raised btn-success positionBoton ">
+                                          Siguiente
+                                          <div class="ripple-container"></div>
+                                          <i class="fa fa-arrow-right" aria-hidden="true"></i>
+                              </button>
+                        </div>             
+                  </div> 
+                  <!-- Inicio tab creacion de rutas -->
+      						<div class="tabbable pestana" id="tabs">
+      						  	<ul class="nav nav-tabs">
+      							    <li class="active ">
+      							    <a id="tabPestana1" href="#1" data-toggle="tab">Ruta</a></li>
+									<li class="tabPuntosControl" style="display: none;"><a id="tabPestana2" href="#2" data-toggle="tab">Puntos de control</a></li>
+									<li class="tabLimitesVelocidad" style="display: none;"><a id="tabPestana3" href="#3" data-toggle="tab">Límites de velocidad</a></li>
+									<li class="tabPuntosInteres" style="display: none;"><a id="tabPestana4" href="#4" data-toggle="tab">Puntos de interes</a></li>
+									
+									<div style="">
+									  <label style="color:#000000; padding-bottom:0; padding-top:0.5em; margin-left:1em;"> 
+										¡Ingresa los puntos de control que quieras añadir a esta ruta!
+									  </label>
+									</div>
+
+      							  </ul>
+                        <div class="tab-content">
+            						   	<div class="tab-pane active" id="1" >
+            						   		<div id="contenedorMapa" style="display:none">
+
+                  								<div id="map" style="width:66%; height:50em;"></div>
+              									    <div id="right-panel">
+                									    	<div style="    float: left;">
+                									    		<button id="activarParadas" type="button" class="btn btn-raised btn-success positionBoton ">
+                															Agregar Parada
+                														</button>
+                									    	</div>
+                									      
+                									      <table id="right-panel-tableOrigenDestino" class="table">
+                										    </table>
+                										    <hr>
+                									      <table id="right-panel-table" class="table">
+                										   </table>
+              									   </div>     
+            								  </div>
+                            </div> 
+                            <!-- Inicio tab creacion de puntos de control -->
+                            <div class="tab-pane active" id="2" id="contenidoTab2">
+                                <div id="contenedorMapa2" style="display:none">
+                                    <div id="map2" style="width:66%; height:50em;"></div>
+                                      <div id="right-panel2" >
+                                                                                    
+                                          <table id="right-panel2-tableOrigenDestino2" class="table">
+                                          </table>
+                                          <hr>
+                                          <table id="right-panel2-table2" class="table">
+                                         </table>
+                                     </div>     
+                                </div>
+
+                            </div> 
+                            <!-- Inicio tab creacion de limites de velocidad -->
+                            <div class="tab-pane active" id="3" id="contenidoTab3">
+                                <div id="contenedorMapa3" style="display:none">
+
+                                    <div id="map3" style="width:66%; height:50em;"></div>
+                                      <div id="right-panel3" >
+                                                                                    
+                                          <table id="right-panel3-tableOrigenDestino3" class="table">
+                                          </table>
+                                          
+                                          <table id="right-panel3-table3" class="table">
+                                         </table>
+                                     </div>     
+                                </div>
+                            </div> 
+                            <!-- Inicio tab creacion puntos interes-->
+                            <div class="tab-pane active" id="4" id="contenidoTab4">
+                                <div id="contenedorMapa4" style="display:none">
+
+                                    <div id="map4" style="width:66%; height:50em;"></div>
+                                      <div id="right-panel4" >
+                                                                                    
+                                          <table id="right-panel4-tableOrigenDestino4" class="table">
+                                          </table>
+                                          <hr>
+                                          <form data-toggle="validator" role="form" id="formInteres">
+                                          <table id="right-panel4-table4" class="table">
+                                         </table>
+                                         </form>
+                                     </div>     
+                                </div>
+                            </div>
+      						      </div>
+      						</div>  
+    					</div>
+                <!-- /.panel-body -->
+          </div>
+        	<!-- /.panel -->
+  	   </div>
+  	 <!-- /.col-lg-12 -->
+  </div>
+</div>
+<!-- /#page-wrapper -->
+
+<script async defer
+     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDOqPrm-nuqELi0b_kPt7nP0vHFdUunOHc&signed_in=true&callback=initMap"></script>
+
+<div class="modal fade" id="formularioCrearRuta" > 
+  <div class="modal-dialog">
+    	<div class="modal-content">
+	     	 	<div class="modal-header">
+			        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			        <h3 class="modal-title">Crear ruta</h3>
+	      		</div>
+  				<div class="modal-body">
+					<form data-toggle="validator" role="form" id="formularioCrearRuta">
+						<div class="row">
+							<div class="col-md-10">
+								<div class="form-group">
+									<label>Nombre de la ruta</label>
+									<input id="formNombreRuta" name="formNombreRuta" required type="text" class="form-control formNombreRuta" required data-error="Ingrese el nombre de la ruta"/>
+									<div class="help-block with-errors"></div>
+								</div>															
+							</div>
+							
+						</div>
+						<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+						<button id="crearRuta" type="submit" class="btn btn-raised btn-success positionBoton">
+							Guardar Ruta
+						</button>
+						</div>
+					</form>
+  				</div>
+    	</div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+</body>
+
+{% endblock %}

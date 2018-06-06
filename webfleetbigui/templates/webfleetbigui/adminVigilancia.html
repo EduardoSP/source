@@ -1,0 +1,1061 @@
+{% extends baseTemplate %}
+<!-- {#% extends "webfleetbigui/baseAdminTenant.html" %#} -->
+{% load staticfiles %}
+{% block titulo %}Vigilancia{% endblock %}
+
+{% block codigoPrincipal %}
+<!-- Estilos -->
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "css/base.css" %}"  rel="stylesheet">
+<link href="{% static "DataTables/datatables.min.css" %}" rel="stylesheet" type="text/css"  />
+<link href="{% static "datetimepicker/css/bootstrap-datetimepicker.min.css" %}"           rel="stylesheet">
+<link href="{% static "mapsPicker/jquery-gmaps-latlon-picker.css" %}" rel="stylesheet" type="text/css" />
+
+<!-- Bibliotecas -->
+<script src="{% static "moment/moment-with-locales.js"      %}"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/noUiSlider/6.2.0/jquery.nouislider.min.js"></script>
+<script src="{% static "DataTables/datatables.min.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapsPicker/jquery-gmaps-latlon-picker.js" %}" ></script>
+<script src="{% static "mapsPicker/jquery-gmaps-latlon-picker.js" %}" ></script>
+<!--<script src="{% static "socketio/socket.io.js" %}"></script>-->
+<script src="{% static "datetimepicker/js/bootstrap-datetimepicker.min.js"      %}"></script>
+<script src="{% static "validatorNuevo/validator.js" %}"></script>
+
+
+<script>
+
+//============ Inicio Monitoreo Zonas ===============================
+var estaMapaCargado   = false;
+var estaMapaCalorCargado   = false;
+var tenant = "{{tenant}}";
+
+function initMap(){
+
+    estaMapaCargado = true;
+    estaMapaCalorCargado = true;
+
+}
+
+var copiaMap1 = null;
+function cargarDatosMapa(tracking, map, beachMarkerOrigen, mapElement){
+    if(estaMapaCargado){
+
+    var posLat = 0;
+
+    var posLon = 0;
+
+    var posLatOrigen = 0;
+
+    var posLonOrigen = 0;
+
+    if (map == null){
+
+    map = new google.maps.Map(document.getElementById(mapElement), {
+        });
+    copiaMap1 = map;
+    }
+
+ 	google.maps.event.trigger(map,'resize');
+
+ 	var LatLngList = [];
+
+ 	for (i in tracking) { 	
+        posLatOrigen = parseFloat(tracking[i].latitud);
+		posLonOrigen = parseFloat(tracking[i].longitud);
+		var cityCircle = new google.maps.Circle({
+		  strokeColor: '#FF0000',
+		  strokeOpacity: 0.8,
+		  strokeWeight: 2,
+		  fillColor: '#ef9a9a',
+		  fillOpacity: 0.35,
+		  map: map,
+		  center: {lat: posLatOrigen, lng: posLonOrigen},
+		  radius: (parseFloat(tracking[i].radio))
+		});
+		map.setZoom(8);
+		LatLngList.push(new google.maps.LatLng (posLatOrigen,posLonOrigen))
+
+	    }
+
+	}
+
+	
+    var latlngbounds = new google.maps.LatLngBounds();
+
+	LatLngList.forEach(function(latLng){
+	   latlngbounds.extend(latLng);
+	});
+
+	map.setCenter(latlngbounds.getCenter());
+	map.fitBounds(latlngbounds); 
+	var infowindow = null;
+//Inicio evento click derecho	 
+	google.maps.event.addListener(map, 'rightclick', function(event) {
+		if(infowindow != null){
+			infowindow.close();
+		}
+	    var latitud = event.latLng.lat().toFixed(4);
+	    var longitud = event.latLng.lng().toFixed(4);
+	    //var url = guibase+"/"+config.getTennant()+"/adminVigilanciaCrearZona/"+latitud+"/"+longitud;
+	    var url = guibase+"/{{tenant}}/adminVigilanciaCrearZona/"+latitud+"/"+longitud;
+	    var contentString = '<a href='+url+'>Crear zona aquí</a>';
+	    infowindow = new google.maps.InfoWindow({
+		content: contentString
+	    });	   
+	    var a = new google.maps.MVCObject();
+	    a.setValues({position: event.latLng });
+	    infowindow.open(map,a);	
+	});
+//Fin evento click derecho
+}
+
+function cargarPosicionZona(){
+	var map = null; 
+	var beachMarkerOrigen = null; 
+	var mapElement = 'map1';
+	// funcion para listar la posición de las zonas monitoreadas
+	var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                                
+                                            },
+                        'data'         : {                     					
+                        				 }
+                      };
+                      
+	
+	// valida si la peticion es de un generador de carga
+    if(config.getEsGeneradorCarga()){
+		//si la peticion es de un generador de carga entonces a la autenticación se le agrega el codigo de acceso
+    	peticion["autenticacion"]["codigoAcceso"] = config.getCodigoAcceso();
+    }
+	
+	
+    var request = $.ajax({
+            type: "POST",
+            url		: "{% url 'wsmonitoreoZonas' %}",
+            data	: {
+                        request: JSON.stringify(peticion)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+            //return (respuesta["data"]);
+           // var tracking = new Array();
+            tracking = respuesta["data"];
+            cargarDatosMapa(tracking, map, beachMarkerOrigen, mapElement);
+
+        }else{ }
+    });
+    request.fail(function(jqXHR, textStatus){ });
+
+}
+
+
+function pintarTablaMonitoreoZona(data){
+	var dataSet = data;
+
+	if ( ! $.fn.DataTable.isDataTable( '#graficoTabla1' ) ) {
+	    $('#graficoTabla1').DataTable({
+	        responsive: true,
+	        data: dataSet,
+	        fixedHeader:true,
+	       
+	        "pageLength"	:100,
+	        "aaSorting": [],
+	        language: traduccionDatatables,
+	        columns: [
+
+
+	            {  title: "Nombre",
+	               data : null
+	            },
+
+	            {  title: "Posicion",
+	               data : null
+	            },	        
+	            {  title: "Radio",
+	               data : null   },
+
+	            {  title: "Tipo vigilancia",
+	               data : null
+	            },
+
+	            {  title: "Acción",
+	               data : null
+	            },
+	            
+	        ],
+	        "columnDefs": [
+	        	{ responsivePriority: 1, targets: 0 },
+	        	{ responsivePriority: 2, targets: 1 },
+	           
+	      	    {
+	      	        "targets": [0],
+			"render": function (data, type, full, meta){
+			    var nombre = "";
+			    if( data.nombre != "" ){
+				nombre = data.nombre;
+			    }
+			    //return '<a href="'+guibase+'/'+config.getTennant()+'/adminDetalleZona/'+data.id+'" >'+ nombre +'</a>';
+			    return '<a href="'+guibase+'/{{tenant}}/adminDetalleZona/'+data.id+'" >'+ nombre +'</a>';
+	                }
+		    	},
+		    	{
+	      	        "targets": [1],
+					"render": function (data, type, full, meta){
+					    var latitud = "";
+					    var longitud = "";
+					    if( data.latitud != "" && data.longitud != "" ){
+							latitud = data.latitud;
+							longitud = data.longitud;
+			    		}
+						return '<a href="#verPosicion" class="verPosicion" ><img src="{% static "images/pinUbicacion.png" %} " class="imagenPin" >'+latitud + "," + longitud+'</a>'+'<input class="verPosicionData" type="hidden" value="'+JSON.stringify(data).replace(/"/g, '&quot;')+'" />';
+	                }
+		    	},
+
+	      	    {
+	      	        "targets": [2],
+					"render": function (data, type, full, meta){
+					    var radio = "";
+					    if( data.radio != "" ){
+							radio = data.radio;
+			    		}
+	                    return radio+" mts";
+	                }
+		    	},
+		    	{
+	      	        "targets": [3],
+					"render": function (data, type, full, meta){
+					    if(data.registrarAudio == true && data.registrarImagen == true){
+					    	return "Audio e imagen";
+							
+			    		}
+	               		else if(data.registrarAudio == true && data.registrarImagen == false){
+	               			return "Solo audio";
+	               		}
+	               		else if(data.registrarAudio == false && data.registrarImagen == true){
+	               			return "Solo imagen";
+	               		}
+	               		else{
+	               			return "No hay audio ni imagen";
+	               		}
+	               		i
+	                }
+		    	},
+
+	            {
+	                "targets": [4],
+	                "render": function (data, type, full, meta){
+	              		return '<div style="text-align:center;"><input type="hidden" class="idZona"  value="'+data.id+'"/><a class="eliminarZona" href="#" ><i class="fa fa-times-circle-o"></i>  Eliminar</a> </div>';
+	        	}
+	      	    },
+
+	        ]
+	    });
+	 }   
+	 else{
+		$('#graficoTabla1').DataTable().clear().rows.add(dataSet).draw();
+		
+	}
+}
+
+function cargarTablaMonitoreoZona(){
+   	
+	var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                                
+                                            },
+                        'data'         : {                     					
+                        				 }
+                      };
+	
+	// valida si la peticion es de un generador de carga
+    if(config.getEsGeneradorCarga()){
+		//si la peticion es de un generador de carga entonces a la autenticación se le agrega el codigo de acceso
+    	peticion["autenticacion"]["codigoAcceso"] = config.getCodigoAcceso();
+    }
+	
+
+    var request = $.ajax({
+            type: "POST",
+            url		: "{% url 'wsmonitoreoZonas' %}",
+            data	: {
+                        request: JSON.stringify(peticion)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+            pintarTablaMonitoreoZona(respuesta["data"]);
+        }else{ }
+    });
+    request.fail(function(jqXHR, textStatus){ });
+};
+
+function getZoom(radio, valorZoom){
+	var valorPintarZoom = 0;
+	if(radio >= 1 && radio < 100){
+		valorPintarZoom = 21.0303 - (0.030303 * radio);
+	}else if(radio >= 100 && radio < 1000){
+		valorPintarZoom = 18.3333 - (0.00333333 * radio); 
+	}else if(radio >= 1000 && radio < 10000){
+		valorPintarZoom = 15.3333 - (0.000333333 * radio); 
+	}else if(radio >= 10000 && radio < 100000){
+		valorPintarZoom = 12.4444 - (0.0000444444 * radio); 
+	}else if(radio >= 100000 && radio <= 1000000){
+		valorPintarZoom = 8.33333 - ((3.33333 * Math.pow(10, -6)) *radio); 
+	} 
+	return valorPintarZoom;
+}
+
+
+function pintarCirculo(latitud, longitud, radio){
+	if(cityCircle == null){
+
+		cityCircle = new google.maps.Circle({
+		  strokeColor: '#03A9F4',
+		  strokeOpacity: 0.8,
+		  strokeWeight: 2,
+		  fillColor: '#4FC3F7',
+		  fillOpacity: 0.35,
+		  map: copiaMap1
+		});
+	}
+	cityCircle.setCenter({lat: latitud, lng: longitud});
+	cityCircle.setRadius(radio);
+	copiaMap1.setCenter({lat: latitud, lng: longitud});
+	copiaMap1.setZoom(Math.round(getZoom(radio)));
+}
+
+
+function enviarEliminarZona(id){
+	var idZona = id;
+	var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                            },
+                        'data'         : {  
+                        					'id' : idZona,
+                        				 }
+                      };
+	
+    var request = $.ajax({
+            type: "POST",
+            url		: "{% url 'wseliminarZonas' %}",
+            data	: {
+                        request: JSON.stringify(peticion)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+        	$('#formularioAceptarEliminar').modal('hide');
+            notif({
+                    msg     : "La zona se eliminó exitosamente",
+                    type    : "success",
+                    position: "center"
+                });
+            cargarPosicionZona();
+            cargarTablaMonitoreoZona();    
+        }else{
+        	notif({
+                    msg     : "Error al eliminar",
+                    type    : "error",
+                    position: "center"
+                });
+        	 }
+    });
+    request.fail(function(jqXHR, textStatus){ });
+}
+
+//============ Fin Monitoreo Zonas ===============================
+
+//============ Inicio Programacion vigilancia ===============================
+
+
+function pintarTablaProgramacionVigilancia(data){
+	var dataSet = data;
+
+	if ( ! $.fn.DataTable.isDataTable( '#graficoTabla2' ) ) {
+	    $('#graficoTabla2').DataTable({
+	        responsive: true,
+	        data: dataSet,
+	        fixedHeader:true,
+	       
+	        "pageLength"	:100,
+	        "aaSorting": [],
+	        language: traduccionDatatables,
+	        columns: [
+
+
+	            {  title: "Vehículo",
+	               data : null
+	            },
+
+	            {  title: "Fecha",
+	               data : null
+	            },	        
+	            {  title: "Horario",
+	               data : null   },
+
+	            {  title: "Estado",
+	               data : null
+	            },
+
+	            {  title: "Tipo vigilancia",
+	               data : null
+	            },
+
+	            {  title: "Acción",
+	               data : null
+	            },
+
+	            {  title: "Eliminar",
+	               data : null
+	            },
+	            
+	        ],
+	        "columnDefs": [
+	        	{ responsivePriority: 1, targets: 0 },
+	        	{ responsivePriority: 2, targets: 1 },
+	           
+	      	    {
+	      	        "targets": [0],
+			"render": function (data, type, full, meta){
+			    var placa = "";
+			    if( data.placa != "" ){
+				placa = data.placa;
+			    }
+			    if(data.estadoProgramacion !="Sin iniciar"){
+				//return '<a href="'+guibase+'/'+config.getTennant()+'/adminDetalleProgramacionVigilancia/'+data.idProgramacion+'" >'+ placa +'</a>';
+				return '<a href="'+guibase+'/{{tenant}}/adminDetalleProgramacionVigilancia/'+data.idProgramacion+'" >'+ placa +'</a>';
+				
+			    }
+			    else{
+				return placa;
+			    }
+	                }
+		    	},
+		    	{
+	      	        "targets": [1],
+					"render": function (data, type, full, meta){
+						var fechaInicio = "";
+						var fechaFin = "";
+					    if( data.fechaInicio != "" && data.fechaFin !="" ){
+							fechaInicio = data.fechaInicio;
+							fechaFin = data.fechaFin;
+			    		}
+			    		return fechaInicio+" - "+fechaFin;
+
+	                }
+		    	},
+
+	      	    {
+	      	        "targets": [2],
+					"render": function (data, type, full, meta){
+					    var horaInicio = "";
+					    var horaFin = "";
+					    var fecha = new Date();
+					    fechaTemp = "2016-11-03T"
+					    if( data.horaInicio != "" && data.horaFin != "" ){
+					    	
+							//horaInicio = data.horaInicio;
+							//horaFin = data.horaFin;
+							horaInicio = fechaTemp + data.horaInicio;
+							horaFin = fechaTemp + data.horaFin;
+							var horaInicioF = moment(horaInicio).format("hh:mm a");
+							//horaFin = moment(data.horaFin).format("hh:mm a");
+							var horaFinF = moment(horaFin).format("hh:mm a");
+			    		}
+	                    return horaInicioF+" - "+horaFinF;
+	                }
+		    	},
+
+	      	    {
+	      	        "targets": [3],
+					"render": function (data, type, full, meta){
+					    var estadoProgramacion = "";
+					    if( data.estadoProgramacion != ""){
+							estadoProgramacion = data.estadoProgramacion;
+			    		}
+	                    return estadoProgramacion;
+	                }
+		    	},
+
+		    	{
+	      	        "targets": [4],
+					"render": function (data, type, full, meta){
+					    if(data.registrarAudio == true && data.registrarImagen == true){
+					    	return "Audio e imagen";
+							
+			    		}
+	               		else if(data.registrarAudio == true && data.registrarImagen == false){
+	               			return "Solo audio";
+	               		}
+	               		else if(data.registrarAudio == false && data.registrarImagen == true){
+	               			return "Solo imagen";
+	               		}
+	               		else{
+	               			return "No hay audio ni imagen";
+	               		}
+	               		i
+	                }
+		    	},
+
+	            {
+	                "targets": [5],
+	                "render": function (data, type, full, meta){
+	                	/*
+	                	if(data.estadoProgramacion == "Sin iniciar"){
+	                		return '<div style="text-align:center;"><input type="hidden" class="idProgramacion"  value="'+data.idProgramacion+'"/><a class="eliminarProgramacion" href="#" ><i class="fa fa-times-circle-o"></i>  Eliminar</a> </div>';	
+	                	}
+	                	else{
+				    	
+				    	return '<a href="'+guibase+'/'+config.getTennant()+'/adminDetalleProgramacionVigilancia/'+data.idProgramacion+'" > Ver resultado </a>';
+	                	}*/
+	                	
+	                	if(data.estadoProgramacion != "Sin iniciar"){
+	              
+				    	return '<a href="'+guibase+'/'+config.getTennant()+'/adminDetalleProgramacionVigilancia/'+data.idProgramacion+'" > Ver resultado </a>';
+	           
+	                	}
+	                	else{
+	                		return "";
+	                	}
+	              		
+	        	}
+	      	    },
+	            {
+	                "targets": [6],
+	                "render": function (data, type, full, meta){
+	                	if(data.activo){
+	              			return '<div style="text-align:center;"><input type="hidden" class="idProgramacion"  value="'+data.idProgramacion+'"/><a class="eliminarProgramacion" href="#" ><i class="fa fa-times-circle-o"></i> Deshabilitar</a> </div>';	  		
+	                	}
+	           			else{
+	           				return '<div style="text-align:center;">Inactivo</div>';
+	           			}
+	                	
+	 
+	              		
+	        	}
+	      	    },
+
+
+	        ]
+	    });
+	 }   
+	 else{
+		$('#graficoTabla2').DataTable().clear().rows.add(dataSet).draw();
+		
+	}
+}
+
+function cargarTablaProgramacionVigilancia(){
+   	
+	var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                                
+                                            },
+                        'data'         : {                     					
+                        				 }
+                      };
+
+	// valida si la peticion es de un generador de carga
+    if(config.getEsGeneradorCarga()){
+		//si la peticion es de un generador de carga entonces a la autenticación se le agrega el codigo de acceso
+    	peticion["autenticacion"]["codigoAcceso"] = config.getCodigoAcceso();
+    }
+	
+    var request = $.ajax({
+            type: "POST",
+            url		: "{% url 'wslistarProgramacionVigilancia' %}",
+            data	: {
+                        request: JSON.stringify(peticion)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+            pintarTablaProgramacionVigilancia(respuesta["data"]);
+        }else{ }
+    });
+    request.fail(function(jqXHR, textStatus){ });
+};
+
+
+function enviarEliminarProgramacion(id){
+	var idProgramacion = id;
+	var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                            },
+                        'data'         : {  
+                        					'id' : idProgramacion,
+                        				 }
+                      };
+	
+    var request = $.ajax({
+            type: "POST",
+            url		: "{% url 'wsEliminarProgramacionVigilancia' %}",
+            data	: {
+                        request: JSON.stringify(peticion)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+        	$('#formularioAceptarEliminarProgramacion').modal('hide');
+            notif({
+                    msg     : "La programación se eliminó exitosamente",
+                    type    : "success",
+                    position: "center"
+                });
+            cargarTablaProgramacionVigilancia();    
+        }else{
+        	notif({
+                    msg     : "Error al eliminar",
+                    type    : "error",
+                    position: "center"
+                });
+        	 }
+    });
+    request.fail(function(jqXHR, textStatus){ });
+}
+
+
+//============ Fin Programacion vigilancia ===============================
+
+//================= Inicio Mapa de calor =================================
+
+var heatmap;
+var mapCalor;
+
+function cargarMapaCalor(){
+	if(estaMapaCargado){
+		  heatmap = new google.maps.visualization.HeatmapLayer({
+		    map: copiaMap1
+		  });
+		  cargarPuntos();
+	}
+}
+
+
+function obtenerPuntos(data){
+  		var puntosCalor = [];
+		for (i in data) {
+			latitud = parseFloat(data[i].latitud);
+			longitud = parseFloat(data[i].longitud);
+			puntosCalor.push(
+				new google.maps.LatLng(latitud, longitud)
+            );
+		}
+		var newdata = new google.maps.MVCArray(puntosCalor);
+    	heatmap.set('data', newdata)
+    	
+}
+
+function cargarPuntos(){
+    var fechaInicio = $('#formRangoFecha1').data('DateTimePicker').
+    date.format();
+    var fechaFin = $('#formRangoFecha2').data('DateTimePicker').
+    date.format();
+	var permiteAccion = validarFechasUsuario('#formRangoFecha1', '#formRangoFecha2');
+  	 // --------------valida si la peticion es de un generador de carga------------------
+  	var permiteAccionGeneradorCarga = {success: true, tipoFecha: ""}; 	
+    if(config.getEsGeneradorCarga()){
+		//si la peticion es de un generador de carga se validan las fechas con las configuradas por un cliente
+		var fechaGeneracion = moment(config.getFechaGeneracion());
+		var fechaCaducidad  = moment(config.getFechaCaducidad());
+		permiteAccionGeneradorCarga = validarFechasGeneradorCarga("#formRangoFecha1", "#formRangoFecha2", "DD/MM/YYYY h:mm a");
+		if(permiteAccionGeneradorCarga["tipoFecha"] == "fechaGeneracion"){
+			//se le asigna la fecha inicial la fecha de generacion
+			$('#formRangoFecha1').data('DateTimePicker').setDate(fechaGeneracion);
+			permiteAccionGeneradorCarga["success"] = true;	
+		}else if(permiteAccionGeneradorCarga["tipoFecha"] == "fechaCaducidad"){
+			//se le asigna la fecha fin la fecha de caducidad
+			$('#formRangoFecha2').data('DateTimePicker').setDate(fechaCaducidad);
+			permiteAccionGeneradorCarga["success"] = true;
+		}
+    }
+    //-------------------------------------------------------------------------------------
+	if(permiteAccion && permiteAccionGeneradorCarga["success"]){
+			
+		var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+	                                            'token'   : config.getToken(),
+	                                            'tenant'  : config.getTennant(),
+	                                                
+	                                            },
+	                        'data'         : { 
+	                        					'fechaInicio': fechaInicio,
+	                        					'fechaFin': fechaFin,
+	                        				 }
+	                      };
+		
+	    var request = $.ajax({
+	            type: "POST",
+	            url		: "{% url 'wslistarParadaPorRangoFecha' %}",
+	            data	: {
+	                        request: JSON.stringify(peticion)
+	             },
+	             dataType: "json"
+	        });
+	    request.done(function(respuesta){
+	        if(respuesta.success){
+	            obtenerPuntos(respuesta["data"]);
+	        }else{ 
+	        	return[];	
+	        }
+	    });
+	    request.fail(function(jqXHR, textStatus){ });
+	}    
+};
+
+//===========================Fin Imagenes vehículo
+
+//================= fin mapa de calor  ===================================
+
+var cityCircle=null;
+// === Document ready!!! =======================================================
+$(document).ready(function() {
+// valida si la peticion es de un generador de carga
+if(config.getEsGeneradorCarga()){
+	//si la peticion es de un generador de carga entonces muestra el mensaje del rango de fechas definidos por el codigo de acceso
+	var fechaDesde = moment(config.getFechaGeneracion()).format("DD/MM/YYYY h:mm a");
+	var fechaHasta = moment(config.getFechaCaducidad()).format("DD/MM/YYYY h:mm a");
+	$("#textoInfoFechas").text('Habilitado desde '+fechaDesde+ ' hasta '+ fechaHasta);
+}
+
+$('.formRangoFecha').datetimepicker(
+
+        { 	pickTime: true,
+
+          	showToday: true,
+          	pick12HourFormat: true,
+          	minViewMode: "years",
+			minViewMode: "months",
+			minViewMode: "days",
+			language:'es' });
+//============ Inicio Monitoreo Zonas ===============================	
+	$('#contenedorMapa').show();
+	setTimeout(function(){
+	var map = null; 
+	var beachMarkerOrigen = null; 
+	var mapElement = 'map1';
+
+	if(estaMapaCargado){
+
+		cargarPosicionZona();
+
+	}
+
+	}, 1000);
+	cargarTablaMonitoreoZona();
+
+
+	$(document).on('click', '.verPosicion', function(){ 
+
+		var data = $(this).parent().find(".verPosicionData").val();
+		var jsonData = JSON.parse(data)
+	 	//console.log(jsonData.latitud);
+	 	pintarCirculo(parseFloat(jsonData.latitud), parseFloat(jsonData.longitud),
+	 		parseFloat(jsonData.radio))
+	});
+
+    $(document).on('click', '#crearZona', function(){
+    	var latitud = "4.5981";
+    	var longitud = "-74.0758"
+    	var url = guibase+"/{{tenant}}/adminVigilanciaCrearZona/"+latitud+"/"+longitud;
+        window.location.href = url;
+    });
+//eliminar zona
+	$(document).on('click', '.eliminarZona', function(){
+		var idZona 	= $(this).parent().find('.idZona').val();
+		$('#formZonaId')   	.val(idZona);
+		$('#formularioAceptarEliminar').modal('show');
+	});
+		
+	$(document).on('click', '#aceptarEliminarZona', function(){
+		var idZona = $('#formZonaId').val();
+		enviarEliminarZona(idZona);
+	});
+//============ Fin Monitoreo Zonas ===============================  	
+
+//============ Inicio Programacion vigilancia ===============================
+	cargarTablaProgramacionVigilancia();
+    $(document).on('click', '#crearProgramacion', function(){
+        window.location.href = "{% url 'adminVigilanciaCrearProgramacion' tenant=tenant %}";
+    });
+
+//eliminar programacion
+	$(document).on('click', '.eliminarProgramacion', function(){
+		var idProgramacion 	= $(this).parent().find('.idProgramacion').val();
+		$('#formProgramacionId')   	.val(idProgramacion);
+		$('#formularioAceptarEliminarProgramacion').modal('show');
+	});
+
+	$(document).on('click', '#aceptarEliminarProgramacion', function(){
+		var idProgramacion = $('#formProgramacionId').val();
+		enviarEliminarProgramacion(idProgramacion);
+	});
+
+//============ Fin Programacion vigilancia ===============================
+
+//=================== inicio formulario mapa calor ==============================
+$('#formularioMapaCalor').validator().on('submit', function (e) {
+	  if (e.isDefaultPrevented()) {
+		notif({
+                msg     : "Invalido campo",
+                type    : "error",
+                position: "center"
+            });
+	  } else {
+	  	//cargarPosicionZona();
+	  	puntosCalor = [];
+	  	var newdata = new google.maps.MVCArray(puntosCalor);
+    	heatmap.set('data', newdata)
+	    cargarMapaCalor();
+	    e.preventDefault();
+	  }
+	});
+	
+var fechaAhora = moment();
+var fechaAyer = moment().subtract(1, 'days');
+    
+//----------------------------------------------------------------
+//Generador de carga
+//Evalua que la fecha de inicio este habilitado al generador de carga
+if(config.getEsGeneradorCarga()){
+    var fechaGeneracion = moment(config.getFechaGeneracion());
+    if(fechaGeneracion > fechaAyer){
+    	fechaAyer 	= fechaGeneracion;
+    }
+}
+//----------------------------------------------------------------
+
+$('#formRangoFecha1').data('DateTimePicker').setDate(fechaAyer);
+$('#formRangoFecha2').data('DateTimePicker').setDate(fechaAhora);
+
+//esconde elemnetos	
+$(".form-group").hide();	
+// boton checked
+$("#activarMapaCalor").click( function(){
+   if( $(this).is(':checked') ){
+   		cargarMapaCalor();
+   	    $(".form-group").show();
+
+   	}else{
+   		cargarPosicionZona();
+   		$(".form-group").hide();	
+   	}
+});
+//=================== fin formulario mapa calor ==============================
+});	
+
+</script>
+
+{% endblock %}
+
+{% block contenido %}
+
+<body>
+	
+	<div id="page-wrapper" style="  margin: 3em; margin-top: 0;">
+	
+	    <div class="row">
+	        <!-- /.col-lg-12 -->
+	    </div>
+	    <!-- /.row -->
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <div class="panel panel-default">
+	                <!-- /.panel-heading -->
+	                <div class="panel-body">
+						<div class="tabbable pestana">
+							<ul class="nav nav-tabs">
+								<div class="row">
+								   	<div class="col-md-10">
+						    			<h3><span id="vehiculoPlaca" >Vigilancia</span> <small class="rojoFleet" id="textoInfoFechas"></small></h3>
+						    		</div>
+					    		</div>
+
+							    <li class="active"><a href="#1" data-toggle="tab">Monitoreo Zonas</a></li>
+							    <li ><a href="#2" data-toggle="tab">Vigilancia Programada</a></li>	  
+						  	</ul>
+							<div class="tab-content">
+                                <div class="tab-pane active" id="1">
+	                                <div class="row">
+		 								<div class="col-md-12">
+										  	<div id="contenedorMapa" style="display:none">
+				    							<div id="map1" style="width:100%; height:30em;"></div>    
+											</div>	
+
+		 								</div>
+
+	                                </div>
+
+	                                <div class="row" style="margin:0em;">
+	                                	<div class="col-mod-8 pull-right">
+											<button id="crearZona" type="submit" class="btn btn-raised btn-lg btn-success btn-block ">
+												Crear Zona
+											</button>
+	                                	</div>		
+	                                </div>
+	                             		<form data-toggle="validator" role="form" id="formularioMapaCalor">
+		                                	<div class="row">
+		                                		<div class="col-md-3">
+									                       <div class="checkbox zonaCheckbox checkbox-danger">
+									                         <label><input type="checkbox" name="activarMapaCalor" id="activarMapaCalor"/> Activar mapa de calor</label>
+									                       </div>
+		                                		</div>
+		                                		<div class="col-md-3">
+												    <div class="form-group">
+										           		<label>Fecha Inicio:</label>
+										                <div class="input-group date formRangoFecha" id="formRangoFecha1">
+										                  <input id="inputPeriodoGrafico3" type="text" class="form-control" 
+															data-date-format="DD/MM/YYYY hh:mm a"data-date-format="DD/MM/YYYY hh:mm a" data-error="Ingrese una fecha (DD/MM/YYYY hh:mm)"
+									                  		pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\s[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$"
+									                  		>
+										                  <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+										                  </span>
+										            	</div>
+										            	<div class="help-block with-errors"></div>
+											         </div>
+		                                		</div>
+		                                		<div class="col-md-3">
+												    <div class="form-group">
+										           		<label>Fecha Fin:</label>
+										                <div class="input-group date formRangoFecha" id="formRangoFecha2">
+										                  <input id="inputPeriodoGrafico4" type="text" class="form-control" 
+															data-date-format="DD/MM/YYYY hh:mm a" data-error="Ingrese una fecha (DD/MM/YYYY hh:mm)"
+									                  		pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\s[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$"
+									                  		>
+										                  <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+										                  </span>
+										            	</div>
+										            	<div class="help-block with-errors"></div>
+											         </div>
+		                                		</div>
+		                                		<div class="col-md-2">
+												    <div class="form-group">                                	
+													<button id="ActualizarMapa" type="submit" class="btn btn-success btn-lg">    
+												    	<i class="fa fa-bullseye" aria-hidden="true"></i>
+												    	Actualizar Mapa de calor
+											    	</button>
+													</div>
+		                                		</div>
+		                                	</div>
+	                                  	</form>
+
+									<div class="row">
+										<div class="col-md-12">
+											<div class="tab-pane active" id="1" >
+									   	 		<table id="graficoTabla1" class="table table-striped table-bordered display" style="width: 100%">
+					                      		</table>
+									   		</div>
+										</div>
+									</div>
+                                <!--Fin Tab Monitoreo zonas-->
+
+                            	</div>
+                            	<!--Inicio tab programacion vigilancia-->
+                                <div class="tab-pane" id="2">
+	                                <div class="row" style="margin:0em;">
+	                                	<div class="col-mod-8 pull-right">
+											<button id="crearProgramacion" type="submit" class="btn btn-raised btn-lg btn-success btn-block ">
+												Crear Programación
+											</button>
+	                                	</div>		
+	                                </div>
+ 									<div class="row">
+										<div class="col-md-12">
+											<div class="tab-pane active" id="1" >
+									   	 		<table id="graficoTabla2" class="table table-striped table-bordered display" style="width: 100%">
+					                      		</table>
+									   		</div>
+										</div>
+									</div>
+
+
+                                	
+                                </div>						  
+                            </div>	
+						</div>
+					</div>
+	                <!-- /.panel-body -->
+	            </div>
+	            <!-- /.panel -->
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	</div>
+<!-- /#page-wrapper -->
+
+<!-- /#MODAL, VENTANA EMERGENTE PARA ACEPTAR ELIMINAR ZONA-->
+<div class="modal fade" id="formularioAceptarEliminar" > 
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title">Eliminar zona</h3>
+      </div>
+      <div class="modal-body">
+      	<form>
+      	<div class="row">
+			<div class="col-md-10">
+				<input type="hidden" id="formZonaId"/>
+				<span> ¿Está seguro de eliminar la zona?</span>
+			</div>
+		</div>
+        
+		</form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-success" id="aceptarEliminarZona">Eliminar zona</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<!-- /#MODAL, VENTANA EMERGENTE PARA ACEPTAR ELIMINAR ZONA-->
+
+<!-- /#MODAL, VENTANA EMERGENTE PARA ACEPTAR ELIMINAR Programacion-->
+<div class="modal fade" id="formularioAceptarEliminarProgramacion" > 
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title">Deshabilitar Programación</h3>
+      </div>
+      <div class="modal-body">
+      	<form>
+      	<div class="row">
+			<div class="col-md-10">
+				<input type="hidden" id="formProgramacionId"/>
+				<span> ¿Está seguro de deshabilitar la programación?</span>
+			</div>
+		</div>
+        
+		</form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-success" id="aceptarEliminarProgramacion">Deshabilitar Programación</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<!-- /#MODAL, VENTANA EMERGENTE PARA ACEPTAR ELIMINAR PROGRAMACION-->
+
+<script async defer
+
+     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDOqPrm-nuqELi0b_kPt7nP0vHFdUunOHc&signed_in=true&libraries=visualization&callback=initMap">
+     </script>
+ 
+</body>
+
+
+{% endblock %}

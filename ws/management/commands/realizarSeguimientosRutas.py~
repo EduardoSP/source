@@ -1,0 +1,31 @@
+# -*- coding: utf-8 -*-
+from django.core.management.base import NoArgsCommand
+from django.conf                 import settings
+#from webbiodws.models            import *
+import json
+from django.conf                 import settings
+from datetime                    import datetime,timedelta
+import urllib2
+import logging
+import couchdb
+import requests
+import json
+from dateutil import parser
+import time
+#from ws.serviciosweb.conexion import conexion
+
+class Command(NoArgsCommand):
+
+    def handle_noargs(self, **options):
+        
+        couch      = couchdb.Server(url=settings.COUCHDB_URL)
+        base       = settings.BASEDB
+        db         = couch[base]
+        dbsTenants = [] #Guarda una reerencia a todas las conexiones de los tenants
+
+        filas = db.view(
+            '_design/GPS/_view/gpsPorId',
+            include_docs  = True
+        )
+
+        

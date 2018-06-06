@@ -1,0 +1,192 @@
+# -*- coding: utf-8 -*-
+import hashlib
+import uuid
+import logging
+import time
+from django.core.urlresolvers import reverse
+from django.conf              import settings
+from ..conexion               import conexion
+from datetime                 import datetime
+from ..autenticacion          import autenticacion as moduloAutenticacion
+
+def crearPersonalMedico( peticion ):
+    autenticacion = peticion['autenticacion']
+    datos         = peticion['data']
+    usuario       = autenticacion['usuario']
+    tennant       = usuario[:3]
+    
+    db = conexion.getConexionTenant(usuario[:3])
+
+    if db == None:
+        return { 'success' : False }
+
+    try: 
+        doc_id, doc_rev = db.save({
+            "activo"		: True,
+            "tipoDato"		: "personalMedico",
+            "creadoEn"		: datetime.now().isoformat(),
+            "modificadoEn"	: datetime.now().isoformat(),
+            "modificadoPor"	: usuario,
+            "nombres"		: datos["nombres"],
+            "identificacion": datos["identificacion"],
+            "titulo"        : datos["titulo"],
+            "correo"        : datos["correo"],
+            "telefono"      : datos["telefono"],
+            "loginUsuario"  : tennant+datos["loginUsuario"],
+            "contrasena"    : moduloAutenticacion.salarConMd5(datos["contrasena"])
+        })
+        return {
+            'success' : True,
+            'data'    : {
+                'id' : doc_id
+            }            
+        }
+    except:
+        pass
+
+    return { 'success' : False }
+
+#-------------------------------------------------------------
+
+def editarPersonalMedico( peticion ):
+    autenticacion = peticion['autenticacion']
+    datos         = peticion['data']
+    usuario       = autenticacion['usuario']
+    Tennant       = usuario[:3]
+    
+    db = conexion.getConexionTenant(usuario[:3])
+
+    if db == None:
+        return { 'success' : False }
+
+    try:
+        doc = db[datos['id']]
+        doc['modificadoPor'] = usuario
+        doc['modificadoEn']  = datetime.now().isoformat()
+
+        doc['nombres']          = datos['nombres']
+        doc['identificacion']   = datos['identificacion']
+        doc['titulo']           = datos['titulo']
+        doc['correo']           = datos['correo']
+        doc['telefono']         = datos['telefono']
+        doc['loginUsuario']     = Tennant+datos['loginUsuario']
+        doc['contrasena']       = moduloAutenticacion.salarConMd5( datos['contrasena'] ) if not datos.get('contrasena',None) == None else doc['contrasena'] 
+        
+        db.save(doc)
+        
+        return {
+            'success' : True,
+            'data'    : {
+            }            
+        }
+    except:
+        pass
+
+    return { 'success' : False }
+
+#-------------------------------------------------------------
+
+def eliminarPersonalMedico( peticion ):
+    autenticacion = peticion['autenticacion']
+    datos         = peticion['data']
+    usuario       = autenticacion['usuario']
+    
+    db = conexion.getConexionTenant(usuario[:3])
+
+    if db == None:
+        return { 'success' : False }
+
+    try:
+        idEquipo    = datos['id']
+        doc = db[datos['id']]
+        doc['modificadoPor'] = usuario
+        doc['modificadoEn']  = datetime.now().isoformat()
+
+        doc['activo']        = False
+        db.save(doc)
+        
+        return {
+            'success' : True,
+            'data'    : {
+            }            
+        }
+    except:
+        pass
+
+    return { 'success' : False }
+
+#-------------------------------------------------------------
+
+def detallePersonalMedico( peticion ):
+    autenticacion = peticion['autenticacion']
+    datos         = peticion['data']
+    usuario       = autenticacion['usuario']
+    
+    db = conexion.getConexionTenant(usuario[:3])
+
+    if db == None:
+        return { 'success' : False }
+
+    try:
+        doc = db[datos['id']]
+        dataResponse = {
+            'id'                    : doc['_id'],
+            'nombres'               : doc.get('nombres', ''),
+            'identificacion'        : doc.get('identificacion', ''),
+            'titulo'                : doc.get('titulo', ''),
+            'correo'                : doc.get('correo', ''),
+            'telefono'              : doc.get('telefono', ''),
+            'loginUsuario'          : (doc.get('loginUsuario', '')[3:]),
+            
+        }
+        return {
+            'success' : True,
+            'data'    : dataResponse 
+        }    
+    except:
+        pass
+
+    return { 'success' : False }
+
+#-------------------------------------------------------------
+
+def listarPersonalMedico( peticion ):
+    autenticacion = peticion['autenticacion']
+    datos         = peticion['data']
+    usuario       = autenticacion['usuario']
+    
+    db = conexion.getConexionTenant(usuario[:3])
+
+    if db == None:
+        return { 'success' : False }
+
+    try:
+
+        filas = db.view('_design/personalMedico/_view/personalMedico',
+                        include_docs  = True )
+
+        dataRaw = []
+        for fila in filas:
+            doc         = fila.doc           
+            dataRaw.append({
+                'id'                    : doc['_id'],
+                'nombres'               : doc.get('nombres', ''),
+                'identificacion'        : doc.get('identificacion', ''),
+                'titulo'                : doc.get('titulo', ''),
+                'correo'                : doc.get('correo', ''),
+                'telefono'              : doc.get('telefono', ''),
+                'loginUsuario'          : doc.get('loginUsuario', ''),
+            })        
+            
+        return {
+            'success' : True,
+            'data'    : dataRaw
+        }
+    except:
+        pass
+
+    return { 'success' : False }
+
+
+# === Auxiliares ===============================================================
+

@@ -1,0 +1,411 @@
+{% extends "webfleetbigui/base.html" %}
+{% load staticfiles %}
+{% block titulo %}Login{% endblock %}
+
+{% block codigoPrincipal %}
+<!-- Estilos -->
+<link href="{% static "css/login.css" %}"  rel="stylesheet">
+<!-- <link href='http://fonts.googleapis.com/css?family=Cabin:400,700,400italic' rel='stylesheet' type='text/css'> -->
+<link href='https://fonts.googleapis.com/css?family=Poppins' rel='stylesheet' type='text/css'>
+
+<!-- Bibliotecas -->
+<script src="{% static "validatorNuevo/validator.js" %}"></script>
+
+<script>
+
+function autenticarGeneradorCarga(){
+	var nombreGenerador		= $('#formNombreGenerador').val();
+	var codigoAcceso 		= $('#formCodigoAcceso').val();
+	var email  				= $('#formConfirmarEmail').val();
+	var contrasena  		= $('#formConfirmarContrasena').val();
+	var peticion    = { 
+						'data' : {	'nombreGenerador'	:  nombreGenerador,
+									'codigoAcceso'		: codigoAcceso,
+									'email'				: email,
+									'contrasena'		: contrasena,
+								 }
+                      };
+	
+    var request = $.ajax({
+            type: "POST",
+            url		: "{% url 'wsAutenticarGeneradorCarga' %}",
+            data	: {
+                        request: JSON.stringify(peticion)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+			var nombreTennant = respuesta.tenant;
+        	config.setLogueado(true);
+			config.setUsuarioLogin(respuesta.idUsuario);
+			config.setNombreUsuario(respuesta.nombreUsuario);
+			config.setToken(respuesta.token);
+			config.setPerfilUsuario(respuesta.perfil);
+			config.setTennant(nombreTennant);
+			config.setNombreGenerador(respuesta.nombreGenerador);
+			//representa si la sesión de un generador de carga
+			config.setEsGeneradorCarga(true);
+           notif({
+ 				msg		: "Bienvenido a fleetbi.",
+  				type	: "success",
+  				position: "center"
+			});
+            var urlLogin 			= guibase+"/"+nombreTennant+"/codigosAccesoGenerador";
+			window.location.href 	= urlLogin;
+        }else{ 
+        	 notif({
+ 				msg		: respuesta.mensaje,
+  				type	: "warning",
+  				position: "center"
+			});
+		}
+    });
+    request.fail(function(jqXHR, textStatus){ });
+}
+
+
+function autenticarGeneradorCargaLogin(){
+	var autenticar          = new Object();
+	autenticar.accion       = 'ingresar';
+	autenticar.usuario 		= $('#usuarioLogin').val();
+	autenticar.contrasena	= $('#usuarioContrasena').val();	
+    var request = $.ajax({
+            type: "POST",
+            url		: "{% url 'wsAutenticarGeneradorCargaLogin' %}",
+            data	: {
+                        request: JSON.stringify(autenticar)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+			var nombreTennant = respuesta.tenant;
+        	config.setLogueado(true);
+			config.setUsuarioLogin(respuesta.idUsuario);
+			config.setNombreUsuario(respuesta.nombreUsuario);
+			config.setToken(respuesta.token);
+			config.setPerfilUsuario(respuesta.perfil);
+			config.setTennant(nombreTennant);
+			config.setNombreGenerador(respuesta.nombreGenerador);
+			//representa si la sesión de un generador de carga
+			config.setEsGeneradorCarga(true);
+           notif({
+ 				msg		: "Bienvenido a fleetbi.",
+  				type	: "success",
+  				position: "center"
+			});
+            var urlLogin 			= guibase+"/"+nombreTennant+"/codigosAccesoGenerador";
+			window.location.href 	= urlLogin;
+        }else{ 
+        	 notif({
+ 				msg		: respuesta.mensaje,
+  				type	: "warning",
+  				position: "center"
+			});
+		}
+    });
+    request.fail(function(jqXHR, textStatus){ });
+}
+
+
+function enviarRecuperacionContrasena(){
+	var correo		= $('#formUsuarioRecuperar').val();
+	var peticion    = {
+		'correo':  correo,
+    };
+	
+    var request = $.ajax({
+            type: "POST",
+            url		: "{% url 'wsRecuperarContrasenaGeneradorCarga' %}",
+            data	: {
+                        request: JSON.stringify(peticion)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+        	$('#formularioRecuperarContrasena').modal('hide');
+           notif({
+ 				msg		: "Recuperacion de la clave enviada correctamente.",
+  				type	: "success",
+  				position: "center"
+			});
+        }else{ 
+        	 notif({
+ 				msg		: "Correo incorrecto",
+  				type	: "warning",
+  				position: "center"
+			});
+		}
+    });
+    request.fail(function(jqXHR, textStatus){ });
+}
+
+
+// === Document ready!!! =======================================================
+$(document).ready(function() {
+
+//=============formulario usuario registrado
+	$(document).on('click', '.usuarioRegistrado', function(){
+		$( ".usuarioNuevo" ).addClass("text-muted");
+		$( ".usuarioRegistrado" ).removeClass("text-muted");
+		$("#formularioCrearCodigoAcceso").hide();
+		$("#formLogin").show();
+	});
+
+//=============formulario nuevo usuario
+	$(document).on('click', '.usuarioNuevo', function(){
+		$( ".usuarioRegistrado" ).addClass("text-muted");
+		$( ".usuarioNuevo" ).removeClass("text-muted");
+		$("#formLogin").hide();
+		$("#formularioCrearCodigoAcceso").show();
+
+	});
+
+//=============ventana emergente olvideContrasena
+	$(document).on('click', '#olvideContrasena', function(){
+		$('#formularioRecuperarContrasena').modal('show');
+	});
+
+//=============boton recuperarContrasena de la ventana emergente
+	$(document).on('click', '#recuperarContrasena', function(){
+		enviarRecuperacionContrasena();
+	});	
+
+
+	$('#formLogin').validator().on('submit', function (e) {
+	  if (e.isDefaultPrevented()) {
+		notif({
+                msg     : "Invalido campo",
+                type    : "error",
+                position: "center"
+            });
+	  } else {
+	  	autenticarGeneradorCargaLogin();
+	    e.preventDefault();
+	  }
+	});  
+
+	$('#formularioCrearCodigoAcceso').validator().on('submit', function (e) {
+	  if (e.isDefaultPrevented()) {
+		notif({
+                msg     : "Invalido campo",
+                type    : "error",
+                position: "center"
+            });
+	  } else {
+	    if($('#formContrasena').val()!="" && $('#formConfirmarContrasena').val()==""){
+			notif({
+	                msg     : "Por favor confirme la Contraseña",
+	                type    : "warning",
+	                position: "center"
+	            });
+	    }else if($('#formEmail').val()!="" && $('#formConfirmarEmail').val()==""){
+			notif({
+	                msg     : "Por favor confirme el email",
+	                type    : "warning",
+	                position: "center"
+	            });
+	    				
+	    }else{
+	    	autenticarGeneradorCarga();
+	    	e.preventDefault();
+	    }
+	    
+	  }
+	});  
+
+    $("#formularioCrearCodigoAcceso").hide();
+ 	$("#formLogin").hide();
+
+ 	$(document).on('click', '#volverPrincipal', function(){
+		window.location.href = "/";
+	});	
+
+
+});
+// --- End document ready ------------------------------------------------------
+
+</script>
+{% endblock %}
+
+{% block contenido %}
+<body>
+	<div class="fondoImagen">
+		<img style="    width: 300px; margin-left: 3em; margin-top: 3em;" src="{% static "images/logoSloganRojo.png" %}" />
+	</div>
+	<div style="position:relative; top: 0px; left:0px; display:flex; justify-content:center;align-items:center;width:100%;height:100%;">
+		<div>
+			
+			<div class="panel panel-default shadow-z-3">
+	            <div class="panel-body-generador">
+	            	<div class="row">
+	            	  	<div class="col-md-12" style="text-align: right;">	
+			        		<a href="#" class="" id="volverPrincipal"><i class="fa fa-hand-o-left"></i> Volver</a>
+			        	</div>	
+	            		
+	            	</div>
+	            	<div class="row">
+				        <div style=" margin: 2em; text-align: center;">
+						  <img style="width: 199px;" src="{% static "images/logoSloganRojo.png" %}" />
+				
+						</div>
+					</div>
+	            	<div class="row">
+			        	<div class="col-md-6 text-center">
+			        		<div class="form-group">
+			        			<a href="#" class="opcion-generador usuarioRegistrado"><i class="fa fa-check-circle-o"></i> Soy un usuario registrado</a>
+			        		</div>
+		                </div>
+			        	<div class="col-md-6 text-center">
+			        		<div class="form-group">
+			        			<a href="#" class="opcion-generador usuarioNuevo text-muted"><i class="fa fa-user-plus"></i> Quiero registrarme ahora</a>
+			        		</div>
+		                </div>
+	              	</div>
+	              	
+	                    <form data-toggle="validator" id="formLogin" class="formLogin" role="form">
+	                     	<div  id="formUsuarioRegistrado" style="padding: 2em;">
+		                        <fieldset>
+		                            <div class="form-group">
+		                                <input id="usuarioLogin" class="form-control campoFormulario" placeholder="Email" required name="email" type="text" autofocus>
+		                                <div class="help-block with-errors"></div>
+		                            </div>
+		                            <div class="form-group">
+		                                <input id="usuarioContrasena" class="form-control campoFormulario" placeholder="Contraseña" required name="password" type="password" value="">
+		                                <div class="help-block with-errors"></div>
+		                            </div>
+		                            <div style="padding: 1.2em;">
+			                            <button id="buttonLogin"  type="submit" class="btn btn-raised btn-success btn-block">
+										Ingresar
+										</button>
+									</div>
+		                            <div class="olvidasteContrasena">
+		                              <a class=""	href="#" id="olvideContrasena" data-style="">¿Has olvidado tu contraseña?</a>
+		                            </div>
+		                        </fieldset>
+		                    </div>
+	                    </form>
+
+						<form data-toggle="validator" role="form"  class="formLogin"  id="formularioCrearCodigoAcceso">
+							<div id="formUsuarioNuevo" style="padding: 2em;">	
+								<div class="row">
+									<div class="form-group col-md-6" >
+									    <label for="labelNombreGenerador">Nombre del generador</label>
+										<input id="formNombreGenerador" name="formNombreGenerador" required type="text" class="form-control formNombreGenerador" required data-error="Ingrese el nombre del generador' "/>
+										<div class="help-block with-errors"></div>
+									 </div>
+									<div class="form-group col-md-6">
+									    <label for="labelCodigoAcceso">Código de acceso</label>
+										<input id="formCodigoAcceso" name="formCodigoAcceso" required type="text" class="form-control formCodigoAcceso" required data-error="Ingrese el código de acceso ej.QI26TY "/>
+										<div class="help-block with-errors"></div>
+									</div>
+								</div>
+								<div class="row">
+									<div class="form-group col-md-6" >
+									    <label for="labelEmail">Email</label>
+										<input id="formEmail" name="formEmail" required type="email" class="form-control formEmail" required data-error="Ingrese un correo ej. camilo@gmail.com"/>
+										<div class="help-block with-errors"></div>
+									 </div>
+									<div class="form-group col-md-6">
+									    <label for="labelConfirmarEmail">Confirmar e-mail</label>
+										<input  type="email" id="formConfirmarEmail" required data-match="#formEmail" data-match-error="Los email no coinciden." class="form-control" name="formConfirmarEmail">
+										<div class="help-block with-errors"></div>
+									</div>
+								</div>
+								<div class="row">
+									<div class="form-group col-md-6" >
+									    <label for="labelContrasena">Contraseña</label>
+										<input type="password" id="formContrasena" class="form-control"  required id="formContrasena" name="formContrasena"/>
+										<div class="help-block with-errors"></div>
+									 </div>
+									<div class="form-group col-md-6">
+									    <label for="labelConfirmarContrasena">Confirmar Contraseña</label>
+										<input  type="password" id="formConfirmarContrasena" required data-match="#formContrasena" data-match-error="Las contraseñas no coinciden." class="form-control" name="formConfirmarContrasena">
+										<div class="help-block with-errors"></div>
+									</div>
+								</div>
+								
+								<button id="crearGenerador"  type="submit" class="btn btn-raised btn-success positionBoton">
+									Registrarme
+								</button>
+							</div>
+						</form>
+	            </div>
+			</div>
+		</div>
+	</div>
+	
+	
+	<nav class="navbar  navbar-fixed-bottom shadow-z-2 footer">
+	    <div class="container-fluid">
+	      <!-- Brand and toggle get grouped for better mobile display -->
+		    <div class="navbar-header">
+		        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+		          <span class="sr-only">Toggle navigation</span>
+		          <span class="icon-bar"></span>
+		          <span class="icon-bar"></span>
+		          <span class="icon-bar"></span>
+		        </button>
+		        <!-- <a class="navbar-brand" href="#"> -->
+		          <!-- <img src="{% static "images/logoBiod3.png" %}" style="height: 2em;"/> 
+		       </a>-->
+		       
+		       
+		    </div>
+		    <div class="row">
+				<div class="col-md-4">
+			 		<label class="lbldatos">Copyright © 2017</label>
+			 	</div>
+			 	<div class="col-md-4">
+			 		<label class="lbldatos"> Tel: (+57 2) 3799764</label>
+			 	</div>
+			 	<div class="col-md-4">
+			 		<img src="/static/images/favicon-96x96.png" style="width: 35px; height: ">
+			 		 <a class="lbldatos" href="http://www.fleetbi.cloud">www.fleetbi.cloud</a>
+			 	</div>
+			</div>
+	  	</div><!-- /.container-fluid -->
+	</nav>
+
+	<!-- /#MODAL, VENTANA EMERGENTE PARA RECUPERAR CONTRASEÑA-->
+	<div class="modal fade" data-backdrop="static" id="formularioRecuperarContrasena" tabindex="-1" role="dialog"
+		aria-labelledby="basicModal" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-hidden="true">X</button>
+					<h3 class="modal-title">Recuperar contraseña</h3>
+					<hr class="lineaDivision"/>
+				</div>
+				<div class="modal-body">
+					<form data-toggle="validator" role="form" id="formularioCrud">
+						<input type="hidden" id="formId"/>
+							<div class="row espacioFila" >
+								<div class="form-group">
+									<div class="">
+										<label>Podemos ayudarte a restablecer tu contraseña. Generador de carga escribe tu correo electrónico </label>
+									</div>
+									<div class="form-group row" id="cantidadRecibida">
+										<div class="col-md-8">
+											<input id="formUsuarioRecuperar" name="formNombre" class="form-control" placeholder="Correo electrónico" type="email" required data-error="Ingrese un correo ej. camilo@gmail.com" />
+										</div>
+									</div>
+								</div>
+							</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal" style="text-transform: none">Cerrar</button>
+					<button id="recuperarContrasena" type="button" class="btn btn-success" style="text-transform: none">Recuperar contraseña</button>
+				</div> 				
+				
+			</div>
+		</div>
+	</div>
+
+<!-- /#MODAL, VENTANA EMERGENTE PARA ACTUALIZACION DE DATOS-->
+</body>
+{% endblock %}

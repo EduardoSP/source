@@ -1,0 +1,281 @@
+
+
+/*@font-face {
+    font-family: "opensans";
+    src: url(fuentes/Open_Sans/OpenSans-Regular.ttf) format("truetype");
+}*/
+
+.navbar.navbar, .navbar-default.navbar{
+  background-color: #59a7f1 !important;
+
+}
+
+/*.fuente{
+	 font-family: "opensans";
+}*/
+
+h3, h4 {
+	color: #499bd5;
+}
+
+
+body {
+   font-family: 'Lato', sans-serif;
+   font-size: 1.44em;
+}
+
+a, a:hover, a:focus{
+	color: #428bca;
+}
+
+body, h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4{
+	font-family: 'Lato', sans-serif;
+}
+
+.cabecera {
+	 /*height: 9em;*/
+	 background: #FFFFFF;
+	 /*text-align: center;*/
+
+}
+.margintopcabecera{
+	margin-top: 1em;
+}
+
+/*ES MEJOR HACER LA BARRA DESDE CERO PARA QUE SEA TOTALMENTE RESPONSIVE */
+.form-control-scientia{
+  width: 100%;
+  display: block;
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 1.42857143;
+}
+
+.margen{
+	margin-top:		0.4em;
+	margin-left:	2em;
+	margin-right: 	2em;
+	margin-bottom: 	0.4em;
+	padding-top: 	0.5em;
+  /*padding-bottom: 0.5em;*/
+}
+
+.margen .page-header{
+	padding-bottom: 5px;
+    margin: 10px 0 10px;
+}
+
+
+.margen .tamanoColumna{
+	padding-left: 0px;
+    padding-right: 25px;
+}
+
+.margen .iconFaLibro{
+	font-size: 70px;
+    padding-top: 0.2em;
+    color: #428bca;
+}
+.negrita{
+
+	font-style: italic;
+    color: #275271;
+}
+
+
+
+ .resultado-a{
+ 	margin-bottom: 2em;
+ 	background-color: #fff;
+    padding-bottom: 0.5em;
+    padding-top: 0.5em;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    border-radius: 4px;
+
+ }
+
+ .centrar{
+ 	text-align: center;
+ 	background-color: #f0f0f0;
+ }
+
+.centrarDetalle{
+ 	text-align: center;
+
+ }
+
+.detalle{
+	background-color: rgba(0, 0, 0, 0.018);
+}
+
+.barraBuscar{
+	background-color: rgba(5, 5, 15,0.6);
+	border-color: #e7e7e7;
+
+  	padding-bottom: 0.2em;
+}
+
+.tituloLibro{
+	font-size: 16px;
+	margin-bottom: 0.4em;
+}
+
+.cuadroDetalle{
+  background-color: #fff;
+  border-radius: 4px;
+  margin-bottom: 1em;
+}
+
+.filaDato{
+  margin-bottom: 0.2em;
+}
+
+.rayita{
+  padding-bottom: 9px;
+  color:#7B899F;
+  border-bottom: 1px solid #eee;
+  font-size: 1em;
+}
+
+.estiloLista{
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  padding-left: 1em;
+}
+.estiloBolita{
+  font-size: 80%;
+}
+
+.fondo{
+  background-color: #f0f0f0;
+  /*padding-top: 12em;*/
+}
+.fondoDosPartes{
+  /*width           : 100%;
+  height          : 30em;
+  background: -webkit-linear-gradient(120deg, #003A84, #69C3D1);
+  background: -o-linear-gradient(120deg, #003A84, #69C3D1);
+  background: -moz-linear-gradient(120deg, #003A84, #69C3D1);
+  background: linear-gradient(120deg, #003A84, #69C3D1);
+  top             : 0;
+  position        : absolute;*/
+  width           : 100%;
+  height          : 30em;
+  background: -webkit-linear-gradient(210deg, #003A84, #69C3D1); /* For Safari 5.1 to 6.0 */
+  background: -o-linear-gradient(210deg, #003A84, #69C3D1); /* For Opera 11.1 to 12.0 */
+  background: -moz-linear-gradient(210deg, #003A84, #69C3D1); /* For Firefox 3.6 to 15 */
+  background: linear-gradient(210deg, #003A84, #69C3D1); /* Standard syntax */
+  top             : 0;
+  position        : absolute;
+}
+
+.rayitaDetalle{
+  padding-bottom: 9px;
+  border-bottom: 1px solid #eee;
+
+}
+
+.iconolibroejemplar{
+    height : 2em;
+}
+
+.tituloBiblioteca{
+    font-weight: 200;
+}
+
+/*Nuevo material design*/
+/*
+.btn-primary:not(.btn-link):not(.btn-flat) {
+    background-color:  #59a7f1 !important;
+    color: rgba(255,255,255,1) !important;
+}*/
+
+/* Definición scroll para las barras */
+.wrapper {
+    position:relative;
+    margin:0 auto;
+    overflow:hidden;
+	  padding:5px;
+  	height:50px;
+}
+
+.list {
+    position:absolute;
+    left:0px;
+    top:0px;
+  	min-width:3000px;
+  	margin-left:12px;
+    margin-top:0px;
+}
+
+.list li{
+	display:table-cell;
+    position:relative;
+    text-align:center;
+    cursor:grab;
+    cursor:-webkit-grab;
+    color:#efefef;
+    vertical-align:middle;
+}
+
+.scroller {
+  text-align:center;
+  cursor:pointer;
+  display:none;
+  padding:7px;
+  padding-top:11px;
+  white-space:no-wrap;
+  vertical-align:middle;
+  background-color:#fff;
+  background-color: #03A9F4;
+  color : #ffffff;
+}
+
+.scroller i {
+  top : 0;
+}
+
+.scroller-right{
+  float:right;
+}
+
+.scroller-left {
+  float:left;
+}
+
+
+#contenedorResultados .nav-tabs {
+  background: none;
+  /*border-bottom: 1px solid #DDD;*/
+  border-bottom: 0px solid #DDD;
+}
+
+
+#contenedorResultados li.active{
+  border-bottom: 3px solid #DDD;
+}
+
+#contenedorResultados li.active a{
+  font-weight: bold;
+}
+
+.fuenteTiendas{
+	color:#FFFFFF;
+}
+
+.separadorColeccion{
+  margin-top: 0px;
+  margin-bottom: 10px;
+}
+/********************************************/
+
+/** Login *********************************************************************/
+.login-panel .form-control{
+  background-color: white;
+  padding-left: 1em;
+}
+
+
+/******************************************************************************/

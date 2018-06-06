@@ -1,0 +1,37 @@
+{
+    "ws"         : "http://localhost:8080/ws/enviarRuta",
+    "idVehiculo" : "20160801",
+	"fechaHoraInicial" : "2016-12-25T08:00:00",
+    "ping"       : "1",
+    "ruta" : [
+		{
+			"tipoPaso": "avance",
+			"lat" : "3.407611",
+			"lon" : "-76.542731",	    	    
+			"velocidad" : "20",
+			"variacionVelocidad" : "5"			
+		},
+		{
+			"tipoPaso": "parada",
+			"lat" : "3.426270",
+			"lon" : "-76.537475",	    	    
+			"duracionParada" : "60",
+			"estaMotorEncendido" : false						
+		},
+		{
+			"tipoPaso": "avance",			
+			"lat" : "3.426270",
+			"lon" : "-76.537475",	    	    	    	    
+			"velocidad" : "5",
+			"variacionVelocidad" : "5"
+		},
+		{
+			"tipoPaso": "parada",
+			"lat" : "3.413344",
+			"lon" : "-76.528698",	    	    
+			"duracionParada" : "60",
+			"estaMotorEncendido" : false
+			
+		}	
+    ]
+}

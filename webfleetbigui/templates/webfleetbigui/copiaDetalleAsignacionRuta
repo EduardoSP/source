@@ -1,0 +1,1584 @@
+{% extends baseTemplate %}
+<!-- {#% extends "webfleetbigui/baseAdminTenant.html" %#} -->
+{% load staticfiles %}
+{% block titulo %}Rutas{% endblock %}
+
+{% block codigoPrincipal %}
+
+<!-- Estilos -->
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "css/base.css" %}"  rel="stylesheet">
+<link href="{% static "DataTables/datatables.min.css" %}" rel="stylesheet" type="text/css"  />
+<link href="{% static "datetimepicker/css/bootstrap-datetimepicker.min.css" %}"           rel="stylesheet">
+<link href="{% static "mapsPicker/jquery-gmaps-latlon-picker.css" %}" rel="stylesheet" type="text/css" />
+<link href="nouislider.min.css" rel="stylesheet">
+
+<!-- Bibliotecas -->
+<script src="{% static "moment/moment-with-locales.js"      %}"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/noUiSlider/6.2.0/jquery.nouislider.min.js"></script>
+<script src="{% static "DataTables/datatables.min.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapsPicker/jquery-gmaps-latlon-picker.js" %}" ></script>
+<script src="{% static "archivo/bootstrap-filestyle.min.js" %}"></script>
+<script src="{% static "mustache/mustache.min.js" %}"   type="text/javascript" ></script>
+<script src="{% static "select/js/bootstrap-select.min.js" %}"></script>
+<script src="{% static "validatorNuevo/validator.js" %}"></script>
+<script src="{% static "datetimepicker/js/bootstrap-datetimepicker.min.js"      %}"></script>
+<script src="{% static "mapaPuntosControl/mapaPuntosControl.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapaLimitesVelocidad/mapaLimitesVelocidad.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapaPuntosInteres/mapaPuntosInteres.js" %}"   type="text/javascript" ></script>
+
+
+
+<!--<script src="{% static "socketio/socket.io.js" %}"></script>-->
+
+{% verbatim %}
+<script id="templatePuntosControl" type="x-tmpl-mustache">
+<tr class="filaPuntoControl" style="margin: 1em; padding-bottom: 1em;"><td>
+
+  <label >{{titulo}}</label><br/>
+  <input type="hidden" class="direccion"  value="{{direccion}}"/></div>
+  <input type="hidden" class="latitud"  value="{{latitud}}"/></div>
+  <input type="hidden" class="longitud"  value="{{longitud}}"/></div>
+  <!-- <span class="filaDireccion" style="display: none;">{{id}}</span><br/> -->
+ 
+  <div class="row">
+  	<div class="col-md-4">
+		<div class="form-group estiloFormGroup" style="padding-bottom:1em;">
+   				<!-- <label>Fecha Inicio:</label> -->
+                <div class="input-group date formRangoFechaPunto" id="formRangoFechaPunto">
+                  	<input id="inputFechaPunto" type="text" required class="form-control" data-date-format="DD/MM/YYYY" data-error="Ingrese una fecha (DD/MM/YYYY)" pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]$">
+                  	<span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+                  	</span>
+        		</div>
+        		<div class="help-block with-errors"></div>
+         </div>
+  	</div>
+  	<div class="col-md-4">
+		<div class="form-group estiloFormGroup">
+			<!-- <label>Fecha Inicio:</label> -->
+            <div class="input-group date formRangoHoraPunto" id="formRangoHoraPunto">
+              	<input id="inputHoraPunto" type="text" required class="form-control" data-date-format="hh:mm a" data-error="Ingrese una hora (hh:mm)" pattern="^[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$">
+              	<span class="input-group-addon"><span class="glyphicon-time glyphicon"></span>
+              	</span>
+    		</div>
+    		<div class="help-block with-errors"></div>
+         </div>
+  	</div>
+	  	<div class="col-md-2" style="padding-right: 0;">
+	  		<div class="form-group estiloFormGroup">
+		  		<span>
+					<i class="fa fa-plus"></i></br>
+					<i class="fa fa-minus"></i>
+				</span>
+				    <input id="formMinutos" name="formMinutos" type="text" class="form-control formMinutos"  style="margin-top: -2.5em;padding-left: 1.4em;" value="{{minutos}}">
+				
+			</div>
+	  	</div>
+	  	<div class="col-md-2"  style="padding-left: 0;">
+	  		<div class="form-group estiloFormGroup">
+		  			<label style="margin-top: 1em;">minutos</label>
+			</div>
+	  	</div>
+  </div>
+  
+   <div style="text-align:right;"><input type="hidden" class="id"  value="{{id}}"/></div>
+
+</td></tr>
+</script>
+<script id="templateOrigenDestino" type="x-tmpl-mustache">
+<tr><td>
+	<img class="filaImagen" src="{{imagen}}"/>
+	<span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong>
+	</span><br/>
+	<span class="filaDireccion">{{direccion}}</span><br/>
+	<span class="filaPosicion small">{{posicion}}</span>
+</td></tr>
+</script>
+
+<script id="templateParadas" type="x-tmpl-mustache">
+<tr><td>
+  <img class="filaImagen" src="{{imagen}}"/>
+  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+	<span class="filaDireccion">{{direccion}}</span><br/>
+	<span class="filaPosicion small">{{posicion}}</span>
+   <div style="text-align:right;"><input type="hidden" class="id"  value="{{id}}"/><a class="eliminarParada" href="#" ><i class="fa fa-times-circle-o"></i> Eliminar</a> </div>
+
+</td></tr>
+</script>
+
+<script id="templatePuntosControl" type="x-tmpl-mustache">
+<tr><td>
+  <img class="filaImagen" src="{{imagen}}"/>
+  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+  <span class="filaDireccion">{{direccion}}</span><br/>
+  <span class="filaPosicion small">{{posicion}}</span>
+   <div style="text-align:right;"><input type="hidden" class="id"  value="{{id}}"/><a class="eliminarPuntoControl" href="#" ><i class="fa fa-times-circle-o"></i> Eliminar</a> </div>
+
+</td></tr>
+</script>
+
+
+<script id="templateLimiteVelocidadInicial" type="x-tmpl-mustache">
+<tr><td>
+  <img class="filaImagen" src="{{imagen}}"/>
+  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+  <span class="filaDireccion">{{direccion}}</span><br/>
+  <span class="filaPosicion small">{{posicion}}</span>
+</td></tr>
+<tr>
+    <td class="row">
+      <div class="col-md-6 form-group">
+        <label for="exampleInputEmail1">Vel.Cargado</label>
+         <input id="formPuntosVelocidadCarga0" name="formPuntosVelocidadCarga0" value="{{valorCargaInicial}}" required type="text" size="3" class= "form-control formPuntosVelocidad" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;"/>
+        </div>
+        <div class="col-md-6 form-group">
+        <label for="exampleInputEmail1">Vel. Descargado</label>
+        <input id="formPuntosVelocidadDescarga0" name="formPuntosVelocidadDescarga0" value="{{valorDescargaInicial}}" required type="text" size="3" class="form-control formPuntosVelocidadDescarga" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;"/>
+      </div>
+    </td> 
+</tr> 
+</td></tr>
+</script>
+
+<script id="templateLimiteVelocidad" type="x-tmpl-mustache">
+<tr><td>
+  <img class="filaImagen" src="{{imagen}}"/>
+  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+  <span class="filaDireccion">{{direccion}}</span><br/>
+  <span class="filaPosicion small">{{posicion}}</span>
+</td></tr>
+
+<tr>
+    <td class="row">
+      <div class="col-md-6 form-group">
+        <label for="exampleInputEmail1">Vel.Cargado</label>
+         <input id="formPuntosVelocidadCarga{{id}}" name="formPuntosVelocidadCarga{{id}}" value="{{valorCarga}}" required type="text" size="3" class= "form-control formPuntosVelocidad" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;"/>
+        </div>
+        <div class="col-md-6 form-group">
+        <label for="exampleInputEmail1">Vel. Descargado</label>
+        <input id="formPuntosVelocidadDescarga{{id}}" name="formPuntosVelocidadDescarga{{id}}" value="{{valorDescarga}}" required type="text" size="3" class="form-control formPuntosVelocidadDescarga" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;"/>
+      </div>
+    </td> 
+</tr> 
+<br/>
+<tr><td>
+
+   <div style="text-align:right;"><input type="hidden" class="id"  value="{{id}}"/><a class="eliminarLimiteVelocidad" href="#" ><i class="fa fa-times-circle-o"></i> Eliminar</a> </div>
+
+</td></tr>
+</script>
+
+<script id="templateLimiteVelocidadFinal" type="x-tmpl-mustache">
+<tr><td>
+  <img class="filaImagen" src="{{imagen}}"/>
+  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+  <span class="filaDireccion">{{direccion}}</span><br/>
+  <span class="filaPosicion small">{{posicion}}</span>
+</td></tr>
+</script>
+
+
+
+<script id="templatePuntosInteres" type="x-tmpl-mustache">
+
+<tr><td>
+  <img class="filaImagen" src="{{imagen}}"/>
+  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+ </td></tr>
+
+<tr>
+    <td class="row">
+      <div class="col-md-12 form-group">
+        <label for="exampleInputEmail1">Nombre Punto Interes</label>
+              <input id="formNombreInteres{{id}}" name="formNombreInteres{{id}}" value="{{nombre}}" required type="text" class="form-control formNombreInteres" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;">
+        </div>
+    </td> 
+</tr> 
+
+<tr><td>
+
+  <span class="filaDireccion">{{direccion}}</span><br/>
+  <span class="filaPosicion small">{{posicion}}</span>
+   <div style="text-align:right;"><input type="hidden" class="id"  value="{{id}}"/><a class="eliminarPuntoInteres" href="#" ><i class="fa fa-times-circle-o"></i> Eliminar</a> </div>
+
+</td></tr>
+</script>
+
+{% endverbatim %}
+
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Draggable directions</title>
+    <style>
+      #right-panel, #right-panel2, #right-panel3, #right-panel4 {
+        font-family: 'Roboto','sans-serif';
+        line-height: 30px;
+        padding-left: 10px;
+      }
+
+      #right-panel select, #right-panel input, #right-panel2 select, #right-panel2 input, #right-panel3 select, #right-panel3 input, #right-panel4 select, #right-panel4 input{
+        font-size: 15px;
+      }
+
+      #right-panel select, #right-panel2 select, #right-panel3 select, #right-panel4 select   {
+        width: 100%;
+      }
+
+      #right-panel i, #right-panel2 i, #right-panel3 i, #right-panel4 i  {
+        font-size: 12px;
+      }
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map, #map2, #map3, #map4 {
+        height: 100%;
+        float: left;
+        width: 63%;
+        height: 100%;
+      }
+      #right-panel, #right-panel2, #right-panel3, #right-panel4 {
+        float: right;
+        width: 34%;
+        height: 100%;
+      }
+      .panel {
+        height: 100%;
+        overflow: auto;
+      }
+    </style>
+  </head>	
+
+<script>
+
+var conductores;
+var vehiculos;
+var rutas;
+var puntosControl;
+var puntosControl;
+var idRuta;
+var datosAsignacionRuta;
+var rutaRecorridaVehiculo;
+var webServiceListo = false;
+var mapaPintado = false;
+var map = null;
+var templateOrigenDestino = $('#templateOrigenDestino').html();
+
+
+//Traer la informacion de seguimiento de ruta
+function traer_datos_interfaz (){
+	
+  var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : "{{tenant}}",
+                                              
+                                            },
+                        'data'         : { 
+                            'id': "{{idRuta}}",
+							'retornarPuntosRutaDefinida' : true
+                        }
+                    };
+  
+    var request = $.ajax({
+            type: "POST",
+            url   : "{% url 'wsDetalleRuta' %}",
+            data  : {
+                        request: JSON.stringify(peticion)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+      //pintarTablaRutas(respuesta["data"]);
+      initMap(respuesta["data"],datosAsignacionRuta);
+	  
+    });
+    request.fail(function(jqXHR, textStatus){ });
+};
+
+
+function initMap(data,datosAsignacionRuta) {
+	data_origen           = { lat: data.origen[0],  lng: data.origen[1] };
+	data_destino          = { lat: data.destino[0], lng: data.destino[1] };
+	data_puntosParadas    = data.puntosParadas;
+	//data_waypointsmaps    = data.waypointsmaps;
+	data_nombre_ruta      = data.nombreRuta;
+
+	idPuntosRutaDefinida  = data.idPuntosRutaDefinida; // Se le asigna el id de la ruta definida
+	idRuta                = "{{idRuta}}";
+
+
+	$('#formNombreRuta').val(data_nombre_ruta);
+	//$('#activarParadas').attr("disabled", false);
+
+	$('#contenedorMapa').show();
+
+
+	var puntosRutaDefinida = data.puntosRutaDefinida;
+	var pathRuta = [];
+	
+	for(var i = 0 ; i < puntosRutaDefinida.length ; i++){
+		var punto = puntosRutaDefinida[i];
+		pathRuta.push(
+			 { "lat" : punto[0], "lng" : punto[1]}
+		);
+	}
+	
+	
+	map = new google.maps.Map(document.getElementById('map'), {
+		//zoom: 4,
+		//center: {lat:  4.265594 , lng: -74.387341}  // Colombia 
+		zoom    : 4,
+		center  : data_origen // Colombia 
+	});
+	
+	var marker = new google.maps.Marker({
+	  position: data_origen,
+	  map: map,
+	  icon: guiImagePuntoControl+"/static/images/origenPin.png",
+	  title: "origen"
+	 });
+	 
+	 var marker = new google.maps.Marker({
+	  position: data_destino,
+	  map: map,
+	  icon: guiImagePuntoControl+"/static/images/destinoPin.png",
+	  title: "origen"
+	 });
+
+	polyline = new google.maps.Polyline({
+		path: pathRuta,
+		strokeColor: '#008080',
+		strokeOpacity: 0.8,
+		strokeWeight: 3
+ 	});
+
+	polyline.setMap(map);
+	
+
+	/*  Pintamos en el mapa los puntos origen y fin ademas de todos los waypoinits
+		que crea automaticamente maps al mover la ruta.
+    */
+	//displayRoute(data_origen, data_destino, directionsService, directionsDisplay, array_waypointsmaps);
+
+	/*  lo que sige a continuacion es para centrar y dar zoom al mapa e los puntos de 
+		origen y fin 
+    */
+	var latlngbounds  = new google.maps.LatLngBounds();
+	var LatLng_1      = new google.maps.LatLng(data_origen.lat, data_origen.lng);
+	var LatLng_2      = new google.maps.LatLng(data_destino.lat, data_destino.lng);
+
+	latlngbounds.extend(LatLng_1);
+	latlngbounds.extend(LatLng_2);
+
+	map.setCenter(latlngbounds.getCenter());
+	map.fitBounds(latlngbounds); 
+
+	/*  seteamos las variables importantes para inicializar de forma correcta la interfaz
+     */
+	puntoInicioCreado   = true;
+	puntoFinCreado      = true;
+
+	
+
+	/*  Agregamos los puntos de carga y descarga a la variable puntoIntermedio 
+        despues ejecutamos los metodos para ordenarlos y pintarlos en mapa y 
+        pantalla
+    */
+	for (i = 0; i < data_puntosParadas.length; i++) {
+		lat_temp        = parseFloat (data_puntosParadas[i][0]);
+		lng_temp        = parseFloat (data_puntosParadas[i][1]);;
+		tipoCarga_temp  = data_puntosParadas[i][2];
+		direcc_temp     = "";
+		//puntoIntermedio.push({location: {lat: lat_temp, lng: lng_temp, tipoCarga: tipoCarga_temp}});
+		// print ("algo"); // funciona pero es para abrir la app de la impresora :D
+	}
+	
+	
+	//Pinto la ruta seguida del vehiculo
+	mapaPintado = true;
+	
+
+	// for (i=0;i<legs.length;i++) {
+    // var steps = legs[i].steps;
+    // for (j=0;j<steps.length;j++) {
+    // var nextSegment = steps[j].path;
+    // for (k=0;k<nextSegment.length;k++) {
+    // polyline2.getPath().push(nextSegment[k]);
+    // //console.log (nextSegment[k]);
+    // bounds.extend(nextSegment[k]);
+    // }
+    // }
+    // }
+    // polyline2.setMap(map2);
+    // //makeMarkerRutaPuntoControl( origen, "file:localhost:8080/Fleetbiweb/webfleetbigui/static/images/origenPin.png", "Origen" );
+    // makeMarkerRutaPuntoControl( origen, guiImagePuntoControl+"/static/images/origenPin.png", "Origen" );
+	//       
+    // makeMarkerRutaPuntoControl( destino, guiImagePuntoControl+"/static/images/destinoPin.png", 'Destino' );
+} // fin initMap
+
+
+var origen;
+var destino;
+function displayRoute(origin, destination, service, display, puntoIntermedio) {
+  service.route({
+    origin        : origin,
+    destination   : destination, 
+    waypoints     : puntoIntermedio, //puntos intermedios
+    travelMode    : 'DRIVING',
+    avoidTolls    : false //evita peajes
+  }, function(response, status) {
+    if (status === 'OK') {
+      display.setDirections(response);
+
+      if (inicializar_pintar_todas_las_pestanas) { 
+          cargar_todas_pestanas (); 
+          inicializar_pintar_todas_las_pestanas = false;
+      }
+      console.log ("display route despues del ajax ");
+
+      }else {
+        puntoInicioCreado 	= false;
+        puntoFinCreado		  = false;         	
+        notif({
+                msg     : "Por favor crear de nuevo los puntos",
+                type    : "warning",
+                multiline: true,
+                position: "center"
+        	});
+        setTimeout(function() { 
+          location.reload(); 
+        }, 
+        1000);
+      }
+    });
+}
+
+//pintar ruta seguida del vehiculo
+function pintarRutaSeguidaDelVehiculo(){
+	var pathRutaSeguida = [];
+	if(webServiceListo && mapaPintado ){
+		var puntosRutaSeguidaVehiculo = rutaRecorridaVehiculo;
+		
+		for(var i = 0 ; i < puntosRutaSeguidaVehiculo.length ; i++){
+			var punto = puntosRutaSeguidaVehiculo[i];
+			pathRutaSeguida.push(
+				 { "lat" : punto.latitud, "lng" : punto.longitud}
+			);
+		}
+		
+		polyline = new google.maps.Polyline({
+			path: pathRutaSeguida,
+			strokeColor: '#eb2626',
+			strokeWeight: 3	
+	 	});
+	 	
+	 	polyline.setMap(map);
+	}
+	
+}
+
+
+//------ Traer datos de detalle de ruta----------------------------------------------------
+function traerDatosDeatlleRuta(){
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : "{{tenant}}",          
+                                         },
+                        'data'          : {  
+                        					"idAsignacionRuta":"{{idAsignacionRuta}}",    
+                        				  }
+                      };
+  
+    var request = $.ajax({
+	type        : "POST",
+	url         : "{% url 'wsDetalleAsignacionRuta' %}",
+	data        : {
+            request :  JSON.stringify(peticion)
+        },
+	dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+
+            cargarDatosDetalleRuta(respuesta.data);
+           
+        }
+        else{
+            notif({
+                msg     : respuesta.mensaje,
+                type    : "error",
+                position: "center"
+            });
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        
+    });
+}
+
+function cargarDatosDetalleRuta(data){
+	cargarListadoPuntosControl(data);
+	idRuta					= data.idRuta;
+	var estado 				= data.estado;
+	var fechaActual 		= moment();
+	
+	$('#formRangoFecha1') 	.data('DateTimePicker').setDate(moment(data.fechaInicioProgramada).format("DD/MM/YYYY hh:mm a"));
+	$('#formRangoFecha2') 	.data('DateTimePicker').setDate(moment(data.fechaFinProgramada).format("DD/MM/YYYY hh:mm a"));
+   	if (data.estado== "programada"){
+		estado = "PROGRAMADA";
+		$('#abortarRuta')	.hide();
+	}
+	else if (data.estado== "iniciada"){
+		estado = "INICIADA";
+		$('#abortarRuta')	.show();
+		
+		fechaPickerInicio 	= $('#formRangoFecha1').data('DateTimePicker').date.format();
+		fechaPickerFin 		= $('#formRangoFecha2').data('DateTimePicker').date.format();
+		if(fechaPickerInicio<fechaActual){
+			$('#formRangoFecha1').data('DateTimePicker').disable();
+		}
+		
+		if(fechaPickerFin<fechaActual){
+			$('#formRangoFecha2').data('DateTimePicker').disable();
+		}
+	}
+	else if (data.estado== "sinfinalizar"){
+		$('#abortarRuta')	.hide();
+		$('#enviarAsignacion')	.hide();
+		fechaPickerInicio 	= $('#formRangoFecha1').data('DateTimePicker').date.format();
+		fechaPickerFin 		= $('#formRangoFecha2').data('DateTimePicker').date.format();
+		if(fechaPickerInicio<fechaActual){
+			$('#formRangoFecha1').data('DateTimePicker').disable();
+		}
+		
+		if(fechaPickerFin<fechaActual){
+			$('#formRangoFecha2').data('DateTimePicker').disable();
+		}
+	}
+	
+	else if (data.estado== "noejecutada"){
+		estado 				= "NO EJECUTADA";
+		$('#abortarRuta')		.hide();
+		$('#enviarAsignacion')	.hide();
+		$('#formRangoFecha1')	.data('DateTimePicker').disable();
+		$('#formRangoFecha2')	.data('DateTimePicker').disable();
+	}
+	else if (data.estado== "abortada"){
+		estado = "ABORTADA";
+		$('#abortarRuta')		.hide();
+		$('#enviarAsignacion')	.hide();
+
+		$('#formRangoFecha1').data('DateTimePicker').disable();
+		$('#formRangoFecha2').data('DateTimePicker').disable();
+		
+	}
+	
+	else if (data.estado== "finalizada"){
+		estado = "FINALIZADA";
+		$('#abortarRuta')		.hide();
+		$('#enviarAsignacion')	.hide();
+
+		$('#formRangoFecha1').data('DateTimePicker').disable();
+		$('#formRangoFecha2').data('DateTimePicker').disable();
+	}
+		
+	$('#estadoRuta')		.val(estado);
+	$('#estadoRuta')		.text(estado);
+    
+    $('#grupoConductores')	.val(data.idConductor);
+    $('#grupoVehiculos')	.val(data.idVehiculo);
+    $('#grupoRutas')		.val(data.idRuta);
+    $('#grupoVehiculos')	.prop('disabled', true);
+    $('#grupoRutas')		.prop('disabled', true);
+    
+    $('#grupoConductores')	.selectpicker('refresh');
+    $('#grupoVehiculos')	.selectpicker('refresh');
+    $('#grupoRutas')		.selectpicker('refresh');
+    
+    traerPosicionesVehiculo(data);
+    
+}
+
+
+function enviarAbortarRuta(id){
+	var idRuta = id;
+	var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                            },
+                        'data'         : {  
+                        					'idAsignacionRuta' : "{{idAsignacionRuta}}",
+                        				 }
+                      };
+	
+    var request = $.ajax({
+            type: "POST",
+            url		: "{% url 'wsAbortarAsignacionRuta' %}",
+            data	: {
+                        request: JSON.stringify(peticion)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+        	$('#formularioAceptarEliminar').modal('hide');
+            notif({
+                    msg     : "La asignacion de ruta se aborto exitosamente",
+                    type    : "success",
+                    position: "center"
+                });
+           setTimeout(function() { location.reload(true);}, 4000);
+        }else{
+        	notif({
+                    msg     : "Error al eliminar",
+                    type    : "error",
+                    position: "center"
+                });
+        	 }
+    });
+    request.fail(function(jqXHR, textStatus){ });
+}
+
+//------ Cargar picker de conductores----------------------------------------------------
+function traerConductores(){
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : "{{tenant}}",          
+                                         },
+                        'data'          : {      }
+                      };
+  
+    var request = $.ajax({
+	type        : "POST",
+	url         : "{% url 'wsPickerConductores' %}",
+	data        : {
+            request :  JSON.stringify(peticion)
+        },
+	dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+
+            cargarPickerConductores(respuesta.data);
+        }
+        else{
+            notif({
+                msg     : respuesta.mensaje,
+                type    : "error",
+                position: "center"
+            });
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        
+    });
+}
+
+function cargarPickerConductores(data){
+    conductores   = data;
+    var totalDatos	= conductores.length;
+    for (i = 0; i < totalDatos; i++){
+		var itemconductor = conductores[i];
+		$('#grupoConductores').append('<option value="'+itemconductor.id+'">'+itemconductor.nombres+' '+itemconductor.apellidos+'</option>');
+    }
+       
+    $('#grupoConductores').selectpicker('refresh');
+	$('#grupoConductores').selectpicker('deselectAll');
+ 	$('#grupoConductores').selectpicker('refresh');
+ 	
+ 	traerDatosDeatlleRuta();
+}
+
+//------ Cargar picker de vehiculos----------------------------------------------------
+function traerVehiculos(){
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : "{{tenant}}",          
+                                         },
+                        'data'          : {      }
+                      };
+  
+    var request = $.ajax({
+	type        : "POST",
+	url         : "{% url 'wsPickerVehiculos' %}",
+	data        : {
+            request :  JSON.stringify(peticion)
+        },
+	dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+
+            cargarPickerVehiculos(respuesta.data);
+        }
+        else{
+            notif({
+                msg     : respuesta.mensaje,
+                type    : "error",
+                position: "center"
+            });
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        
+    });
+}
+
+function cargarPickerVehiculos(data){
+    vehiculos   = data;
+    var totalDatos	= vehiculos.length;
+    for (i = 0; i < totalDatos; i++){
+		var itemvehiculo = vehiculos[i];
+		$('#grupoVehiculos').append('<option value="'+itemvehiculo.id+'">'+itemvehiculo.vehiculo.placa+'</option>');
+    }
+       
+    $('#grupoVehiculos').selectpicker('refresh');
+	$('#grupoVehiculos').selectpicker('deselectAll');
+ 	$('#grupoVehiculos').selectpicker('refresh');
+ 	
+ 	traerRutas();
+}
+
+//------ Cargar picker de rutas----------------------------------------------------
+function traerRutas(){
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : "{{tenant}}",          
+                                         },
+                        'data'          : {      }
+                      };
+  
+    var request = $.ajax({
+	type        : "POST",
+	url         : "{% url 'wsPickerRutas' %}",
+	data        : {
+            request :  JSON.stringify(peticion)
+        },
+	dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+
+            cargarPickerRutas(respuesta.data);
+        }
+        else{
+            notif({
+                msg     : respuesta.mensaje,
+                type    : "error",
+                position: "center"
+            });
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        
+    });
+}
+
+function cargarPickerRutas(data){
+    rutas   = data;
+    var totalDatos	= rutas.length;
+    for (i = 0; i < totalDatos; i++){
+		var itemruta = rutas[i];
+		$('#grupoRutas').append('<option value="'+itemruta.id+'">'+itemruta.nombre+'</option>');
+    }
+       
+    $('#grupoRutas').selectpicker('refresh');
+	$('#grupoRutas').selectpicker('deselectAll');
+ 	$('#grupoRutas').selectpicker('refresh');
+ 	
+ 	var idRuta 	= $('#grupoRutas').val();
+	//traerPuntosControlRuta(idRuta);
+	
+	traerConductores();
+}
+
+
+//------ Cargar listado puntos de control----------------------------------------------------
+function traerPuntosControlRuta(idRuta){
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : "{{tenant}}",          
+                                         },
+                        'data'          : {  
+                        					"id":idRuta,    
+                        				  }
+                      };
+  
+    var request = $.ajax({
+	type        : "POST",
+	url         : "{% url 'wsDetallePuntoControlRuta' %}",
+	data        : {
+            request :  JSON.stringify(peticion)
+        },
+	dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+
+            cargarListadoPuntosControl(respuesta.data);
+        }
+        else{
+            notif({
+                msg     : respuesta.mensaje,
+                type    : "error",
+                position: "center"
+            });
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        
+    });
+}
+
+function cargarListadoPuntosControl(data){
+    puntosControl   = data.puntosDeControlVirtual;
+    var estado      = data.estado;
+    var totalDatos	= puntosControl.length;
+    var numPunto	= 0;
+    var fechaAhora 	= moment().format('DD/MM/YYYY');
+    var horaaActual = moment().format('HH:mm');
+    
+    $("#menuContenedorPuntosDeControl").empty();
+    
+    if(totalDatos>0){
+    	$( "#textoSinPuntosControl").hide();
+	    for (i = 0; i < totalDatos; i++){
+			var itempuntoControl = puntosControl[i];
+			numPunto 	+= 1;
+		  	var template 		 = $('#templatePuntosControl').html();
+	        Mustache.parse(template);
+	        var html = Mustache.render(template,
+	        	 {
+	        	 	
+	        	 	latitud   : itempuntoControl.latiud,
+	        	 	longitud  : itempuntoControl.longitud,
+	        	 	direccion    : numPunto+". "+itempuntoControl.direccion,
+	        	 	minutos  : itempuntoControl.minutosTolerancia,
+	        	 });
+	        $('#menuContenedorPuntosDeControl').append(html);
+			 
+	    }
+	   
+	    
+	   $(".formRangoFechaPunto").each(function(index, element) {
+			    var elemento 			= $(element);
+			    var itempuntoControl 	= puntosControl[index];
+			    var fecha;
+			     if(itempuntoControl.fechaHoraCruceProgramada !=""){
+			     	fecha				= moment(itempuntoControl.fechaHoraCruceProgramada).format("DD/MM/YYYY");
+			     }
+			    
+			    elemento.datetimepicker(
+		        { 
+		        	pickTime: false,
+		          	showToday: true,
+		          	pick12HourFormat: true,
+		          	minViewMode: "years",
+					minViewMode: "months",
+					minViewMode: "days",
+					minDate: moment(),
+					language:'es' 
+					
+				});
+				elemento	.data('DateTimePicker').setDate(fecha);
+				
+				if(itempuntoControl.fechaHoraCruceReal !=""){
+					var fechaCruceReal		= moment(itempuntoControl.fechaHoraCruceReal).format("DD/MM/YYYY");
+					if(fecha<=fechaCruceReal){
+						elemento.data('DateTimePicker').disable();
+					}
+			     }
+			     
+			     if(estado!="programada" || estado!="iniciada"){
+			     	elemento.data('DateTimePicker').disable();
+			     	
+			     }
+				
+					
+			});
+			
+			
+		$( ".formRangoHoraPunto" ).each(function( index, element ) {
+		    var elemento 			= $(element);
+		    var itempuntoControl 	= puntosControl[index];
+		    var hora;
+		    if(itempuntoControl.fechaHoraCruceProgramada !=""){
+		    	hora				= moment(itempuntoControl.fechaHoraCruceProgramada).format("hh:mm a");
+				
+		    }
+			
+		    elemento.datetimepicker(
+		        { 
+		        	pickTime: true,
+		        	pickDate: false,
+		          	showToday: true,
+		          	pick12HourFormat: true,
+		          	minViewMode: "years",
+					minViewMode: "months",
+					minViewMode: "days",
+					minDate: moment(),
+					language:'es' 
+				});
+				elemento.data('DateTimePicker').setDate(hora);   
+				
+				 if(itempuntoControl.fechaHoraCruceReal !=""){
+			    
+					var horaCruceReal		= moment(itempuntoControl.fechaHoraCruceReal).format("HH:MM");
+					if(hora<=horaCruceReal){
+						elemento.data('DateTimePicker').disable();
+						elemento.closest('.filaPuntoControl').find(".formMinutos").prop('disabled', true);
+					}
+			     }
+				if(estado!="programada" && estado!="iniciada"){
+				     	elemento.data('DateTimePicker').disable();
+				     	elemento.closest('.filaPuntoControl').find(".formMinutos").prop('disabled', true);	
+				}
+				
+		});
+   }
+   else{
+   		$( "#textoSinPuntosControl").show();
+   }
+}
+
+
+
+//------ Enviar datos de actualización de asignacion de rutas----------------------------------------------------
+function enviarActualizacionRuta(){
+	//var idRuta					= $('#grupoRutas').val();
+	//var vehiculo				= $('#grupoVehiculos').val();
+	var conductor				= $('#grupoConductores').val();
+	var fechaInicioProgramada	= $('#formRangoFecha1').data('DateTimePicker').date.format();
+	var fechaFinProgramada		= $('#formRangoFecha2').data('DateTimePicker').date.format();
+	var listadoPuntosControl 	= [];
+	
+	$( "tr.filaPuntoControl" ).each(function( index, element ) {
+	    var elemento 					= $(element);
+	    //var latitud						= elemento.find('.latitud').val();
+	    //var longitud					= elemento.find('.longitud').val();
+	    var direccion					= elemento.find('.direccion').val();
+	    //var fechaCruceReal				= "";
+	    var fechaCruceProgramada		= elemento.find('.formRangoFechaPunto').data('DateTimePicker').date.format("YYYY-MM-DD");
+		var HoraCruceProgramada			= elemento.find('.formRangoHoraPunto').data('DateTimePicker').date.format("HH:mm:ss");	
+		var minutosTolerancia			= elemento.find('.formMinutos').val();
+		
+		var puntoControl				= {
+											//"latitud"   : latitud,
+							                //"longitud"  : longitud,
+							                "direccion" : direccion,
+							                //"fechaHoraCruceReal"       : fechaCruceReal,
+							                "fechaHoraCruceProgramada" : fechaCruceProgramada+"T"+HoraCruceProgramada,
+							                "minutosTolerancia"        : minutosTolerancia
+			
+											};
+		listadoPuntosControl.push(puntoControl);									
+ 	});
+
+	
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : "{{tenant}}",          
+                                         },
+                        'data'          : {  
+                        					"idAsignacionRuta"       : "{{idAsignacionRuta}}",
+									        //"idVehiculo"             : vehiculo,
+									        "idConductor"            : conductor,
+									        "fechaInicioProgramada"  : fechaInicioProgramada,
+									        "fechaFinProgramada"     : fechaFinProgramada,
+									        "puntosDeControlVirtual" : listadoPuntosControl
+									     
+                        					}
+                      };
+  
+    var request = $.ajax({
+	type        : "POST",
+	url         : "{% url 'wsEditarAsignacionRuta' %}",
+	data        : {
+            request :  JSON.stringify(peticion)
+        },
+	dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+			notif({
+                msg     : "Se actualizó exitosamente la asignacion de ruta",
+                type    : "success",
+                position: "center"
+            });
+           setTimeout(function() { location.reload(true);}, 4000);
+        }
+        else{
+            notif({
+                msg     : respuesta.mensaje,
+                type    : "error",
+                position: "center"
+            });
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        
+    });
+}
+
+
+//Funcion slider
+function cargarSlider(){
+	var slider = document.getElementById('sliderCal');
+	
+	$(".shor").noUiSlider({
+      start: 40,
+      connect: "lower",
+      //step:	0.1,
+      range: {
+        min: 0,
+        max: 1
+      }
+    });
+	
+	var valor 	= parseFloat($('#sliderCal').val());
+	$('#calificacion').text(valor);
+	$('#calificacion').val(valor);
+}
+
+//------ Traer posiciones vehiculo----------------------------------------------------
+function traerPosicionesVehiculo(datosAsignacionRuta){
+	var fechaData		= "";
+	var fechaInicio		= "";
+	var fechaFin		= "";
+	
+	if(datosAsignacionRuta.fechaInicioProgramada != ""){
+		fechaInicio 	= moment(datosAsignacionRuta.fechaInicioProgramada).format();
+		
+		if(datosAsignacionRuta.fechaFinProgramada != ""){
+			fechaFin 		= moment(datosAsignacionRuta.fechaFinProgramada).format();
+		}
+		
+		if(datosAsignacionRuta.fechaInicioReal != ""){
+			fechaInicio 	= moment(datosAsignacionRuta.fechaInicioReal).format();
+		}
+		
+		if(datosAsignacionRuta.fechaFinReal != ""){
+			//fechaFin 	= moment(datosAsignacionRuta.fechaFinReal).format();
+			fechaFin 	= "2017-08-16T08:09:08";
+		}
+	
+		
+		var fechaFin 		= moment(datosAsignacionRuta.fechaFinProgramada).format();
+		
+	    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+	                                            'token'   : config.getToken(),
+	                                            'tenant'  : "{{tenant}}",          
+	                                         },
+	                        'data'          : {  
+	                        					"id"			:datosAsignacionRuta.idVehiculo,    
+	                        					"fechaInicio"	: fechaInicio,
+												"fechaFin"		:"2017-08-16T08:09:38",
+	                        				  }
+	                        				  
+	
+	                      };
+	  
+	    var request = $.ajax({
+		type        : "POST",
+		url         : "{% url 'wsposicionVehiculoRangoFecha' %}",
+		data        : {
+	            request :  JSON.stringify(peticion)
+	        },
+		dataType    : "json"
+	
+	    }).done(function(respuesta){
+	        if (respuesta.success){
+	
+	            rutaRecorridaVehiculo = respuesta.data;
+	            webServiceListo =true;
+	            pintarRutaSeguidaDelVehiculo();
+	        }
+	        else{
+	            notif({
+	                msg     : respuesta.mensaje,
+	                type    : "error",
+	                position: "center"
+	            });
+	        }
+	    }).fail(function(jqXHR, textStatus){
+	        notif({
+	            msg     : "Falló la conexión",
+	            type    : "error",
+	            position: "center"
+	        });
+	    }).always(function(){
+	        
+	    });
+	    
+	    }
+}
+
+
+
+//funciones que pintan los puntos en el panel derecho
+function pintarPanelOrigen(latitud, longitud, direccion){
+  //console.log ("pintarPanelOrigen");
+
+	$("#right-panel-tableOrigenDestino").empty();
+	var filaRenderizadaOrigen = Mustache.render(templateOrigenDestino, 
+		{
+			imagen    : "{% static 'images/origenCirculo.png' %}",
+			titulo    : "Punto Origen",
+			direccion : direccion,
+			posicion  : "["+latitud+", "+longitud+"]",
+      		lat       : latitud,
+      		lng       : longitud
+		}
+		);
+	$("#right-panel-tableOrigenDestino").append(filaRenderizadaOrigen);
+
+	if(activoPuntoFin){
+		// si el usuario a definido el punto final
+	  	var filaRenderizadaDestino = Mustache.render(templateOrigenDestino, 
+	  		{
+	  			imagen   : "{% static 'images/destinoCirculo.png' %}",
+	  			titulo    : "Punto Destino",
+	  			direccion : direccionDestino,
+	  			posicion  : "("+destino.lat()+", "+destino.lng()+")",
+          lat       : destino.lat(),
+          lng       : destino.lng()
+	  		}
+	  		);
+		$("#right-panel-tableOrigenDestino").append(filaRenderizadaDestino);
+	}
+}
+
+// =============================================================================================== //
+
+function pintarPanelDestino(latitudOrigen, longitudOrigen, latitudDestino, longitudDestino, direccionOrigen, direccionDetino){
+	$("#right-panel-tableOrigenDestino").empty();
+	//punto origen
+	var filaRenderizadaOrigen = Mustache.render(templateOrigenDestino, 
+		{
+			imagen    : "{% static 'images/origenCirculo.png' %}",
+			titulo    : "Punto Origen",
+			direccion : direccionOrigen,
+			//posicion  : "("+origen.lat()+", "+origen.lng()+")",
+			posicion  : "("+latitudOrigen+", "+longitudOrigen+")",
+      lat       : latitudOrigen,
+      lng       : longitudOrigen
+		}
+		);
+	$("#right-panel-tableOrigenDestino").append(filaRenderizadaOrigen);
+	//punto Destino
+  	var filaRenderizadaDestino = Mustache.render(templateOrigenDestino, 
+  		{
+  			imagen   : "{% static 'images/destinoCirculo.png' %}",
+  			titulo    : "Punto Destino",
+  			direccion : direccionDetino,
+  			//posicion  : "("+latitud+", "+longitud+")",
+  			posicion  : "("+latitudDestino+", "+longitudDestino+")",
+        lat       : latitudDestino,
+        lng       : longitudDestino
+  		}
+  		);
+	$("#right-panel-tableOrigenDestino").append(filaRenderizadaDestino);
+}
+
+// =============================================================================================== //
+
+
+// === Document ready!!! =======================================================
+var socket = null;
+$(document).ready(function() {
+	
+	var fechaAhora = moment();
+	var fechaManana = moment().add(1, 'days');
+	$('.formRangoFecha').datetimepicker(
+	        { 
+	        	pickTime: true,
+	          	showToday: true,
+	          	pick12HourFormat: true,
+	          	minViewMode: "years",
+				minViewMode: "months",
+				minViewMode: "days",
+				minDate: moment(),
+				language:'es' });
+	
+	traerVehiculos();
+	cargarSlider();
+	//pintarPanelOrigen("3.423441","-76.541062", "calle 6 # 38-15");
+	pintarPanelDestino("3.423441","-76.541062","3.423441","-76.541062", "calle 6 # 38-15", "carrera 28 e6 #72j36");
+	
+	
+	$('#formRangoFecha1').data('DateTimePicker').setDate(fechaAhora);
+	$('#formRangoFecha2').data('DateTimePicker').setDate(fechaManana);
+	
+	//Valida la fecha y hora inicio programada
+	
+	
+	
+	//Valida la fecha y hora fin programada
+	
+	//Valida la  fecha de cruce programada
+	
+ $(document).on('change', '#sliderCal', function( values, handle ) {
+	var calificacion	= parseFloat(handle);
+	$('#calificacion').text(calificacion);
+	$('#calificacion').val(calificacion);
+    });
+	
+
+//=============abortar ruta
+	$(document).on('click', '#abortarRuta', function(){
+		//var idRuta 	= $(this).parent().find('.idRuta').val();
+		$('#formularioAceptarEliminar').modal('show');
+	});
+
+	$(document).on('click', '#aceptarAbortarRuta', function(){
+		
+		enviarAbortarRuta();
+	});
+  
+ //Validador
+ 
+ $('#formularioCrearAsignacion').validator().on('submit', function (e) {
+	if (e.isDefaultPrevented()) {
+	    notif({
+                msg     : "Invalido campo",
+                type    : "error",
+                position: "center"
+            });
+	} else {
+		var permitirEnvioRuta		= validarFechasUsuario('#formRangoFecha1', '#formRangoFecha2');
+		var algo					= "";
+	    
+	    if(permitirEnvioRuta){
+	    	enviarActualizacionRuta();
+	   	}
+	    e.preventDefault();
+	}
+});	
+
+});
+// --- End document ready ------------------------------------------------------
+
+
+
+</script>
+{% endblock %}
+
+{% block contenido %}
+<body>
+	<div id="page-wrapper" style="  margin: 3em; margin-top: 0;">
+	
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <h1 class="">Detalle Asignación ruta <span id="textoNombre"></span></h1>
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	    <!-- /.row -->
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <div class="panel panel-default">
+	                
+	                <!-- /.panel-heading -->
+
+	                <div class="panel-body">
+						<form data-toggle="validator" role="form" id="formularioCrearAsignacion">
+							<div class="row">
+								<div class="col-md-3">
+									<label> Estado: </label><label id="estadoRuta" style="color:#149911; margin-left: 1em;"><strong> Algo</strong></label>
+								</div>
+								<div class="col-md-3">
+									<button id="abortarRuta" style="display: none;" type="button" class="btn btn-raised btn-success">
+										Abortar Ruta
+									</button>
+								</div>	
+								
+							</div>
+							
+							<div class="row">
+								<div class="col-md-3">
+									<div class="form-group">
+					           				<label>Fecha Inicio:</label>
+							                <div class="input-group date formRangoFecha" id="formRangoFecha1">
+							                  	<input id="inputPeriodoGrafico1" type="text" required="" class="form-control" data-date-format="DD/MM/YYYY hh:mm a" data-error="Ingrese una fecha (DD/MM/YYYY hh:mm)" pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\s[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$">
+							                  	<span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+							                  	</span>
+						            		</div>
+						            		<div class="help-block with-errors"></div>
+							         </div>
+									<div class="form-group">
+									    <label for="grupoVehiculos">Vehículo</label><label> </label>
+									    <div id="selectConductores">
+									      <select class="selectpicker" data-width="fit"  data-live-search="true" title="Seleccionar vehículo" id="grupoVehiculos" name="grupoVehiculos">
+								
+									      </select>
+									    </div>
+									</div>
+									<div class="form-group">
+									    <label  for="grupoConductores">Conductor</label><label> </label>
+									    <div id="selectConductores">
+									      <select class="selectpicker" data-width="fit"  data-live-search="true" title="Seleccionar conductor" id="grupoConductores" name="grupoConductores">
+										
+									      </select>
+									    </div>
+									</div>
+								
+								</div>
+								
+								<div class="col-md-3">
+									
+									<div class="form-group">
+					           				<label>Fecha Fin:</label>
+							                <div class="input-group date formRangoFecha" id="formRangoFecha2">
+							                  	<input id="inputPeriodoGrafico2" type="text" required="" class="form-control" data-date-format="DD/MM/YYYY hh:mm a" data-error="Ingrese una fecha (DD/MM/YYYY hh:mm)" pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\s[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$">
+							                  	<span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+							                  	</span>
+						            		</div>
+						            		<div class="help-block with-errors"></div>
+							         </div>
+									<div class="form-group">
+									    <label  for="grupoRutas">Asignar ruta</label><label> </label>
+									    <div id="selectRutas">
+									      <select class="selectpicker" data-width="fit"  data-live-search="true" title="Seleccionar ruta" id="grupoRutas" name="grupoRutas">
+										
+									      </select>
+									    </div>
+									</div>
+									
+								</div>
+								
+								<div class="col-md-6">
+									<label style="color: #eb2626;">Puntos de control</label>
+									<div class="" style="max-height: 100.65em; overflow:auto;">
+										<div id="menuContenedorPuntosDeControl" style="padding: 1em;">
+		      							</div>
+		      							<label id="textoSinPuntosControl" style="display: none; color:#000000;">La ruta seleccionada no tiene puntos de control definidos.</label>
+	      							</div>
+								</div>
+								
+							</div>
+					
+							<button id="enviarAsignacion" type="submit" class="btn btn-raised btn-success enviarAsignacion positionBoton">
+								Guardar Asignación
+							</button>
+						</form>
+					</div>
+	                <!-- /.panel-body -->
+	            </div>
+	            <!-- /.panel -->
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	
+	</div>
+	
+	
+	
+	
+	
+	<div id="page-wrapper" style="  margin: 3em; margin-top: 0;">
+	
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <h1 class="">Seguimiento Ruta</h1>
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	    <!-- /.row -->
+	    <div class="row">
+		    <div class="col-lg-12">
+	       <!-- /.col-lg-12 -->
+	        	<div class="panel panel-default">
+	      	     <div class="panel-body">
+	                  
+	                  <!-- Inicio tab creacion de rutas -->
+	      						<div class="tabbable pestana" id="tabs">
+	      						  	<ul class="nav nav-tabs">
+	      							    <li class="active">
+				                            <a id="tabPestana1" href="#1" data-toggle="tab">Ruta</a>
+				                        </li>
+				                        <li class="tabPuntosControl" >
+				                            <a id="tabPestana2" href="#2" data-toggle="tab">Puntos de control</a>
+				                        </li>
+				                        <li class="tabLimitesVelocidad" >
+				                            <a id="tabPestana3" href="#3" data-toggle="tab">Límites de velocidad</a>
+				                        </li>
+				                        <li class="tabPuntosInteres" >
+				                            <a id="tabPestana4" href="#4" data-toggle="tab">Puntos de interes</a>
+				                        </li>
+	
+      							    </ul>
+			                        <div class="tab-content">
+            						   	<div class="tab-pane active" id="1" >
+            						   		<div class="row">
+            						   			<label style="margin: 1em;">Deslice la barra usando el circulo rojo para seleccionar una hora de la ruta seguida.</label>
+            						   			<div class="col-md-6 col-md-offset-3" style="text-align: center;">
+													<label id="calificacion" class="estiloLabelSlider"> </label>
+												</div>
+            						   			<div class="col-md-6 col-md-offset-3">
+            						   				<div class="slider shor" id="sliderCal" style="margin-bottom: 3em;"></div>
+            						   			</div>
+            						   			
+            						   			
+            						   		</div>
+            						   		<div class="row">
+            						   			<div class="col-md-2" style="text-align: right;">
+            						   				<label >Ruta seguida por el conductor </label>
+            						   				<label >Ruta definida </label>
+            						   			</div>
+            						   			<div class="col-md-1" style="text-align: center;">
+            						   				<hr class="claselinea" style="height: 2px; background-color:#eb2626;"/>
+            						   				<hr class="claselinea" style="height: 2px; background-color:#008080;"/>
+            						   			</div>	
+            						   		</div>
+            						   		<div id="contenedorMapa" style="">
+
+                  								<div id="map" style="width:66%; height:50em;"></div>
+              									    <div id="right-panel">
+                									    	<div style="    float: left;">
+
+                									    	</div>
+                									      <table class="table tablaEncabezado">
+                									      <tr>
+															  <th>Programada</th><th>Real</th><th>Estado</th>
+															</tr>
+                										  </table>
+                										  <hr class="estiloLineaTabla" >
+                										   
+                									      <table id="right-panel-tableOrigenDestino" class="table">
+                									      
+                										  </table>
+                										    <hr>
+                									      <table id="right-panel-table" class="table">
+                										   </table>
+              									   </div>     
+            								  </div>
+			                            </div> 
+			                            <!-- Inicio tab creacion de puntos de control -->
+			                            <div class="tab-pane active" id="2" id="contenidoTab2">
+			                                <div id="contenedorMapa2" style="display:none">
+			                                    <div id="map2" style="width:66%; height:50em;"></div>
+			                                      <div id="right-panel2" >
+			                                                                                    
+			                                          <table id="right-panel2-tableOrigenDestino2" class="table">
+			                                          </table>
+			                                          <hr>
+			                                          <table id="right-panel2-table2" class="table">
+			                                         </table>
+			                                     </div>     
+			                                </div>
+			
+			                            </div> 
+			                            <!-- Inicio tab creacion de limites de velocidad -->
+			                            <div class="tab-pane active" id="3" id="contenidoTab3">
+			                                <div id="contenedorMapa3" style="display:none">
+			
+			                                    <div id="map3" style="width:66%; height:50em;"></div>
+			                                      <div id="right-panel3" >
+			                                                                                    
+			                                          <table id="right-panel3-tableOrigenDestino3" class="table">
+			                                          </table>
+			                                          
+			                                          <table id="right-panel3-table3" class="table">
+			                                         </table>
+			                                     </div>     
+			                                </div>
+			                            </div> 
+			                            <!-- Inicio tab creacion puntos interes-->
+			                            <div class="tab-pane active" id="4" id="contenidoTab4">
+			                                <div id="contenedorMapa4" style="display:none">
+			
+			                                    <div id="map4" style="width:66%; height:50em;"></div>
+			                                      <div id="right-panel4" >
+			                                                                                    
+			                                          <table id="right-panel4-tableOrigenDestino4" class="table">
+			                                          </table>
+			                                          <hr>
+			                                          <form data-toggle="validator" role="form" id="formInteres">
+			                                          <table id="right-panel4-table4" class="table">
+			                                         </table>
+			                                         </form>
+			                                     </div>     
+			                                </div>
+			                            </div>
+	      						      </div>
+	      						</div>  
+	    					</div>
+	                <!-- /.panel-body -->
+	          </div>
+	        	<!-- /.panel -->
+	  	   </div>
+	  	 <!-- /.col-lg-12 -->
+	  </div>
+	</div>
+<!-- /#page-wrapper -->
+<script async defer
+     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDOqPrm-nuqELi0b_kPt7nP0vHFdUunOHc&signed_in=true&callback=traer_datos_interfaz"></script>
+
+
+
+<!-- /#MODAL, VENTANA EMERGENTE PARA ACEPTAR ELIMINAR CONDUCTOR-->
+<div class="modal fade" id="formularioAceptarEliminar" > 
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title">Abortar asignación ruta</h3>
+      </div>
+      <div class="modal-body">
+      	<form>
+      	<div class="row">
+			<div class="col-md-10">
+				<input type="hidden" id="formRutaId"/>
+				<span> ¿Está seguro de abortar la asignación de ruta?</span>
+			</div>
+		</div>
+        
+		</form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-success" id="aceptarAbortarRuta">Abortar asignación</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<!-- /#MODAL, VENTANA EMERGENTE PARA ACEPTAR ELIMINAR CONDUCTOR-->
+
+
+
+</body>
+
+{% endblock %}

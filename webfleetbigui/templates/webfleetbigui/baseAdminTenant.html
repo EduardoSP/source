@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}...titulo...{% endblock %}</title>
+
+    <link rel="icon" type="image/png" href="{% static "images/favicon-32x32.png"									%}/?v=2" sizes="32x32">
+    <link rel="icon" type="image/png" href="{% static "images/android-chrome-192x192.png"							%}/?v=2" sizes="192x192">
+    <link rel="icon" type="image/png" href="{% static "images/favicon-96x96.png"									%}/?v=2" sizes="96x96">
+    <link rel="icon" type="image/png" href="{% static "images/favicon-16x16.png"									%}/?v=2" sizes="16x16">
+
+	<!-- Estilos -->
+    <link href='https://fonts.googleapis.com/css?family=Oxygen:400,700' rel='stylesheet' type='text/css'>
+    <link href="{% static "bootstrap/css/bootstrap.min.css" %}"  rel="stylesheet">
+    <link href="{% static "font-awesome-4.3.0/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css">
+    <link href="{% static "validator/css/bootstrapValidator.min.css" %}" rel="stylesheet" type="text/css">
+    <link href="{% static "notifit/css/notifIt.css" %}" rel="stylesheet" type="text/css">
+    <link href="{% static "material/css/material.min.css" %}"  rel="stylesheet">
+    <link href="{% static "material/css/ripples.min.css"  %}"  rel="stylesheet">
+    <link href="{% static "pace/themes/red/pace-theme-corner-indicator.css" %}" rel="stylesheet" />     
+
+	<!-- Bibliotecas -->
+    <script src="{% static "js/jquery.js" %}"></script>
+    <script src="{% static "bootstrap/js/bootstrap.min.js" %}"></script>
+    <!-- <script src="{% static "validator/js/bootstrapValidator.min.js" %}"></script>
+    <script src="{% static "validator/js/language/es_ES.js" %}"></script> -->
+    <script src="{% static "notifit/js/notifIt.js" %}"></script>
+    <script src="{% static "js/configuracion.js" %}"></script>
+    <script src="{% static "material/js/ripples.min.js" 					%}"></script>
+    <script src="{% static "material/js/material.min.js"					%}"></script>
+    <script src="{% static "socketio/socket.io.js"                          %}"></script>
+    <script >
+		 paceOptions = {
+		 'ajax' : {
+		 'trackMethods': ['GET', 'POST']
+		 }	 
+		 };
+	</script>
+    <script src="{% static "pace/pace.min.js" %}" ></script>
+    
+    <script>
+    function cargarDatosUsuario(){	
+        verificarEstadoIngreso(
+            "adminTenant",
+            { 
+                
+                "adminTenant"		 : "{% url 'adminVistaGeneral' tenant=tenant %}",
+                "superAdministrador" : "{% url 'superAdministradorTenants' tenant=tenant  %}",
+                
+            },
+            "{% url 'loginUnificado' %}",
+			"{{tenant}}"
+        );                               
+    };
+
+
+function mostrarAlarmasNoVistasUsuario(){
+    var peticion    = {
+		'autenticacion': {
+			'usuario' : config.getUsuarioLogin(),
+			'token'   : config.getToken(),
+			'tenant'  : config.getTennant(),
+			
+		},
+        'data' : {
+			
+        }
+    };
+    
+    var request = $.ajax({
+        type : "POST",
+        url  : "{% url 'wsmostrarAlarmasNoVistasUsuario' %}",
+        data : {
+            request: JSON.stringify(peticion)
+        },
+        dataType: "json"
+    });
+    
+    request.done(function(respuesta){
+        if(respuesta.success){
+            var numeroNotificacionesPendientes = respuesta.mensaje;
+            if(numeroNotificacionesPendientes > 0){
+                $('#numeroNotificacionesPendientes').text(numeroNotificacionesPendientes);
+                $('#numeroNotificacionesPendientes').show();
+            }else{
+                $('#numeroNotificacionesPendientes').text(0);
+                $('#numeroNotificacionesPendientes').hide();
+            }   
+        }else{
+		}
+    });
+    request.fail(function(jqXHR, textStatus){ });
+};
+
+function actualizarCerrarSesion(){
+    var peticion    = {
+		'autenticacion': {
+			'usuario'       : config.getUsuarioLogin(),
+			'token'         : config.getToken(),
+            'tenant'        : config.getTennant(),
+            'idUsuario'     : config.getIdUsuario(),
+            'idSesion'      : config.getIdSesion(),
+            'tipoIngreso'   : "fleetBiWeb"
+		},
+        'data' : {
+			
+        }
+    };
+    
+    var request = $.ajax({
+        type : "POST",
+        url  : "{% url 'wsActualizarCerrarSesion' %}",
+        data : {
+            request: JSON.stringify(peticion)
+        },
+        dataType: "json"
+    });
+    request.done(function(respuesta){
+        if(respuesta.success){
+            config.setLogueado(false);
+            config.setToken("");
+            config.setListaOpcionesHabilitadasPlataforma(null);
+            window.location.href = "{% url 'loginUnificado' %}";
+        }else{
+            notif({
+                 msg     : respuesta.mensaje,
+                 type    : "warning",
+                 position: "center"
+             });
+            config.setLogueado(false);
+            config.setToken("");
+            config.setListaOpcionesHabilitadasPlataforma(null);
+            window.location.href = "{% url 'loginUnificado' %}";             
+		}
+    });
+    request.fail(function(jqXHR, textStatus){ });
+}
+
+var socket = null;
+$(document).ready(function() {    
+    //muestar la cantidad de alarmas no visualizadas por el usuarario
+    mostrarAlarmasNoVistasUsuario();
+    // This command is used to initialize some elements and make them work properly
+    $.material.init();
+    $('#nombreUsuario').text(" "+config.getUsuarioLogin());
+    cargarDatosUsuario();
+    $('#cerrarSesion').on('click',function() {
+        actualizarCerrarSesion();
+	    // config.setLogueado(false);
+        // config.setToken("");
+        // config.setListaOpcionesHabilitadasPlataforma(null);
+		// //window.location.href = "{% url 'loginUsuarios' tenant=tenant %}";	
+    	
+		// window.location.href = "{% url 'loginUnificado' %}";
+    });
+    //notier
+    socket = io(notierbase, { query: "usuario="+config.getUsuarioLogin()+"&token="+config.getToken()+"&tenant="+config.getTennant()+"" });
+
+	socket.on('notificacion', function(msg){
+	   console.log(msg); 
+       var jsonMensaje = JSON.parse(msg); 
+        if (jsonMensaje.tipo == "alarma"){
+            //muestra la cantidad de alarmas no visualizadas por el usuarario          
+            notif({
+                        msg      : jsonMensaje.mensaje,
+                        type     : "warning",
+                        position : "center"
+                    });
+            mostrarAlarmasNoVistasUsuario();
+        }
+        if(jsonMensaje.tipo == "seguridadAutenticacion"){
+            var formatoFecha    = convertirFechaEspanol(jsonMensaje.fecha).format("dddd DD [de] MMMM YYYY [a las] hh:mm a");
+            mensaje = "Una nueva sesión se ha iniciado en su cuenta desde "+ jsonMensaje.dispositivo+" el "+formatoFecha+". Se cerrará la sesión automáticamente"
+            $('#formMensajeAlertaSeguridad').text(mensaje);
+            $('#formularioNotificarAlertaSeguridad').modal('show');
+            // no ha sido leida la alerta
+            config.setMensajeAlerta(mensaje);
+            config.setNotificacionAlertaLeida(false);
+        }
+    });
+
+    $('#miCuenta').on('click',function() {
+        window.location.href = "{% url 'miCuenta' tenant=tenant %}";
+    });  
+
+    var notificacionLeidaBool = config.getNotificacionAlertaLeida() == "true";
+    if(!notificacionLeidaBool){
+        // No ha sido leida la notificacion de la alerta de seguridad entonces se muestra en la plataforma
+        $('#formMensajeAlertaSeguridad').text(config.getMensajeAlerta());
+        $('#formularioNotificarAlertaSeguridad').modal('show');
+    }
+
+    $(document).on('click', '#aceptarNotificacionLeida', function(){
+        actualizarCerrarSesion();
+        config.setNotificacionAlertaLeida(true);
+    });
+    $(document).on('click', '#closeNotificacionLeida', function(){
+        actualizarCerrarSesion();
+        config.setNotificacionAlertaLeida(true);
+    });
+    $('#formularioNotificarAlertaSeguridad').on('hidden.bs.modal', function () {
+        // No ha sido leida la notificacion de la alerta de seguridad entonces se muestra en la plataforma
+        $('#formMensajeAlertaSeguridad').text(config.getMensajeAlerta());
+        $('#formularioNotificarAlertaSeguridad').modal('show'); 
+    });
+
+});
+        </script>
+	<!-- Código principal librerias, css, estilos-->
+	{% block codigoPrincipal %}...codigoPrincipal...{% endblock %}
+</head>
+<body class="fondoTodo">
+  
+  <div id="wrapper" >
+   <!-- nuevo -->
+    <nav class="navbar navbar-default shadow-z-2">
+      <div class="container-fluid">
+	<div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+	  <a class="navbar-brand" href="#">
+	    <img src="{% static "images/logoBlanco.png" %}" style="height: 2em;"/>
+	  </a>
+	</div>
+    <!-- nuevo -->
+	<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+	  <ul class="nav navbar-nav">
+	    <!-- <li class="{% if pintarPestana == "pestanaAdminEquiposEmergencia" %} active {% endif %}"><a href="#">Equipos de emergencia</a></li> -->
+
+            <li class="{% if pintarPestana == "pestanaAdminVistaGeneral" %} active {% endif %}"><a href="{% url 'adminVistaGeneral' tenant=tenant %}">  Vista General</a></li>
+
+            <li class="dropdown {% if pintarPestana == "pestanaAdminTransporte" %} active {% endif %}">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    Transporte
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li class="{% if pintarSubPestana == 'pestanaAdminVigilancia' %} active {% endif %}">
+                        <a href= "{% url 'adminVehiculos' tenant=tenant %}"> Vehículos </a>
+                    </li>
+                    <li class="{% if pintarSubPestana == 'pestanaAdminTipoZona' %}   active {% endif %}">
+                        <a href= "{% url 'adminConductores' tenant=tenant %}"> Conductores </a>
+                    </li>
+                </ul>
+            </li>
+
+<!--             <li class="{% if pintarPestana == "pestanaAdminVehiculos" %}    active {% endif %}"><a href="{% url 'adminVehiculos' tenant=tenant %}">     Vehículos</a></li>
+            <li class="{% if pintarPestana == "pestanaAdminConductores" %}  active {% endif %}"><a href="{% url 'adminConductores' tenant=tenant %}">   Conductores</a></li> -->
+            <!-- <li class="{% if pintarPestana == "pestanaAdminRutas" %}        active {% endif %}"><a href="{% url 'adminRutas' tenant=tenant %}">         Rutas</a></li> -->
+            
+            <li id="pestanaAdminRutas" class="dropdown {% if pintarPestana == "pestanaAdminRutas" %} active {% endif %}">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    Rutas
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li class="{% if pintarSubPestana == 'pestanaAdminRutas' %} active {% endif %}">
+                        <a href= "{% url 'adminRutas' tenant=tenant %}"> Listado rutas </a>
+                    </li>
+                    <li class="{% if pintarSubPestana == 'pestanaAdminAsignacionesRutas' %}   active {% endif %}">
+                        <a href= "{% url 'adminListadoAsignacionesRutas' tenant=tenant %}"> Asignación rutas </a>
+                    </li>
+                </ul>
+            </li>
+            <!--
+            <li class="{% if pintarPestana == "pestanaAdminVigilancia" %}   active {% endif %}"><a href="{% url 'adminVigilancia' tenant=tenant %}">    Vigilancia</a></li>
+	    	-->
+            <li class="dropdown {% if pintarPestana == "pestanaAdminVigilancia" %} active {% endif %}">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    Vigilancia
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li class="{% if pintarSubPestana == 'pestanaAdminTipoZona' %}   active {% endif %}">
+                        <a href= "{% url 'adminTipoZona' tenant=tenant %}">   Tipo Zona </a>
+                    </li>
+                    <li class="{% if pintarSubPestana == 'pestanaAdminVigilancia' %} active {% endif %}">
+                        <a href= "{% url 'adminVigilancia' tenant=tenant %}"> Vigilancia General </a>
+                    </li>
+                    <li id="pestanaAdminSeguridadVial"  class="{% if pintarSubPestana == 'pestanaAdminSeguridadVial' %}   active {% endif %}">
+                        <a href= "{% url 'adminSeguridadVial' tenant=tenant %}">Seguridad Vial</a>
+                    </li>
+                </ul>
+            </li>
+            <!---->
+            <li class="{% if pintarPestana == "pestanaAdminAlarmas" %} active {% endif %}"><a href="{% url 'adminAlarmas' tenant=tenant %}">       Alarmas  <span id="numeroNotificacionesPendientes" class="badge"></span></a></li>
+<!--             <li class="{% if pintarPestana == "pestanaAdminSeguridadVial" %} active {% endif %}"><a href="{% url 'adminSeguridadVial' tenant=tenant %}">Seguridad Vial</a></li> -->
+
+			<li id="pestanaAdminGeneradoresCarga" class="{% if pintarPestana == "pestanaAdminGeneradoresDeCodigo" %} active {% endif %}"><a href="{% url 'adminGeneradorCodigo' tenant=tenant %}">Generadores de código</a></li>
+			<li id="pestanaAdminCadenaFrio" class="{% if pintarPestana == "pestanaAdminCadenaFrio" %} active {% endif %}"><a href="{% url 'adminCadenaFrio' tenant=tenant %}">Cadena de frío</a></li>
+
+            <!-- <li class="{% if pintarPestana == "pestanaAdminReportes" %} active {% endif %}"><a href="{% url 'adminReportes' tenant=tenant %}">      Reportes</a></li> -->
+            
+            <li class="dropdown {% if pintarPestana == "pestanaAdminReportes" %} active {% endif %}">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    Reportes
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li id="pestanaAdminReportes"  class="{% if pintarSubPestana == 'pestanaAdminReportes' %} active {% endif %}">
+                        <a href= "{% url 'adminReportes' tenant=tenant %}">Reportes estadísticos</a>
+                    </li>
+                    <li id= "pestanaAdminParadasVehiculos"  class="{% if pintarSubPestana == 'pestanaAdminParadasVehiculos' %}   active {% endif %}">
+                        <a href= "{% url 'adminReporteParadasVehiculosZonas' tenant=tenant %}">Reporte paradas vehículos - zonas</a>
+                    </li>
+                    <li id="pestanaAdminActividadVehiculos"  class="{% if pintarSubPestana == 'pestanaAdminActividadVehiculos' %}   active {% endif %}">
+                        <a href= "{% url 'adminReporteActividadVehiculos' tenant=tenant %}">Reporte kilometraje por hora</a>
+                    </li>
+                    <li id="pestanaAdminCalificacionConductores"  class="{% if pintarSubPestana == 'pestanaAdminCalificacionConductores' %}   active {% endif %}">
+                        <a href= "{% url 'adminReporteCalificacionConductores' tenant=tenant %}">Reporte calificación de conductores</a>
+                    </li>
+                    <li id="pestanaAdminConduccionHorarioPermitido"  class="{% if pintarSubPestana == 'pestanaAdminConduccionHorarioPermitido' %}   active {% endif %}">
+                        <a href= "{% url 'adminReporteConduccionHorarioPermitido' tenant=tenant %}">Reporte conducción fuera horario permitido</a>
+                    </li>
+                    <li id="pestanaAdminReportesCadenaFrio"  class="{% if pintarSubPestana == 'pestanaAdminReportesCadenaFrio' %}   active {% endif %}">
+                        <a href= "{% url 'adminReportesCadenaFrio' tenant=tenant %}">Reportes cadena de frío</a>
+                    </li>
+                </ul>
+            </li>
+            
+            
+	  </ul>
+
+    <!--    
+            
+    -->
+	    <ul class="nav navbar-nav navbar-right">
+	      <li class="dropdown">
+		      <a href="#" class="dropdown-toggle"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="true" style="padding-bottom: 0; padding-top: 1.33em;">
+    		  <!-- <img id="imagenUsuario" class="img-circle" src="{% static "images/userimage.png" %}" style="height: 2em;"/> -->
+    		  <span id="divID" class="divID circle-avatar"></span>
+    		  <span id="nombreUsuario"> NombreUsuario</span> <span class="caret"></span></a>
+    		<ul class="dropdown-menu">
+    		  <li><a id="miCuenta"      href="#"><i class="fa fa-user fa-fw"></i>Mi cuenta</a></li>
+    		  <li><a id="configuracion" href="{% url 'adminConfiguracion' tenant=tenant %}"><i class="fa fa-cog fa-fw"></i>Configuración</a></li>
+    		  <li><a id="cerrarSesion"  href="#"><i class="fa fa-sign-out fa-fw"></i>Cerrar Sesión</a></li>
+    		</ul>
+	      </li>
+	    </ul>
+	</div>
+  </div>
+    </nav>
+
+    {% block contenido %}...contenido...{% endblock %}
+
+  </div>
+  <!-- /#wrapper -->
+
+<!-- /#MODAL, VENTANA EMERGENTE NOTIFICAR SESION SIMULTANEA-->
+<div class="modal fade" id="formularioNotificarAlertaSeguridad" > 
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="closeNotificacionLeida"><span aria-hidden="true">&times;</span></button>
+          <h3 class="modal-title">Alerta de seguridad</h3>
+        </div>
+        <div class="modal-body">
+            <form>
+            <div class="row">
+              <div class="col-md-10">
+                  <span id="formMensajeAlertaSeguridad"></span>
+              </div>
+          </div>
+          
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-success" id="aceptarNotificacionLeida">Aceptar</button>
+        </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+  <!-- /#MODAL, VENTANA EMERGENTE NOTIFICAR SESION SIMULTANEA-->
+  
+</body>
+</html>

@@ -1,0 +1,641 @@
+{% extends baseTemplate %}
+<!-- {#% extends "webfleetbigui/baseAdminTenant.html" %#} -->
+{% load staticfiles %}
+{% block titulo %}Reportes{% endblock %}
+
+{% block codigoPrincipal %}
+
+<!-- Estilos -->
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "css/base.css" %}"  rel="stylesheet">
+<link href="{% static "DataTables/datatables.min.css" %}" rel="stylesheet" type="text/css"  />
+<link href="{% static "datetimepicker/css/bootstrap-datetimepicker.min.css" %}"           rel="stylesheet">
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "mapsPicker/jquery-gmaps-latlon-picker.css" %}" rel="stylesheet" type="text/css" />
+<link href="{% static "bootstrap-player/css/bootstrap3_player.css" %}" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" href="https://www.amcharts.com/lib/3/plugins/export/export.css" type="text/css" media="all" />
+
+<!-- Bibliotecas -->
+<script src="{% static "select/js/bootstrap-select.min.js" %}"></script>
+<script src="{% static "moment/moment-with-locales.js"      %}"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/noUiSlider/6.2.0/jquery.nouislider.min.js"></script>
+<script src="{% static "DataTables/datatables.min.js" %}"   type="text/javascript" ></script>
+
+<script src="{% static "mapsPicker/jquery-gmaps-latlon-picker.js" %}" ></script>
+<!--<script src="{% static "socketio/socket.io.js" %}"></script>-->
+<script src="{% static "datetimepicker/js/bootstrap-datetimepicker.min.js"      %}"></script>
+<script src="{% static "validatorNuevo/validator.js" %}"></script>
+<script src="{% static "bootstrap-player/js/bootstrap3_player.js" %}"   type="text/javascript" ></script>
+<!-- <link href="{% static "amcharts/plugins/export/export.css" %}" rel="stylesheet" type="text/css">
+<script src="http://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.6/fabric.min.js" ></script>
+<script src="{% static "amcharts/amcharts.js"              %}" ></script>
+<script src="{% static "amcharts/serial.js"                %}" ></script>
+<script src="{% static "amcharts/plugins/export/export.js" %}" ></script>
+<script src="{% static "amcharts/pie.js"              	   %}" ></script>
+<script src="{% static "amcharts/themes/light.js"          %}" ></script>
+<script src="{% static "amcharts/themes/green.js"          %}" ></script>
+<script src="{% static "amcharts/themes/orangeGreen.js"    %}" ></script> -->
+<script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
+<script src="https://www.amcharts.com/lib/3/serial.js"></script>
+<script src="https://www.amcharts.com/lib/3/plugins/export/export.min.js"></script>
+<script src="https://www.amcharts.com/lib/3/themes/light.js"></script>
+
+<!--<script src="{% static "socketio/socket.io.js" %}"></script>-->
+
+<script>
+var vehiculos;
+var tiposZonas;
+var tipoZonasTodos;
+
+
+//------ Cargar Tabla listado estadisticas de los vehiculos----------------------------------------------------
+function cargarTablaVehiculos(){
+	// $("#indicadorAvance").show();
+    var fechaInicio 	= $('#formRangoFecha1').data('DateTimePicker').date.format();
+    var fechaFin 		= $('#formRangoFecha2').data('DateTimePicker').date.format();
+
+    var vehiculos 		= [];
+    if($('#grupoVehiculos').val() != null && $('#grupoVehiculos').val() !=0 ){
+    	vehiculos = $('#grupoVehiculos').val();
+    	
+    	
+    }
+    
+    var tiposZonas 		= [];
+    if($('#grupoVehiculos').val() != null && $('#grupoTipoZona').val() !=0){
+    	tiposZonas.push($('#grupoTipoZona').val());
+    }
+    
+    var peticion    = {
+	'autenticacion': {
+	    'usuario' : config.getUsuarioLogin(),
+            'token'   : config.getToken(),
+            'tenant'  : config.getTennant(),
+            
+        },
+        'data'         : {
+            'fechaInicio'		: fechaInicio,
+            'fechaFin'			: fechaFin,
+            'vehiculos'			: vehiculos,
+            'tipoZonas'			: tiposZonas
+        }
+    };
+   
+	// valida si la peticion es de un generador de carga
+    if(config.getEsGeneradorCarga()){
+		//si la peticion es de un generador de carga entonces a la autenticación se le agrega el codigo de acceso
+    	peticion["autenticacion"]["codigoAcceso"] = config.getCodigoAcceso();
+    	peticion["data"]["tipoZonasTodos"]		  = tipoZonasTodos;
+    }   
+
+    var request = $.ajax({
+        type : "POST",
+        url  : "{% url 'wsReporteParadasVehiculosEnZonas' %}",
+        data : {
+            request: JSON.stringify(peticion)
+        },
+        dataType: "json"
+    });
+    
+    request.done(function(respuesta){
+        if(respuesta.success){
+            pintarTablaVehiculos(respuesta["data"]);
+            // $("#indicadorAvance").hide();
+        }else{ }
+    });
+    request.fail(function(jqXHR, textStatus){ });
+};
+
+
+function pintarTablaVehiculos(data){
+    var dataSet = data;
+
+    if ( ! $.fn.DataTable.isDataTable( '#graficoVehiculos' ) ) {
+	$('#graficoVehiculos').DataTable({
+	    responsive: true,
+	    data: dataSet,
+	    fixedHeader:true,
+	    
+	    "pageLength"	:100,
+	    "aaSorting": [],
+	    language: traduccionDatatables,
+	    
+	    columns: [
+
+	        {  title: "Fecha hora inicio",
+	           data : null
+	        },
+	        {  title: "Fecha hora fin",
+	           data : null
+	        },	        
+	        {  title: "Duración parada",
+	           data : null   },
+
+	        {  title: "Nombre zona",
+	           data : null
+	        },
+	        {  title: "Tipo zona",
+	           data : null
+	        },
+	        {  title: "Vehículo",
+	           data : null
+	        }
+	        
+	    ],
+	    "columnDefs": [	        	
+	        { responsivePriority: 1, targets: 0 },
+        	{ responsivePriority: 2, targets: 1 },
+	      	{ responsivePriority: 3, targets: 2 },
+	      	{ responsivePriority: 4, targets: 3 },
+	      	{ responsivePriority: 5, targets: 5 },
+	      	
+	      	
+
+	      	{
+	      	    "targets": [0],
+		    "render": function (data, type, full, meta){
+		    		var fechaHoraInicio ="";
+				    if( data.fechahoraInicio != "" ){
+						fechaHoraInicio = moment(data.fechahoraInicio).format("DD/MM/YYYY, hh:mm a");
+		    		}					
+	                return fechaHoraInicio;
+	            }
+		},
+		{
+	      	    "targets": [1],
+		    "render": function (data, type, full, meta){
+					var fechaHoraFin ="";
+				    if( data.fechahoraFin != ""){
+						fechaHoraFin = moment(data.fechahoraFin).format("DD/MM/YYYY, hh:mm a");
+		    		}					
+	                return fechaHoraFin;
+					
+		                
+		    }
+		},
+
+		{
+	      	    "targets": [2],
+		    "render": function (data, type, full, meta){
+					var duracionParada = "";
+					if( data.duracionParadaSegundos !== 0 ){
+						
+						var segundos  = data.duracionParadaSegundos;
+						var minutos   = parseInt(segundos / 60);
+						var horas     = parseInt(segundos/(60*60));
+						var dias      = parseInt(segundos/(60*60*24));
+						 
+						 var texto ="";
+						 if(segundos < 60){
+							 texto = segundos+" Segundos";
+						 }else if(minutos < 60){
+							 texto = minutos+" Minutos";
+						 }else if(horas < 24){
+							 var minutosResiduo = parseInt((segundos/60) % 60);
+							 texto = horas+"h "+minutosResiduo+"min";
+						 }else{
+							 var horasResiduo = parseInt((minutos/60) % 24);
+						 	 texto = dias+"días "+horasResiduo+"h";
+						 }
+						 
+						 duracionParada 		= texto;
+					}
+					return duracionParada;
+					
+	            }
+		},
+
+		{
+	      	    "targets": [3],
+		    	"render": function (data, type, full, meta){
+				    var nombreZona = "";
+				    if( data.zonas !== null ){
+				    	for(var i=0; i<data.zonas.length;i++){
+				    		var zona = data.zonas[i];
+				    		nombreZona += " "+zona.nombre;
+				    	}
+		    		}
+	                return nombreZona;
+	            }
+		},
+
+		{
+	      	"targets": [4],
+		    "render": function (data, type, full, meta){
+				    var nombreTipoZona = "";
+				    if( data.tipoZonas !== null ){
+				    	for(var i=0; i<data.tipoZonas.length;i++){
+				    		var tipoZona = data.tipoZonas[i];
+				    		nombreTipoZona += " "+tipoZona.nombre;
+				    	}
+		    		}
+	                return nombreTipoZona;
+	            }
+		},
+
+		{
+	      	    "targets": [5],
+		    "render": function (data, type, full, meta){
+				//return '<a href="#verPosicion" class="verPosicion" ><img src="{% static "images/pinUbicacion.png" %} " class="imagenPin" >Ver Posición</a>'+'<input class="verPosicionData" type="hidden" value="'+JSON.stringify(data).replace(/"/g, '&quot;')+'" />';
+	        	var vehiculo = "";
+	        	var placa="";
+				    if( data.vehiculo !== null){
+						vehiculo = data.vehiculo.placa;
+						placa = data.vehiculo.placa;
+		    		}
+	               
+	                return '<a href="'+guibase+'/{{tenant}}/adminDetalleVehiculo/'+data.idVehiculo+'" >'+placa+'</a>';
+	        
+	        }
+		},			
+   	
+      
+	    ]
+	});
+    }   
+    else{
+	$('#graficoVehiculos').DataTable().clear().rows.add(dataSet).draw();
+	
+    }
+
+
+    //muestar la cantidad de alarmas no visualizadas por el usuarario
+    //mostrarAlarmasNoVistasUsuario();
+}
+
+
+
+
+
+
+function cargarListadoVehiculos(){
+    var peticion    = {
+        'autenticacion': {
+
+            'usuario' : config.getUsuarioLogin(),
+            'token'   : config.getToken(),
+            'tenant'  : config.getTennant(),                                                                               
+        },                                                                               
+        'data'         : { 
+        	"numeroOpcionHabilitadaPlataforma" : "6" //Reporte paradas vehiculos - zonas                                                    
+        }                                                                                                    
+    };       
+
+	// valida si la peticion es de un generador de carga
+    if(config.getEsGeneradorCarga()){
+		//si la peticion es de un generador de carga entonces a la autenticación se le agrega el codigo de acceso
+    	peticion["autenticacion"]["codigoAcceso"] = config.getCodigoAcceso();
+    }   
+                                                                                                                                      
+    var request = $.ajax({                                                                                                                                 
+        type        : "POST",                                                                                                           
+        url         : "{% url 'wslistVehiculos' %}",                                                                                    
+        data        : {                                                                                                                   
+            request :  JSON.stringify(peticion)                                                                                                   
+
+        },                                                                                                                                        
+        dataType    : "json"                                                                                                               
+    }).done(function(respuesta){                                                                                                  
+        if (respuesta.success){                                                                                                                        
+            pintarPickerVehiculos(respuesta.data);                                                                                                 
+        }                                                                                                                                      
+        else{                                                                                                                                  
+            notif({                                                                                                                               
+                msg     : respuesta.mensaje,                                                                                                  
+                type    : "error",                                                                                                            
+                position: "center"                                                                                                             
+            });                                                                                                                                   
+        }                                                                                                                                      
+    }).fail(function(jqXHR, textStatus){                                                                                                          
+        notif({                                                                                                                                   
+            msg     : "Falló la conexión",                                                                                                        
+            type    : "error",                                                                                                                    
+            position: "center"                                                                                                                    
+        });                                                                                                                                       
+    }).always(function(){                                                                                                                         
+    }); 
+
+}
+
+function pintarPickerVehiculos(data){
+    vehiculos   	= data;                                               
+	$("#grupoVehiculos").append('<option value="0">Todos</option>');
+    for (i=0; i<vehiculos.length; i++){  
+    	var dato   	= vehiculos[i];        
+    	$("#grupoVehiculos").append('<option value="'+dato.idVehiculo+'">'+dato.placa+'</option>');     
+                                                            
+    }
+    $('#grupoVehiculos').selectpicker('refresh');
+    $('#grupoVehiculos').selectpicker('deselectAll');
+    $('#grupoVehiculos').selectpicker('refresh');    
+}
+
+function cargarListadoTiposZonas(){
+    var peticion    = {
+        'autenticacion': {
+
+            'usuario' : config.getUsuarioLogin(),
+            'token'   : config.getToken(),
+            'tenant'  : config.getTennant(),                                                                               
+        },                                                                               
+        'data'         : {                                                      
+        }                                                                                                    
+    };
+
+	// valida si la peticion es de un generador de carga
+    if(config.getEsGeneradorCarga()){
+		//si la peticion es de un generador de carga entonces a la autenticación se le agrega el codigo de acceso
+    	peticion["autenticacion"]["codigoAcceso"] = config.getCodigoAcceso();
+    }   
+                                                                                                                                      
+    var request = $.ajax({                                                                                                                                 
+        type        : "POST",                                                                                                           
+        url         : "{% url 'wsListarTiposZonas' %}",                                                                                    
+        data        : {                                                                                                                   
+            request :  JSON.stringify(peticion)                                                                                                   
+
+        },                                                                                                                                        
+        dataType    : "json"                                                                                                               
+    }).done(function(respuesta){                                                                                                  
+        if (respuesta.success){                                                                                                                        
+            pintarPickerTiposZonas(respuesta.data);                                                                                                 
+        }                                                                                                                                      
+        else{                                                                                                                                  
+            notif({                                                                                                                               
+                msg     : respuesta.mensaje,                                                                                                  
+                type    : "error",                                                                                                            
+                position: "center"                                                                                                             
+            });                                                                                                                                   
+        }                                                                                                                                      
+    }).fail(function(jqXHR, textStatus){                                                                                                          
+        notif({                                                                                                                                   
+            msg     : "Falló la conexión",                                                                                                        
+            type    : "error",                                                                                                                    
+            position: "center"                                                                                                                    
+        });                                                                                                                                       
+    }).always(function(){                                                                                                                         
+    }); 
+
+}
+
+function pintarPickerTiposZonas(data){
+    tiposZonas   	= data;
+    tipoZonasTodos  = data;                
+    $("#grupoTipoZona").append('<option value="0">Todas</option>');                                
+    for (i=0; i<tiposZonas.length; i++){  
+        var dato   = tiposZonas[i];     
+        $("#grupoTipoZona").append('<option value="'+dato.id+'">'+dato.nombre+'</option>');   
+    }
+    $('#grupoTipoZona').selectpicker('refresh');
+    $('#grupoTipoZona').selectpicker('deselectAll');
+    $('#grupoTipoZona').selectpicker('refresh');   
+    
+    cargarTablaVehiculos(); 
+}
+
+
+
+// === Document ready!!! =======================================================
+var socket = null;
+$(document).ready(function() {	
+	// valida si la peticion es de un generador de carga
+    if(config.getEsGeneradorCarga()){
+		//si la peticion es de un generador de carga entonces muestra el mensaje del rango de fechas definidos por el codigo de acceso
+		var fechaDesde = moment(config.getFechaGeneracion()).format("DD/MM/YYYY");
+		var fechaHasta = moment(config.getFechaCaducidad()).format("DD/MM/YYYY");
+    	$("#textoInfoFechas").text('Habilitado desde '+fechaDesde+ ' hasta '+ fechaHasta);
+    }
+    
+	//Actualiza con un time.time() el ingreso del usuario en alarmas
+	$('.formRangoFecha').datetimepicker(
+        {
+	    	pickTime: false,	    
+            showToday: true,
+            pick12HourFormat: true,
+            minViewMode: "years",
+		    minViewMode: "months",
+		    minViewMode: "days",
+		    language:'es'
+	}
+    );
+	
+	cargarListadoVehiculos();
+	cargarListadoTiposZonas();
+	
+    var fechaAhora = moment();
+    var fechaAyer = moment().subtract(1, 'days');
+
+    $('#formRangoFecha1').data('DateTimePicker').setDate(fechaAyer);
+    $('#formRangoFecha2').data('DateTimePicker').setDate(fechaAhora);
+   
+
+	$('#formularioReportes').validator().on('submit', function (e) {
+		  if (e.isDefaultPrevented()) {
+			notif({
+	                msg     : "Invalido campo",
+	                type    : "error",
+	                position: "center"
+	            });
+		  } else {
+			//aqui se valida que la primer fecha no sea superior a la segunda
+			var permiteAccion =validarFechasUsuario('#formRangoFecha1', '#formRangoFecha2');
+		  	// --------------valida si la peticion es de un generador de carga------------------
+		  	var permiteAccionGeneradorCarga = {success: true, tipoFecha: ""}; 	
+		    if(config.getEsGeneradorCarga()){
+				//si la peticion es de un generador de carga se validan las fechas con las configuradas por un cliente
+				var fechaGeneracion = moment(config.getFechaGeneracion());
+				var fechaCaducidad  = moment(config.getFechaCaducidad());
+				permiteAccionGeneradorCarga = validarFechasGeneradorCarga("#formRangoFecha1", "#formRangoFecha2", "DD/MM/YYYY");
+				if(permiteAccionGeneradorCarga["tipoFecha"] == "fechaGeneracion"){
+					//se le asigna la fecha inicial la fecha de generacion
+					$('#formRangoFecha1').data('DateTimePicker').setDate(fechaGeneracion);
+					permiteAccionGeneradorCarga["success"] = true;	
+				}else if(permiteAccionGeneradorCarga["tipoFecha"] == "fechaCaducidad"){
+					//se le asigna la fecha fin la fecha de caducidad
+					$('#formRangoFecha2').data('DateTimePicker').setDate(fechaCaducidad);
+					permiteAccionGeneradorCarga["success"] = true;
+				}
+		    }
+			if(permiteAccion && permiteAccionGeneradorCarga["success"]){
+				cargarTablaVehiculos();
+			}		    
+		    e.preventDefault();
+		  }
+	});
+
+	
+	
+	$('#grupoVehiculo').on('change',function() {
+  		//alert('The option with value ' + $(this).val() + ' and text ' + $(this).text() + ' was selected.');
+  		var posicion = $(this).val();
+  		cargarTablaVehiculos();
+  		
+	});
+	
+	$('#grupoTipoZona').on('change',function() {
+  		//alert('The option with value ' + $(this).val() + ' and text ' + $(this).text() + ' was selected.');
+  		var posicion 		= $('#grupoTipoReporte').val();
+  		cargarTablaVehiculos();
+
+	});
+	$('#grafica1').on('click',function() {
+		var posicion = $('grupoTipoReporte').val();
+		
+		if(posicion == 0){
+			$('#graficoVehiculos').DataTable().columns.adjust().responsive.recalc();
+		}
+		else if(posicion == 1){
+			$('#graficoVehiculoDia').DataTable().columns.adjust().responsive.recalc();
+		}
+		else if(posicion == 2){
+			$('#graficoParadas').DataTable().columns.adjust().responsive.recalc();
+		}
+		
+		
+		
+	});
+	
+
+});
+// --- End document ready ------------------------------------------------------
+
+
+
+</script>
+{% endblock %}
+
+{% block contenido %}
+<body>
+  
+  	<div id="page-wrapper" style="  margin: 3em; margin-top: 0;">
+    
+	    <div class="row">
+	      <div class="col-lg-12">
+				<h1 class="">Reporte paradas vehículos en zonas <small class="rojoFleet" id="textoInfoFechas"></small></h1>
+	      </div>    
+	    </div>
+
+	    <div class="row">
+	      	<div class="col-lg-12">
+				<div class="panel panel-default">
+			  		<!-- /.panel-heading -->
+				 	<div class="panel-body">
+					    <div class="tabbable pestana">
+	                             		<form data-toggle="validator" role="form" id="formularioReportes">
+		                                	<div class="row">
+						                    
+		                                		<div class="col-md-2">
+												    <div class="form-group">
+										           		<label>Fecha Inicio:</label>
+										                <div class="input-group date formRangoFecha" id="formRangoFecha1">
+										                  <input id="inputPeriodoGrafico1" type="text" class="form-control" 
+															data-date-format="DD/MM/YYYY"data-date-format="DD/MM/YYYY" data-error="Ingrese una fecha (DD/MM/YYYY)"
+									                  		pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]$"
+									                  		>
+										                  <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+										                  </span>
+										            	</div>
+										            	<div class="help-block with-errors"></div>
+											         </div>
+		                                		</div>
+		                                		<div class="col-md-2">
+												    <div class="form-group">
+										           		<label>Fecha Fin:</label>
+										                <div class="input-group date formRangoFecha" id="formRangoFecha2">
+										                  <input id="inputPeriodoGrafico2" type="text" class="form-control" 
+															data-date-format="DD/MM/YYYY" data-error="Ingrese una fecha (DD/MM/YYYY)"
+									                  		pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]$"
+									                  		>
+										                  <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+										                  </span>
+										            	</div>
+										            	<div class="help-block with-errors"></div>
+											         </div>
+		                                		</div>
+		                                		<div class="col-md-2" >
+								                    <div class="form-group" >
+								                        <label>Seleccione vehículo</label>
+								                        <div id="selectVehiculos">
+								                          <select id="grupoVehiculos" class="selectpicker grupoVehiculos"  data-live-search="true" data-width="fit" title="Seleccionar Vehículo" >
+								                          </select>  
+								                        </div>
+								                    </div>
+							                     </div>
+		                                		<div class="col-md-2">
+								                    <div class="form-group">
+								                        <label>Seleccione tipo de zona</label><label> </label>
+								                        <div id="selectTipoZona">
+								                          <select id="grupoTipoZona" class="selectpicker grupoTipoZona"  data-width="fit" title="Seleccionar tipo zona" >
+									                          
+								                          </select>
+								                        </div>
+								                    </div>
+								                </div>		 
+		                                		<div class="col-md-2">
+												    <div class="form-group"> 
+												    	<label></label>                               	
+														<button id="recuperarRutasImagen" type="submit" class="btn btn-raised btn-lg btn-success btn-block ">
+															Generar reporte
+														</button>
+													</div>
+		                                		</div>
+		                                	</div>
+											<!-- <div class="row">
+												<div class="col-md-12">
+													<div class="tab-pane active" id="1" >
+											   	 		<table id="graficoTabla" class="table table-striped table-bordered display" style="width: 100%">
+							                      		</table>
+											   		</div>
+												</div>
+											</div> -->
+											
+	                                  	</form>	
+	                                  	<div >
+											
+											<div id="indicadorAvance"   style="display:none;     text-align: center;">
+										         <br/>
+										         <i class="fa fa-spinner fa-spin fa-3x fa-fw"></i>
+										         <span class="sr-only">Cargando...</span>
+									        </div>
+		                                	<div id="grafico1">
+		                                		<table id="graficoVehiculos" class="table table-striped table-bordered display" style="width: 100%;">
+				                      			</table>
+		                                	</div>
+	                                	</div>						
+						</div>
+					  <!-- /.panel-body -->
+					</div>
+				<!-- /.panel -->
+			    </div>
+		      <!-- /.col-lg-12 -->
+		    </div>
+	    </div>
+  	</div>
+  <!-- /#page-wrapper -->
+<!-- /#MODAL, VENTANA EMERGENTE PARA EL MAPA-->
+	<div class="modal fade" id="detailModal" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+		<div class="modal-dialog-dp detailNoventa">
+			<div class="modal-content">
+				<div class="modal-header">
+				
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
+					<h1 class="modal-title" id="myModalLabel">Mapa</h1>
+					
+					<div id="contenedorMapa2" style="display:none">
+							    <div id="map2" class="map2" style="width:100%; height:40em;"></div>    
+					</div>
+				</div>
+				<div class="modal-body">
+
+				</div>
+					<div class="modal-footer">	<button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>		
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+     
+</body>
+
+{% endblock %}

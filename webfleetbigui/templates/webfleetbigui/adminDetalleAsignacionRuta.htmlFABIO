@@ -1,0 +1,3071 @@
+{% extends baseTemplate %}
+<!-- {#% extends "webfleetbigui/baseAdminTenant.html" %#} -->
+{% load staticfiles %}
+{% block titulo %}Rutas{% endblock %}
+
+{% block codigoPrincipal %}
+
+<!-- Estilos -->
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "css/base.css" %}"  rel="stylesheet">
+<link href="{% static "DataTables/datatables.min.css" %}" rel="stylesheet" type="text/css"  />
+<link href="{% static "datetimepicker/css/bootstrap-datetimepicker.min.css" %}"           rel="stylesheet">
+<link href="{% static "mapsPicker/jquery-gmaps-latlon-picker.css" %}" rel="stylesheet" type="text/css" />
+<link href="nouislider.min.css" rel="stylesheet">
+
+<!-- Bibliotecas -->
+<script src="{% static "moment/moment-with-locales.js"      %}"></script>
+<script src="{% static "nouislider/nouislider.js" %}"   type="text/javascript" ></script>
+<script src="{% static "DataTables/datatables.min.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapsPicker/jquery-gmaps-latlon-picker.js" %}" ></script>
+<script src="{% static "archivo/bootstrap-filestyle.min.js" %}"></script>
+<script src="{% static "mustache/mustache.min.js" %}"   type="text/javascript" ></script>
+<script src="{% static "select/js/bootstrap-select.min.js" %}"></script>
+<script src="{% static "validatorNuevo/validator.js" %}"></script>
+<script src="{% static "datetimepicker/js/bootstrap-datetimepicker.min.js"      %}"></script>
+<script src="{% static "mapaPuntosControl/mapaPuntosControl.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapaLimitesVelocidad/mapaLimitesVelocidad.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapaPuntosInteres/mapaPuntosInteres.js" %}"   type="text/javascript" ></script>
+
+
+
+<!--<script src="{% static "socketio/socket.io.js" %}"></script>-->
+
+{% verbatim %}
+<script id="templatePuntosControl" type="x-tmpl-mustache">
+ <tr class="filaPuntoControl" style="margin: 1em; padding-bottom: 1em;"><td>
+
+ <label >{{titulo}}</label><br/>
+ <input type="hidden" class="direccion"  value="{{direccion}}"/></div>
+ <input type="hidden" class="latitud"  value="{{latitud}}"/></div>
+ <input type="hidden" class="longitud"  value="{{longitud}}"/></div>
+ <!-- <span class="filaDireccion" style="display: none;">{{id}}</span><br/> -->
+ 
+ <div class="row">
+ <div class="col-md-4">
+ <div class="form-group estiloFormGroup" style="padding-bottom:1em;">
+ <!-- <label>Fecha Inicio:</label> -->
+ <div class="input-group date formRangoFechaPunto" id="formRangoFechaPunto">
+ <input id="inputFechaPunto" type="text" required class="form-control" data-date-format="DD/MM/YYYY" data-error="Ingrese una fecha (DD/MM/YYYY)" pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]$">
+ <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+ </span>
+ </div>
+ <div class="help-block with-errors"></div>
+ </div>
+ </div>
+ <div class="col-md-4">
+ <div class="form-group estiloFormGroup">
+ <!-- <label>Fecha Inicio:</label> -->
+ <div class="input-group date formRangoHoraPunto" id="formRangoHoraPunto">
+ <input id="inputHoraPunto" type="text" required class="form-control" data-date-format="hh:mm a" data-error="Ingrese una hora (hh:mm)" pattern="^[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$">
+ <span class="input-group-addon"><span class="glyphicon-time glyphicon"></span>
+ </span>
+ </div>
+ <div class="help-block with-errors"></div>
+ </div>
+ </div>
+ <div class="col-md-2" style="padding-right: 0;">
+ <div class="form-group estiloFormGroup">
+ <span>
+ <i class="fa fa-plus"></i></br>
+ <i class="fa fa-minus"></i>
+ </span>
+ <input id="formMinutos" name="formMinutos" type="text" class="form-control formMinutos"  style="margin-top: -2.5em;padding-left: 1.4em;" value="{{minutos}}">
+ 
+ </div>
+ </div>
+ <div class="col-md-2"  style="padding-left: 0;">
+ <div class="form-group estiloFormGroup">
+ <label style="margin-top: 1em;">minutos</label>
+ </div>
+ </div>
+ </div>
+ 
+ <div style="text-align:right;"><input type="hidden" class="id"  value="{{id}}"/></div>
+
+ </td></tr>
+</script>
+<script id="templateOrigenDestino" type="x-tmpl-mustache">
+  <tr class="row"><td class="col-md-4">
+	  <img class="filaImagen" src="{{imagen}}"/>
+	  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong>
+	  </span>
+	  <span class="filaHoraInicio">{{horaProgramada}}</span>
+	  <br/>
+	  <span class="filaDireccion">{{direccion}}</span><br/>
+	  <span class="filaPosicion small labelRojo">{{posicion}}</span>
+	</td>
+	<td class="col-md-4" style="text-align: center;">
+	  <span class="filaHoraReal">{{horaReal}}</span>
+	  <br/>
+	  <span class="filaDireccion">{{direccion}}</span><br/>
+	  <span class="filavelocidad small">{{velocidad}}</span>
+	</td>
+	<td class="col-md-4 {{estilo}}" style="text-align: center;">
+	  <span class="filaTiempoEstado">{{tiempoEstado}}</span>
+	  <br/>
+	  <span class="filacomentario">{{comentario}}</span><br/>	  
+	</td>
+  </tr>
+</script>
+
+<script id="templateParadas" type="x-tmpl-mustache">
+
+  <tr class="row"><td class="col-md-4">
+	  <img class="filaImagen" src="{{imagen}}"/>
+	  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span>
+	  <span class="filaTipo">{{tipo}}</span><br/>
+	  <span class="filaDireccion">{{direccion}}</span><br/>
+	  <span class="filaPosicion small labelRojo">{{posicion}}</span>
+
+	</td>
+	<td class="col-md-4" style="text-align: center;">
+	  <span class="filaHoraReal">{{horaReal}}</span>
+	  <br/>
+	  <span class="filaDireccion">{{direccion}}</span><br/>
+	  
+	</td>
+	<td class="col-md-4 labelAzul" style="text-align: center; ">
+	  <span class="filaTiempoEstado">{{tiempoEstado}}</span>
+	  <br/>
+	  <span class="filacomentario">{{comentario}}</span><br/>
+	  
+	</td>
+  </tr>
+</script>
+
+<script id="templatePuntosControl" type="x-tmpl-mustache">
+ <tr><td>
+ <img class="filaImagen" src="{{imagen}}"/>
+ <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+ <span class="filaDireccion">{{direccion}}</span><br/>
+ <span class="filaPosicion small">{{posicion}}</span>
+ <div style="text-align:right;"><input type="hidden" class="id"  value="{{id}}"/><a class="eliminarPuntoControl" href="#" ><i class="fa fa-times-circle-o"></i> Eliminar</a> </div>
+
+ </td></tr>
+</script>
+
+
+<script id="templateLimiteVelocidadInicial" type="x-tmpl-mustache">
+ <tr><td>
+ <img class="filaImagen" src="{{imagen}}"/>
+ <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+ <span class="filaDireccion">{{direccion}}</span><br/>
+ <span class="filaPosicion small">{{posicion}}</span>
+ </td></tr>
+ <tr>
+ <td class="row">
+ <div class="col-md-6 form-group">
+ <label for="exampleInputEmail1">Vel.Cargado</label>
+ <input id="formPuntosVelocidadCarga0" name="formPuntosVelocidadCarga0" value="{{valorCargaInicial}}" required type="text" size="3" class= "form-control formPuntosVelocidad" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;"/>
+ </div>
+ <div class="col-md-6 form-group">
+ <label for="exampleInputEmail1">Vel. Descargado</label>
+ <input id="formPuntosVelocidadDescarga0" name="formPuntosVelocidadDescarga0" value="{{valorDescargaInicial}}" required type="text" size="3" class="form-control formPuntosVelocidadDescarga" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;"/>
+ </div>
+ </td> 
+ </tr> 
+ </td></tr>
+</script>
+
+<script id="templateLimiteVelocidad" type="x-tmpl-mustache">
+ <tr><td>
+ <img class="filaImagen" src="{{imagen}}"/>
+ <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+ <span class="filaDireccion">{{direccion}}</span><br/>
+ <span class="filaPosicion small">{{posicion}}</span>
+ </td></tr>
+
+ <tr>
+ <td class="row">
+ <div class="col-md-6 form-group">
+ <label for="exampleInputEmail1">Vel.Cargado</label>
+ <input id="formPuntosVelocidadCarga{{id}}" name="formPuntosVelocidadCarga{{id}}" value="{{valorCarga}}" required type="text" size="3" class= "form-control formPuntosVelocidad" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;"/>
+ </div>
+ <div class="col-md-6 form-group">
+ <label for="exampleInputEmail1">Vel. Descargado</label>
+ <input id="formPuntosVelocidadDescarga{{id}}" name="formPuntosVelocidadDescarga{{id}}" value="{{valorDescarga}}" required type="text" size="3" class="form-control formPuntosVelocidadDescarga" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;"/>
+ </div>
+ </td> 
+ </tr> 
+ <br/>
+ <tr><td>
+
+ <div style="text-align:right;"><input type="hidden" class="id"  value="{{id}}"/><a class="eliminarLimiteVelocidad" href="#" ><i class="fa fa-times-circle-o"></i> Eliminar</a> </div>
+
+ </td></tr>
+</script>
+
+<script id="templateLimiteVelocidadFinal" type="x-tmpl-mustache">
+ <tr><td>
+ <img class="filaImagen" src="{{imagen}}"/>
+ <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+ <span class="filaDireccion">{{direccion}}</span><br/>
+ <span class="filaPosicion small">{{posicion}}</span>
+ </td></tr>
+</script>
+
+
+
+<script id="templatePuntosInteres" type="x-tmpl-mustache">
+
+ <tr><td>
+ <img class="filaImagen" src="{{imagen}}"/>
+ <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span><br/>
+ </td></tr>
+
+ <tr>
+ <td class="row">
+ <div class="col-md-12 form-group">
+ <label for="exampleInputEmail1">Nombre Punto Interes</label>
+ <input id="formNombreInteres{{id}}" name="formNombreInteres{{id}}" value="{{nombre}}" required type="text" class="form-control formNombreInteres" data-error="Ingrese el nombre de la ruta" style="margin-top: -1em;">
+ </div>
+ </td> 
+ </tr> 
+
+ <tr><td>
+
+ <span class="filaDireccion">{{direccion}}</span><br/>
+ <span class="filaPosicion small">{{posicion}}</span>
+ <div style="text-align:right;"><input type="hidden" class="id"  value="{{id}}"/><a class="eliminarPuntoInteres" href="#" ><i class="fa fa-times-circle-o"></i> Eliminar</a> </div>
+
+ </td></tr>
+</script>
+
+
+<script id="templatePuntosDeControl" type="x-tmpl-mustache">
+  <tr class="row">
+	
+	<td class="col-md-4">
+	  <img class="filaImagen" src="{{imagen}}"/>
+	  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span>
+	  <span class="filaDireccion">{{direccion}}</span><br/>
+	  <span class="filaPosicion small labelRojo">{{posicion}}</span>
+	</td>
+	
+	<td class="col-md-4" style="text-align: center;">
+	  <span class="filaHoraReal">{{horaReal}}</span>
+	  <br/>
+	  <span class="filaDireccion">{{direccion}}</span><br/>	  
+	</td>
+	
+	<td class="col-md-4" style="text-align: center;">
+	  <span class="filaTiempoEstado">{{tiempoEstado}}</span>
+	  <br/>
+	  <span class="filacomentario {{estilo}}">{{comentario}}</span><br/>	  
+	</td>
+  </tr>
+</script>
+
+<script id="templateLimitesDeVelocidad" type="x-tmpl-mustache">
+  <tr class="row">
+	<td class="col-md-12" colspan="3"><hr/></td>
+  </tr>
+
+  <tr class="row">
+	
+	<td class="col-md-4">
+	  <img class="filaImagen" src="{{imagen}}"/>
+	  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span>
+	  <div class="">Lim.Carg. {{limiteCargado}}km/h</div>
+	  <div class="">Lim.Desc. {{limiteDescargado}}km/h</div>
+	  <span class="filaPosicion small labelRojo">{{posicion}}</span>
+	</td>
+	
+	<td class="col-md-4" style="text-align: center;">
+	  <div class="">{{direccion}}</div>	  
+	  <div class="">Max. Velocidad registrada: {{velocidadMaximaRegistrada}} Km/h</div>	  
+	</td>
+	
+	<td class="col-md-4 {{estilo}}" style="text-align: center;">
+	  <div class="filaTiempoEstado">{{estado}}</div>	  	  
+	</td>
+  </tr>
+</script>
+
+<script id="templateInfraccionDeVelocidad" type="x-tmpl-mustache">
+  <tr class="row">
+	<td class="col-md-12" colspan="3">
+	  <div class="row" style="padding-top: 1.5em;">
+
+		<div class="col-md-1"></div>
+		<div class="col-md-3">
+		  <img class="filaImagen" src="{{imagen}}"/>
+		  <span class="filaTitulo"><strong><a href='javascript:enfocarPosicion({{lat}}, {{lng}});'>{{titulo}}</a></strong></span>
+		  <br/>
+		  <div class="filaTiempoEstado infoWindowRojo1">{{velocidad}} km/h</div>	  	  
+		  <span class="filaPosicion small labelRojo">{{posicion}}</span>
+		</div>
+		
+		<div class="col-md-4" style="text-align: center;">
+		  <div class="">{{direccion}}</div>	  
+		  <div class="">{{fechaHoraInfraccion}}</div>	  
+		</div>
+		
+		<div class="col-md-4 labelRojo" style="text-align: center;">
+		  <span class="infoWindowRojo2">Excedido por</span> <span class="filaTiempoEstado infoWindowRojo1">{{diferenciaVelocidad}} km/h</span>	  	  
+		</div>
+		
+	  </div>
+	</td>
+	
+	
+	
+  </tr>
+</script>
+
+
+<!-- FABIO ------------------------------------------------ --> 
+<script id="templateInfoWindowPosicion" type="x-tmpl-mustache">
+ <div class="infoWindowRojo1" >{{direccion}}</div>
+ <div style="infoWindowNegro2">{{fechaHora}}</div>
+ <div class="infoWindowRojo2">{{velocidad}}Km/h</div>
+</script>
+
+<script id="templateInfoWindowParada" type="x-tmpl-mustache">
+ <div class="infoWindowRojo1" >{{direccion}}</div>
+ <div style="infoWindowNegro2">Inicio: {{fechaHoraInicio}}</div>
+ <div style="infoWindowNegro2">Fin: {{fechaHoraFin}}</div>
+</script>
+
+<script id="templateInfoWindowPuntoDeControl" type="x-tmpl-mustache">
+ <div class="infoWindowRojo1" >{{direccion}}</div>
+ <div style="infoWindowNegro2">Programada: {{fechaHoraCruceProgramada}}</div>
+ <div style="infoWindowNegro2">Real: {{fechaHoraReal}}</div>
+</script>
+
+<script id="templateInfoWindowLimiteDeVelocidad" type="x-tmpl-mustache">
+  <div class="infoWindowRojo1" >{{direccion}}</div>
+  <div style="infoWindowNegro2">Velocidad máxima cargado: {{limiteCargado}}</div>
+  <div style="infoWindowNegro2">Velocidad máxima descargado: {{limiteDescargado}}</div>
+  <div class="infoWindowRojo1" >Velocidad máxima registrada: {{velocidadMaximaRegistrada}} Km/h</div>
+  <div class="infoWindowRojo1" >Estado: {{estado}}</div>
+</script>
+
+
+<script id="templateInfoWindowInfraccion" type="x-tmpl-mustache">
+	<div class="infoWindowRojo2" >{{direccion}}</div>
+	<div class="infoWindowNegro1" >{{fechaHoraInfraccion}}</div>
+  <div class="infoWindowRojo1" >Velocidad registrada: {{velocidad}} Km/h</div>
+</script>
+<!-- ------------------------------------------------------ --> 
+
+
+{% endverbatim %}
+
+<head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Draggable directions</title>
+    <style>
+     #right-panel, #right-panel2, #right-panel3, #right-panel4 {
+         font-family: 'Roboto','sans-serif';
+         line-height: 30px;
+         padding-left: 10px;
+     }
+
+     #right-panel select, #right-panel input, #right-panel2 select, #right-panel2 input, #right-panel3 select, #right-panel3 input, #right-panel4 select, #right-panel4 input{
+         font-size: 15px;
+     }
+
+     #right-panel select, #right-panel2 select, #right-panel3 select, #right-panel4 select   {
+         width: 100%;
+     }
+
+     #right-panel i, #right-panel2 i, #right-panel3 i, #right-panel4 i  {
+         font-size: 12px;
+     }
+     html, body {
+         height: 100%;
+         margin: 0;
+         padding: 0;
+     }
+     #map, #map2, #map3, #map4 {
+         height: 100%;
+         float: left;
+         width: 63%;
+         height: 100%;
+     }
+     #right-panel, #right-panel2, #right-panel3, #right-panel4 {
+         float: right;
+         width: 42%;
+         height: 100%;
+     }
+     .panel {
+         height: 100%;
+         overflow: auto;
+     }
+    </style>
+</head>	
+
+<script>
+
+var conductores;
+var vehiculos;
+var rutas;
+var puntosControl;
+var puntosControl;
+var idRuta;
+var datosAsignacionRuta;
+var rutaRecorridaVehiculo;
+var webServiceListo = false;
+var mapaPintado = false;
+
+var map  = null;
+var map2 = null;
+var map3 = null;
+var map4 = null;
+
+var pestana1 = true; // pestana definicion rutas con paradas
+var pestana2 = false; // pestana puntos de control
+var pestana3 = false; // pestana limites de velocidad
+var pestana4 = false; // pestana puntos de interes
+
+var templateOrigenDestino      = $('#templateOrigenDestino').html();
+var templateParadas            = $('#templateParadas').html();
+var templatePuntosDeControl    = $('#templatePuntosDeControl').html();
+var templateLimitesDeVelocidad = $('#templateLimitesDeVelocidad').html();
+var templateInfraccionDeVelocidad = $('#templateInfraccionDeVelocidad').html();
+ //FABIO ----------------------------------
+ var markerPosicionVehiculoRuta      = null; //Marcador de posición vehiculo
+ var markerPosicionVehiculoRuta2     = null; //Marcador de posición vehiculo
+ var markerPosicionVehiculoRuta3     = null; //Marcador de posición vehiculo
+ var markerPosicionVehiculoRuta4     = null; //Marcador de posición vehiculo
+ var infoWindowPosicionVehiculoRuta  = null;
+ var infoWindowPosicionVehiculoRuta2 = null;
+ var infoWindowPosicionVehiculoRuta3 = null;
+ var infoWindowPosicionVehiculoRuta4 = null;
+
+
+var geocoder                         = null;
+var templateInfoWindowPosicion       = $('#templateInfoWindowPosicion').html();
+var templateInfoWindowParada         = $('#templateInfoWindowParada').html();
+var templateInfoWindowPuntoDeControl = $('#templateInfoWindowPuntoDeControl').html();
+var templateInfoWindowLimiteDeVelocidad = $('#templateInfoWindowLimiteDeVelocidad').html();
+var templateInfoWindowInfraccion        = $('#templateInfoWindowInfraccion').html();
+
+
+ //----------------------------------------
+
+
+ //Traer la informacion de seguimiento de ruta
+ function traer_datos_interfaz (){
+	 
+	 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : "{{tenant}}",
+                                             
+     },
+                         'data'         : { 
+                             'id': "{{idRuta}}",
+							 'retornarPuntosRutaDefinida' : true
+                         }
+     };
+	 
+     var request = $.ajax({
+         type: "POST",
+         url   : "{% url 'wsDetalleRuta' %}",
+         data  : {
+             request: JSON.stringify(peticion)
+         },
+         dataType: "json"
+     });
+     request.done(function(respuesta){
+		 //pintarTablaRutas(respuesta["data"]);
+		 initMap(respuesta["data"],datosAsignacionRuta);
+		 cargarSlider();
+		 traerVehiculos();
+		 
+     });
+     request.fail(function(jqXHR, textStatus){ });
+ };
+
+
+ function initMap(data,datosAsignacionRuta) {
+	 data_origen           = { lat: data.origen[0],  lng: data.origen[1] };
+	 data_destino          = { lat: data.destino[0], lng: data.destino[1] };
+	 data_puntosParadas    = data.puntosParadas;
+	 //data_waypointsmaps    = data.waypointsmaps;
+	 data_nombre_ruta      = data.nombreRuta;
+
+	 idPuntosRutaDefinida  = data.idPuntosRutaDefinida; // Se le asigna el id de la ruta definida
+	 idRuta                = "{{idRuta}}";
+
+
+	 $('#formNombreRuta').val(data_nombre_ruta);
+	 //$('#activarParadas').attr("disabled", false);
+
+	 $('#contenedorMapa').show();
+
+
+	 var puntosRutaDefinida = data.puntosRutaDefinida;
+	 var pathRuta = [];
+	 
+	 for(var i = 0 ; i < puntosRutaDefinida.length ; i++){
+		 var punto = puntosRutaDefinida[i];
+		 pathRuta.push(
+			 { "lat" : punto[0], "lng" : punto[1]}
+		 );
+	 }
+
+	 
+	 map = new google.maps.Map(document.getElementById('map'), {
+		 //zoom: 4,
+		 //center: {lat:  4.265594 , lng: -74.387341}  // Colombia 
+		 zoom    : 4,
+		 center  : data_origen // Colombia 
+	 });
+
+	 map2 = new google.maps.Map(document.getElementById('map2'), {
+		 //zoom: 4,
+		 //center: {lat:  4.265594 , lng: -74.387341}  // Colombia 
+		 zoom    : 4,
+		 center  : data_origen // Colombia 
+	 });
+
+	 map3 = new google.maps.Map(document.getElementById('map3'), {
+		 //zoom: 4,
+		 //center: {lat:  4.265594 , lng: -74.387341}  // Colombia 
+		 zoom    : 4,
+		 center  : data_origen // Colombia 
+	 });
+
+	 map4 = new google.maps.Map(document.getElementById('map4'), {
+		 //zoom: 4,
+		 //center: {lat:  4.265594 , lng: -74.387341}  // Colombia 
+		 zoom    : 4,
+		 center  : data_origen // Colombia 
+	 });
+	 
+	 
+	 
+	 var marker = new google.maps.Marker({
+		 position: data_origen,
+		 map: map,
+		 icon: guiImagePuntoControl+"/static/images/origenPin.png",
+		 title: "origen"
+	 });
+	 
+	 var marker = new google.maps.Marker({
+		 position: data_destino,
+		 map: map,
+		 icon: guiImagePuntoControl+"/static/images/destinoPin.png",
+		 title: "origen"
+	 });
+
+	 var marker = new google.maps.Marker({
+		 position: data_origen,
+		 map: map2,
+		 icon: guiImagePuntoControl+"/static/images/origenPin.png",
+		 title: "origen"
+	 });
+	 
+	 var marker = new google.maps.Marker({
+		 position: data_destino,
+		 map: map2,
+		 icon: guiImagePuntoControl+"/static/images/destinoPin.png",
+		 title: "origen"
+	 });
+
+	 var marker = new google.maps.Marker({
+		 position: data_origen,
+		 map: map3,
+		 icon: guiImagePuntoControl+"/static/images/origenPin.png",
+		 title: "origen"
+	 });
+	 
+	 var marker = new google.maps.Marker({
+		 position: data_destino,
+		 map: map3,
+		 icon: guiImagePuntoControl+"/static/images/destinoPin.png",
+		 title: "origen"
+	 });
+
+	 var marker = new google.maps.Marker({
+		 position: data_origen,
+		 map: map4,
+		 icon: guiImagePuntoControl+"/static/images/origenPin.png",
+		 title: "origen"
+	 });
+	 
+	 var marker = new google.maps.Marker({
+		 position: data_destino,
+		 map: map4,
+		 icon: guiImagePuntoControl+"/static/images/destinoPin.png",
+		 title: "origen"
+	 });
+	 
+	 markerPosicionVehiculoRuta = new google.maps.Marker({
+		 //position: data_destino,
+		 //map     : map,
+		 icon    : guiImagePuntoControl+"/static/images/pinUbicacion.png",
+		 title   : "..."
+	 });
+
+	 markerPosicionVehiculoRuta2 = new google.maps.Marker({
+		 //position: data_destino,
+		 //map     : map,
+		 icon    : guiImagePuntoControl+"/static/images/pinUbicacion.png",
+		 title   : "..."
+	 });
+
+	 markerPosicionVehiculoRuta3 = new google.maps.Marker({
+		 //position: data_destino,
+		 //map     : map,
+		 icon    : guiImagePuntoControl+"/static/images/pinUbicacion.png",
+		 title   : "..."
+	 });
+
+	 markerPosicionVehiculoRuta4 = new google.maps.Marker({
+		 //position: data_destino,
+		 //map     : map,
+		 icon    : guiImagePuntoControl+"/static/images/pinUbicacion.png",
+		 title   : "..."
+	 });
+
+	 polyline = new google.maps.Polyline({
+		 path: pathRuta,
+		 strokeColor: '#008080',
+		 strokeOpacity: 0.8,
+		 strokeWeight: 3
+ 	 });
+
+	 polyline.setMap(map);
+
+	 polyline = new google.maps.Polyline({
+		 path: pathRuta,
+		 strokeColor: '#008080',
+		 strokeOpacity: 0.8,
+		 strokeWeight: 3
+ 	 });
+
+	 polyline.setMap(map2);
+
+	 polyline = new google.maps.Polyline({
+		 path: pathRuta,
+		 strokeColor: '#008080',
+		 strokeOpacity: 0.8,
+		 strokeWeight: 3
+ 	 });
+
+	 polyline.setMap(map3);
+	 
+	 polyline = new google.maps.Polyline({
+		 path: pathRuta,
+		 strokeColor: '#008080',
+		 strokeOpacity: 0.8,
+		 strokeWeight: 3
+ 	 });
+
+	 polyline.setMap(map4);
+	 
+	 
+
+	 /* polyline = new google.maps.Polyline({
+		path: pathRuta,
+		strokeColor: '#008080',
+		strokeOpacity: 0.8,
+		strokeWeight: 3
+ 		});
+
+		polyline.setMap(map2);
+
+		polyline = new google.maps.Polyline({
+		path: pathRuta,
+		strokeColor: '#008080',
+		strokeOpacity: 0.8,
+		strokeWeight: 3
+ 		});
+
+		polyline.setMap(map3);
+
+		polyline = new google.maps.Polyline({
+		path: pathRuta,
+		strokeColor: '#008080',
+		strokeOpacity: 0.8,
+		strokeWeight: 3
+ 		});
+
+		polyline.setMap(map4);*/
+	 
+	 
+	 
+	 /*  Pintamos en el mapa los puntos origen y fin ademas de todos los waypoinits
+		que crea automaticamente maps al mover la ruta.
+	  */
+	 //displayRoute(data_origen, data_destino, directionsService, directionsDisplay, array_waypointsmaps);
+
+	 /*  lo que sige a continuacion es para centrar y dar zoom al mapa e los puntos de 
+		origen y fin 
+	  */
+	 var latlngbounds  = new google.maps.LatLngBounds();
+	 var LatLng_1      = new google.maps.LatLng(data_origen.lat, data_origen.lng);
+	 var LatLng_2      = new google.maps.LatLng(data_destino.lat, data_destino.lng);
+
+	 latlngbounds.extend(LatLng_1);
+	 latlngbounds.extend(LatLng_2);
+
+	 map.setCenter(latlngbounds.getCenter());
+	 map.fitBounds(latlngbounds);
+
+	 map2.setCenter(latlngbounds.getCenter());
+	 map2.fitBounds(latlngbounds); 
+
+	 /*  seteamos las variables importantes para inicializar de forma correcta la interfaz
+	  */
+	 puntoInicioCreado   = true;
+	 puntoFinCreado      = true;
+
+	 
+
+	 /*  Agregamos los puntos de carga y descarga a la variable puntoIntermedio 
+        despues ejecutamos los metodos para ordenarlos y pintarlos en mapa y 
+        pantalla
+	  */
+	 for (i = 0; i < data_puntosParadas.length; i++) {
+		 lat_temp        = parseFloat (data_puntosParadas[i][0]);
+		 lng_temp        = parseFloat (data_puntosParadas[i][1]);;
+		 tipoCarga_temp  = data_puntosParadas[i][2];
+		 direcc_temp     = "";
+		 //puntoIntermedio.push({location: {lat: lat_temp, lng: lng_temp, tipoCarga: tipoCarga_temp}});
+		 // print ("algo"); // funciona pero es para abrir la app de la impresora :D
+	 }
+	 
+	 
+	 //Pinto la ruta seguida del vehiculo
+	 mapaPintado = true;
+	 
+
+	 // for (i=0;i<legs.length;i++) {
+     // var steps = legs[i].steps;
+     // for (j=0;j<steps.length;j++) {
+     // var nextSegment = steps[j].path;
+     // for (k=0;k<nextSegment.length;k++) {
+     // polyline2.getPath().push(nextSegment[k]);
+     // //console.log (nextSegment[k]);
+     // bounds.extend(nextSegment[k]);
+     // }
+     // }
+     // }
+     // polyline2.setMap(map2);
+     // //makeMarkerRutaPuntoControl( origen, "file:localhost:8080/Fleetbiweb/webfleetbigui/static/images/origenPin.png", "Origen" );
+     // makeMarkerRutaPuntoControl( origen, guiImagePuntoControl+"/static/images/origenPin.png", "Origen" );
+	 //       
+     // makeMarkerRutaPuntoControl( destino, guiImagePuntoControl+"/static/images/destinoPin.png", 'Destino' );
+
+	 //FABIO---------------------------------
+	 //cargarSlider();
+	 traerDatosDetalleSeguimientoRuta();
+	 //---------------------------------------
+	 
+ } // fin initMap
+
+
+ var origen;
+ var destino;
+ function displayRoute(origin, destination, service, display, puntoIntermedio) {
+	 service.route({
+		 origin        : origin,
+		 destination   : destination, 
+		 waypoints     : puntoIntermedio, //puntos intermedios
+		 travelMode    : 'DRIVING',
+		 avoidTolls    : false //evita peajes
+	 }, function(response, status) {
+		 if (status === 'OK') {
+			 display.setDirections(response);
+
+			 if (inicializar_pintar_todas_las_pestanas) { 
+				 cargar_todas_pestanas (); 
+				 inicializar_pintar_todas_las_pestanas = false;
+			 }
+			 console.log ("display route despues del ajax ");
+
+		 }else {
+			 puntoInicioCreado 	= false;
+			 puntoFinCreado		  = false;         	
+			 notif({
+                 msg     : "Por favor crear de nuevo los puntos",
+                 type    : "warning",
+                 multiline: true,
+                 position: "center"
+        	 });
+			 setTimeout(function() { 
+				 location.reload(); 
+			 }, 
+						1000);
+		 }
+     });
+ }
+
+ //pintar ruta seguida del vehiculo
+ function pintarRutaSeguidaDelVehiculo(){
+	 var pathRutaSeguida = [];
+	 if(webServiceListo && mapaPintado ){
+		 var puntosRutaSeguidaVehiculo = rutaRecorridaVehiculo;
+		 
+		 for(var i = 0 ; i < puntosRutaSeguidaVehiculo.length ; i++){
+			 var punto = puntosRutaSeguidaVehiculo[i];
+			 pathRutaSeguida.push(
+				 { "lat" : punto.latitud, "lng" : punto.longitud}
+			 );
+		 }
+		 
+		 polyline = new google.maps.Polyline({
+			 path: pathRutaSeguida,
+			 strokeColor: '#eb2626',
+			 strokeWeight: 3	
+	 	 });
+	 	 
+	 	 polyline.setMap(map);
+
+		 polyline = new google.maps.Polyline({
+			 path: pathRutaSeguida,
+			 strokeColor: '#eb2626',
+			 strokeWeight: 3	
+	 	 });
+	 	 
+	 	 polyline.setMap(map2);
+
+		 polyline = new google.maps.Polyline({
+			 path: pathRutaSeguida,
+			 strokeColor: '#eb2626',
+			 strokeWeight: 3	
+	 	 });
+	 	 
+	 	 polyline.setMap(map3);
+
+		 polyline = new google.maps.Polyline({
+			 path: pathRutaSeguida,
+			 strokeColor: '#eb2626',
+			 strokeWeight: 3	
+	 	 });
+	 	 
+	 	 polyline.setMap(map4);
+	 }
+	 
+ }
+
+
+ //------ Traer datos de detalle de ruta----------------------------------------------------
+ function traerDatosDeatlleRuta(){
+     var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : "{{tenant}}",          
+     },
+                         'data'          : {  
+                        	 "idAsignacionRuta":"{{idAsignacionRuta}}",    
+                         }
+     };
+	 
+     var request = $.ajax({
+		 type        : "POST",
+		 url         : "{% url 'wsDetalleAsignacionRuta' %}",
+		 data        : {
+             request :  JSON.stringify(peticion)
+         },
+		 dataType    : "json"
+
+     }).done(function(respuesta){
+         if (respuesta.success){
+
+             cargarDatosDetalleRuta(respuesta.data);
+			 
+         }
+         else{
+             notif({
+                 msg     : respuesta.mensaje,
+                 type    : "error",
+                 position: "center"
+             });
+         }
+     }).fail(function(jqXHR, textStatus){
+         notif({
+             msg     : "FallÃ³ la conexiÃ³n",
+             type    : "error",
+             position: "center"
+         });
+     }).always(function(){
+         
+     });
+ }
+
+ function cargarDatosDetalleRuta(data){
+	 cargarListadoPuntosControl(data);
+	 idRuta					= data.idRuta;
+	 var estado 				= data.estado;
+	 var fechaActual 		= moment();
+	 
+	 $('#formRangoFecha1') 	.data('DateTimePicker').setDate(moment(data.fechaInicioProgramada).format("DD/MM/YYYY hh:mm a"));
+	 $('#formRangoFecha2') 	.data('DateTimePicker').setDate(moment(data.fechaFinProgramada).format("DD/MM/YYYY hh:mm a"));
+   	 if (data.estado== "programada"){
+		 estado = "PROGRAMADA";
+		 $('#abortarRuta')	.hide();
+	 }
+	 else if (data.estado== "iniciada"){
+		 estado = "INICIADA";
+		 $('#abortarRuta')	.show();
+		 
+		 fechaPickerInicio 	= $('#formRangoFecha1').data('DateTimePicker').date.format();
+		 fechaPickerFin 		= $('#formRangoFecha2').data('DateTimePicker').date.format();
+		 if(fechaPickerInicio<fechaActual){
+			 $('#formRangoFecha1').data('DateTimePicker').disable();
+		 }
+		 
+		 if(fechaPickerFin<fechaActual){
+			 $('#formRangoFecha2').data('DateTimePicker').disable();
+		 }
+	 }
+	 else if (data.estado== "sinfinalizar"){
+		 $('#abortarRuta')	.hide();
+		 $('#enviarAsignacion')	.hide();
+		 fechaPickerInicio 	= $('#formRangoFecha1').data('DateTimePicker').date.format();
+		 fechaPickerFin 		= $('#formRangoFecha2').data('DateTimePicker').date.format();
+		 if(fechaPickerInicio<fechaActual){
+			 $('#formRangoFecha1').data('DateTimePicker').disable();
+		 }
+		 
+		 if(fechaPickerFin<fechaActual){
+			 $('#formRangoFecha2').data('DateTimePicker').disable();
+		 }
+	 }
+	 
+	 else if (data.estado== "noejecutada"){
+		 estado 				= "NO EJECUTADA";
+		 $('#abortarRuta')		.hide();
+		 $('#enviarAsignacion')	.hide();
+		 $('#formRangoFecha1')	.data('DateTimePicker').disable();
+		 $('#formRangoFecha2')	.data('DateTimePicker').disable();
+	 }
+	 else if (data.estado== "abortada"){
+		 estado = "ABORTADA";
+		 $('#abortarRuta')		.hide();
+		 $('#enviarAsignacion')	.hide();
+
+		 $('#formRangoFecha1').data('DateTimePicker').disable();
+		 $('#formRangoFecha2').data('DateTimePicker').disable();
+		 
+	 }
+	 
+	 else if (data.estado== "finalizada"){
+		 estado = "FINALIZADA";
+		 $('#abortarRuta')		.hide();
+		 $('#enviarAsignacion')	.hide();
+
+		 $('#formRangoFecha1').data('DateTimePicker').disable();
+		 $('#formRangoFecha2').data('DateTimePicker').disable();
+	 }
+	 
+	 $('#estadoRuta')		.val(estado);
+	 $('#estadoRuta')		.text(estado);
+     
+     $('#grupoConductores')	.val(data.idConductor);
+     $('#grupoVehiculos')	.val(data.idVehiculo);
+     $('#grupoRutas')		.val(data.idRuta);
+     $('#grupoVehiculos')	.prop('disabled', true);
+     $('#grupoRutas')		.prop('disabled', true);
+     
+     $('#grupoConductores')	.selectpicker('refresh');
+     $('#grupoVehiculos')	.selectpicker('refresh');
+     $('#grupoRutas')		.selectpicker('refresh');
+     
+     traerPosicionesVehiculo(data);
+     
+ }
+
+
+ function enviarAbortarRuta(id){
+	 var idRuta = id;
+	 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : config.getTennant(),
+     },
+                         'data'         : {  
+                        	 'idAsignacionRuta' : "{{idAsignacionRuta}}",
+                         }
+     };
+	 
+     var request = $.ajax({
+         type: "POST",
+         url		: "{% url 'wsAbortarAsignacionRuta' %}",
+         data	: {
+             request: JSON.stringify(peticion)
+         },
+         dataType: "json"
+     });
+     request.done(function(respuesta){
+         if(respuesta.success){
+        	 $('#formularioAceptarEliminar').modal('hide');
+             notif({
+                 msg     : "La asignacion de ruta se aborto exitosamente",
+                 type    : "success",
+                 position: "center"
+             });
+			 setTimeout(function() { location.reload(true);}, 4000);
+         }else{
+        	 notif({
+                 msg     : "Error al eliminar",
+                 type    : "error",
+                 position: "center"
+             });
+         }
+     });
+     request.fail(function(jqXHR, textStatus){ });
+ }
+
+ //------ Cargar picker de conductores----------------------------------------------------
+ function traerConductores(){
+     var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : "{{tenant}}",          
+     },
+                         'data'          : {      }
+     };
+	 
+     var request = $.ajax({
+		 type        : "POST",
+		 url         : "{% url 'wsPickerConductores' %}",
+		 data        : {
+             request :  JSON.stringify(peticion)
+         },
+		 dataType    : "json"
+
+     }).done(function(respuesta){
+         if (respuesta.success){
+
+             cargarPickerConductores(respuesta.data);
+         }
+         else{
+             notif({
+                 msg     : respuesta.mensaje,
+                 type    : "error",
+                 position: "center"
+             });
+         }
+     }).fail(function(jqXHR, textStatus){
+         notif({
+             msg     : "FallÃ³ la conexiÃ³n",
+             type    : "error",
+             position: "center"
+         });
+     }).always(function(){
+         
+     });
+ }
+
+ function cargarPickerConductores(data){
+     conductores   = data;
+     var totalDatos	= conductores.length;
+     for (i = 0; i < totalDatos; i++){
+		 var itemconductor = conductores[i];
+		 $('#grupoConductores').append('<option value="'+itemconductor.id+'">'+itemconductor.nombres+' '+itemconductor.apellidos+'</option>');
+     }
+     
+     $('#grupoConductores').selectpicker('refresh');
+	 $('#grupoConductores').selectpicker('deselectAll');
+ 	 $('#grupoConductores').selectpicker('refresh');
+ 	 
+ 	 traerDatosDeatlleRuta();
+ }
+
+ //------ Cargar picker de vehiculos----------------------------------------------------
+ function traerVehiculos(){
+     var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : "{{tenant}}",          
+     },
+                         'data'          : {      }
+     };
+	 
+     var request = $.ajax({
+		 type        : "POST",
+		 url         : "{% url 'wsPickerVehiculos' %}",
+		 data        : {
+             request :  JSON.stringify(peticion)
+         },
+		 dataType    : "json"
+
+     }).done(function(respuesta){
+         if (respuesta.success){
+
+             cargarPickerVehiculos(respuesta.data);
+         }
+         else{
+             notif({
+                 msg     : respuesta.mensaje,
+                 type    : "error",
+                 position: "center"
+             });
+         }
+     }).fail(function(jqXHR, textStatus){
+         notif({
+             msg     : "FallÃ³ la conexiÃ³n",
+             type    : "error",
+             position: "center"
+         });
+     }).always(function(){
+         
+     });
+ }
+
+ function cargarPickerVehiculos(data){
+     vehiculos   = data;
+     var totalDatos	= vehiculos.length;
+     for (i = 0; i < totalDatos; i++){
+		 var itemvehiculo = vehiculos[i];
+		 $('#grupoVehiculos').append('<option value="'+itemvehiculo.id+'">'+itemvehiculo.vehiculo.placa+'</option>');
+     }
+     
+     $('#grupoVehiculos').selectpicker('refresh');
+	 $('#grupoVehiculos').selectpicker('deselectAll');
+ 	 $('#grupoVehiculos').selectpicker('refresh');
+ 	 
+ 	 traerRutas();
+ }
+
+ //------ Cargar picker de rutas----------------------------------------------------
+ function traerRutas(){
+     var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : "{{tenant}}",          
+     },
+                         'data'          : {      }
+     };
+	 
+     var request = $.ajax({
+		 type        : "POST",
+		 url         : "{% url 'wsPickerRutas' %}",
+		 data        : {
+             request :  JSON.stringify(peticion)
+         },
+		 dataType    : "json"
+
+     }).done(function(respuesta){
+         if (respuesta.success){
+
+             cargarPickerRutas(respuesta.data);
+         }
+         else{
+             notif({
+                 msg     : respuesta.mensaje,
+                 type    : "error",
+                 position: "center"
+             });
+         }
+     }).fail(function(jqXHR, textStatus){
+         notif({
+             msg     : "FallÃ³ la conexiÃ³n",
+             type    : "error",
+             position: "center"
+         });
+     }).always(function(){
+         
+     });
+ }
+
+ function cargarPickerRutas(data){
+     rutas   = data;
+     var totalDatos	= rutas.length;
+     for (i = 0; i < totalDatos; i++){
+		 var itemruta = rutas[i];
+		 $('#grupoRutas').append('<option value="'+itemruta.id+'">'+itemruta.nombre+'</option>');
+     }
+     
+     $('#grupoRutas').selectpicker('refresh');
+	 $('#grupoRutas').selectpicker('deselectAll');
+ 	 $('#grupoRutas').selectpicker('refresh');
+ 	 
+ 	 var idRuta 	= $('#grupoRutas').val();
+	 //traerPuntosControlRuta(idRuta);
+	 
+	 traerConductores();
+ }
+
+
+ //------ Cargar listado puntos de control----------------------------------------------------
+ function traerPuntosControlRuta(idRuta){
+     var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : "{{tenant}}",          
+     },
+                         'data'          : {  
+                        	 "id":idRuta,    
+                         }
+     };
+	 
+     var request = $.ajax({
+		 type        : "POST",
+		 url         : "{% url 'wsDetallePuntoControlRuta' %}",
+		 data        : {
+             request :  JSON.stringify(peticion)
+         },
+		 dataType    : "json"
+
+     }).done(function(respuesta){
+         if (respuesta.success){
+
+             cargarListadoPuntosControl(respuesta.data);
+         }
+         else{
+             notif({
+                 msg     : respuesta.mensaje,
+                 type    : "error",
+                 position: "center"
+             });
+         }
+     }).fail(function(jqXHR, textStatus){
+         notif({
+             msg     : "FallÃ³ la conexiÃ³n",
+             type    : "error",
+             position: "center"
+         });
+     }).always(function(){
+         
+     });
+ }
+
+ function cargarListadoPuntosControl(data){
+     puntosControl   = data.puntosDeControlVirtual;
+     var estado      = data.estado;
+     var totalDatos	= puntosControl.length;
+     var numPunto	= 0;
+     var fechaAhora 	= moment().format('DD/MM/YYYY');
+     var horaaActual = moment().format('HH:mm');
+     
+     $("#menuContenedorPuntosDeControl").empty();
+     
+     if(totalDatos>0){
+    	 $( "#textoSinPuntosControl").hide();
+	     for (i = 0; i < totalDatos; i++){
+			 var itempuntoControl = puntosControl[i];
+			 numPunto 	+= 1;
+		  	 var template 		 = $('#templatePuntosControl').html();
+	         Mustache.parse(template);
+	         var html = Mustache.render(template,
+	        							{
+	        	 							
+	        	 							latitud   : itempuntoControl.latiud,
+	        	 							longitud  : itempuntoControl.longitud,
+	        	 							direccion    : numPunto+". "+itempuntoControl.direccion,
+	        	 							minutos  : itempuntoControl.minutosTolerancia,
+	        							});
+	         $('#menuContenedorPuntosDeControl').append(html);
+			 
+	     }
+		 
+	     
+		 $(".formRangoFechaPunto").each(function(index, element) {
+			 var elemento 			= $(element);
+			 var itempuntoControl 	= puntosControl[index];
+			 var fecha;
+			 if(itempuntoControl.fechaHoraCruceProgramada !=""){
+			     fecha				= moment(itempuntoControl.fechaHoraCruceProgramada).format("DD/MM/YYYY");
+			 }
+			 
+			 elemento.datetimepicker(
+		         { 
+		        	 pickTime: false,
+		          	 showToday: true,
+		          	 pick12HourFormat: true,
+		          	 minViewMode: "years",
+					 minViewMode: "months",
+					 minViewMode: "days",
+					 minDate: moment(),
+					 language:'es' 
+					 
+				 });
+			 elemento	.data('DateTimePicker').setDate(fecha);
+			 
+			 if(itempuntoControl.fechaHoraCruceReal !=""){
+				 var fechaCruceReal		= moment(itempuntoControl.fechaHoraCruceReal).format("DD/MM/YYYY");
+				 if(fecha<=fechaCruceReal){
+					 elemento.data('DateTimePicker').disable();
+				 }
+			 }
+			 
+			 if(estado!="programada" || estado!="iniciada"){
+			     elemento.data('DateTimePicker').disable();
+			     
+			 }
+			 
+			 
+		 });
+		 
+		 
+		 $( ".formRangoHoraPunto" ).each(function( index, element ) {
+		     var elemento 			= $(element);
+		     var itempuntoControl 	= puntosControl[index];
+		     var hora;
+		     if(itempuntoControl.fechaHoraCruceProgramada !=""){
+		    	 hora				= moment(itempuntoControl.fechaHoraCruceProgramada).format("hh:mm a");
+				 
+		     }
+			 
+		     elemento.datetimepicker(
+		         { 
+		        	 pickTime: true,
+		        	 pickDate: false,
+		          	 showToday: true,
+		          	 pick12HourFormat: true,
+		          	 minViewMode: "years",
+					 minViewMode: "months",
+					 minViewMode: "days",
+					 minDate: moment(),
+					 language:'es' 
+				 });
+			 elemento.data('DateTimePicker').setDate(hora);   
+			 
+			 if(itempuntoControl.fechaHoraCruceReal !=""){
+			     
+				 var horaCruceReal		= moment(itempuntoControl.fechaHoraCruceReal).format("HH:MM");
+				 if(hora<=horaCruceReal){
+					 elemento.data('DateTimePicker').disable();
+					 elemento.closest('.filaPuntoControl').find(".formMinutos").prop('disabled', true);
+				 }
+			 }
+			 if(estado!="programada" && estado!="iniciada"){
+				 elemento.data('DateTimePicker').disable();
+				 elemento.closest('.filaPuntoControl').find(".formMinutos").prop('disabled', true);	
+			 }
+			 
+		 });
+	 }
+	 else{
+   		 $( "#textoSinPuntosControl").show();
+	 }
+ }
+
+
+
+ //------ Enviar datos de actualizaciÃ³n de asignacion de rutas----------------------------------------------------
+ function enviarActualizacionRuta(){
+	 //var idRuta					= $('#grupoRutas').val();
+	 //var vehiculo				= $('#grupoVehiculos').val();
+	 var conductor				= $('#grupoConductores').val();
+	 var fechaInicioProgramada	= $('#formRangoFecha1').data('DateTimePicker').date.format();
+	 var fechaFinProgramada		= $('#formRangoFecha2').data('DateTimePicker').date.format();
+	 var listadoPuntosControl 	= [];
+	 
+	 $( "tr.filaPuntoControl" ).each(function( index, element ) {
+	     var elemento 					= $(element);
+	     //var latitud						= elemento.find('.latitud').val();
+	     //var longitud					= elemento.find('.longitud').val();
+	     var direccion					= elemento.find('.direccion').val();
+	     //var fechaCruceReal				= "";
+	     var fechaCruceProgramada		= elemento.find('.formRangoFechaPunto').data('DateTimePicker').date.format("YYYY-MM-DD");
+		 var HoraCruceProgramada			= elemento.find('.formRangoHoraPunto').data('DateTimePicker').date.format("HH:mm:ss");	
+		 var minutosTolerancia			= elemento.find('.formMinutos').val();
+		 
+		 var puntoControl				= {
+			 //"latitud"   : latitud,
+			 //"longitud"  : longitud,
+			 "direccion" : direccion,
+			 //"fechaHoraCruceReal"       : fechaCruceReal,
+			 "fechaHoraCruceProgramada" : fechaCruceProgramada+"T"+HoraCruceProgramada,
+			 "minutosTolerancia"        : minutosTolerancia
+			 
+		 };
+		 listadoPuntosControl.push(puntoControl);									
+ 	 });
+
+	 
+     var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                             'token'   : config.getToken(),
+                                             'tenant'  : "{{tenant}}",          
+     },
+                         'data'          : {  
+                        	 "idAsignacionRuta"       : "{{idAsignacionRuta}}",
+							 //"idVehiculo"             : vehiculo,
+							 "idConductor"            : conductor,
+							 "fechaInicioProgramada"  : fechaInicioProgramada,
+							 "fechaFinProgramada"     : fechaFinProgramada,
+							 "puntosDeControlVirtual" : listadoPuntosControl
+							 
+                         }
+     };
+	 
+     var request = $.ajax({
+		 type        : "POST",
+		 url         : "{% url 'wsEditarAsignacionRuta' %}",
+		 data        : {
+             request :  JSON.stringify(peticion)
+         },
+		 dataType    : "json"
+
+     }).done(function(respuesta){
+         if (respuesta.success){
+			 notif({
+                 msg     : "Se actualizÃ³ exitosamente la asignacion de ruta",
+                 type    : "success",
+                 position: "center"
+             });
+			 setTimeout(function() { location.reload(true);}, 4000);
+         }
+         else{
+             notif({
+                 msg     : respuesta.mensaje,
+                 type    : "error",
+                 position: "center"
+             });
+         }
+     }).fail(function(jqXHR, textStatus){
+         notif({
+             msg     : "Falló la conexión",
+             type    : "error",
+             position: "center"
+         });
+     }).always(function(){
+         
+     });
+ }
+
+ //Funcion slider
+ function cargarSlider(){
+	 var slider         = document.getElementById('sliderCal');	 
+	 noUiSlider.create(slider, {
+		 start: 100000,
+		 connect: "lower",
+		 step:	1,
+		 range: {
+			 min: 0,
+			 max: 100000
+		 }
+	 });
+	 $('#calificacion').text("...");	   
+	 slider.noUiSlider.on('update', function(){
+		 actualizarFechaSeleccionada(false,this);
+	 });
+	 slider.noUiSlider.on('set', function(){		   
+		 actualizarFechaSeleccionada(true,this);
+	 });
+
+	 //---------------------------------------------------------
+	 var slider2         = document.getElementById('sliderCal2');	 
+	 noUiSlider.create(slider2, {
+		 start: 100000,
+		 connect: "lower",
+		 step:	1,
+		 range: {
+			 min: 0,
+			 max: 100000
+		 }
+	 });
+	 $('#calificacion2').text("...");	   
+	 slider2.noUiSlider.on('update', function(){
+		 actualizarFechaSeleccionada(false,this);
+	 });
+	 slider2.noUiSlider.on('set', function(){		   
+		 actualizarFechaSeleccionada(true,this);
+	 });
+
+	 //---------------------------------------------------------
+	 var slider3         = document.getElementById('sliderCal3');	 
+	 noUiSlider.create(slider3, {
+		 start: 100000,
+		 connect: "lower",
+		 step:	1,
+		 range: {
+			 min: 0,
+			 max: 100000
+		 }
+	 });
+	 $('#calificacion3').text("...");	   
+	 slider3.noUiSlider.on('update', function(){
+		 actualizarFechaSeleccionada(false, this);
+	 });
+	 slider3.noUiSlider.on('set', function(){		   
+		 actualizarFechaSeleccionada(true, this);
+	 });
+
+	 //---------------------------------------------------------
+	 var slider4         = document.getElementById('sliderCal4');	 
+	 noUiSlider.create(slider4, {
+		 start: 100000,
+		 connect: "lower",
+		 step:	1,
+		 range: {
+			 min: 0,
+			 max: 100000
+		 }
+	 });
+	 $('#calificacion4').text("...");	   
+	 slider4.noUiSlider.on('update', function(){
+		 actualizarFechaSeleccionada(false,this);
+	 });
+	 slider4.noUiSlider.on('set', function(){		   
+		 actualizarFechaSeleccionada(true,this);
+	 });
+ }
+
+ //debeCargarDireccion indica si debe consulta la direccionde dicho punto.
+ function actualizarFechaSeleccionada(debeCargarDireccion, sliderEvent){
+	 
+	 //var slider = document.getElementById('sliderCal');
+	 var slider = sliderEvent;
+	 if(slider == null){
+		 slider = document.getElementById('sliderCal').noUiSlider;
+	 }
+	 
+	 var valor = slider.get();
+
+	 var porcentaje = valor / 100000*1.0;
+	 if(rutaRecorridaVehiculo != null){
+		 if(rutaRecorridaVehiculo.length > 0){
+			 var posicion = parseInt( (rutaRecorridaVehiculo.length-1) * porcentaje);
+			 if(posicion < 0 ){
+				 posicion = 0;
+			 }
+
+			 var posicionRuta   = rutaRecorridaVehiculo[posicion];
+			 var horaRegistrada = posicionRuta.horaRegistrada;
+			 var fecha          = moment(horaRegistrada).format("DD/MM/YYYY hh:mm a")
+			 var velocidad      = parseFloat(posicionRuta.velocidad.toFixed(2));
+			 $('#calificacion').text(fecha);
+			 $('#calificacion2').text(fecha);
+			 $('#calificacion3').text(fecha);
+			 $('#calificacion4').text(fecha);
+
+			 if(debeCargarDireccion){
+
+				 //if(markerPosicionVehiculoRuta != null){
+				 var posicionMarker = { lat: posicionRuta.latitud, lng: posicionRuta.longitud};				   
+				 markerPosicionVehiculoRuta.setPosition(posicionMarker);
+				 markerPosicionVehiculoRuta2.setPosition(posicionMarker);
+				 markerPosicionVehiculoRuta3.setPosition(posicionMarker);
+				 markerPosicionVehiculoRuta4.setPosition(posicionMarker);
+
+				 markerPosicionVehiculoRuta.setMap(map);
+				 markerPosicionVehiculoRuta2.setMap(map2);
+				 markerPosicionVehiculoRuta3.setMap(map3);
+				 markerPosicionVehiculoRuta4.setMap(map4);				   
+				 
+				 if(infoWindowPosicionVehiculoRuta == null){
+					 infoWindowPosicionVehiculoRuta = new google.maps.InfoWindow({
+						 content: ''
+					 });
+				 }else{
+					 infoWindowPosicionVehiculoRuta.close();
+				 }
+				 
+				 if(infoWindowPosicionVehiculoRuta2 == null){
+					 infoWindowPosicionVehiculoRuta2 = new google.maps.InfoWindow({
+						 content: ''
+					 });
+				 }else{
+					 infoWindowPosicionVehiculoRuta2.close();
+				 }
+				 
+				 if(infoWindowPosicionVehiculoRuta3 == null){
+					 infoWindowPosicionVehiculoRuta3 = new google.maps.InfoWindow({
+						 content: ''
+					 });
+				 }else{
+					 infoWindowPosicionVehiculoRuta3.close();
+				 }
+				 
+				 if(infoWindowPosicionVehiculoRuta4 == null){
+					 infoWindowPosicionVehiculoRuta4 = new google.maps.InfoWindow({
+						 content: ''
+					 });
+				 }else{
+					 infoWindowPosicionVehiculoRuta4.close();
+				 }
+
+				 
+				 if(geocoder == null){
+					 geocoder = new google.maps.Geocoder;
+				 }
+
+				 geocoder.geocode(
+					 {'location': posicionMarker},
+					 function(results, status) {
+						 var direccion = "";						   						   
+						 if (status === 'OK') {
+							 if (results[0]) {								   
+								 direccion = results[0].formatted_address;													   
+							 } else {
+								 direccion = "Dirección no definida";
+							 }
+						 } else {
+							 direccion = "Servicio de dirección no disponible";
+						 }
+
+						 var htmlInfoWindow = Mustache.render(templateInfoWindowPosicion,{
+							 "direccion" : direccion,
+							 "fechaHora" : fecha,
+							 "velocidad" : velocidad
+						 });
+						 
+						 infoWindowPosicionVehiculoRuta.setContent(htmlInfoWindow);
+						 infoWindowPosicionVehiculoRuta2.setContent(htmlInfoWindow);
+						 infoWindowPosicionVehiculoRuta3.setContent(htmlInfoWindow);
+						 infoWindowPosicionVehiculoRuta4.setContent(htmlInfoWindow);
+						 infoWindowPosicionVehiculoRuta.open(map, markerPosicionVehiculoRuta);
+						 infoWindowPosicionVehiculoRuta2.open(map, markerPosicionVehiculoRuta2);
+						 infoWindowPosicionVehiculoRuta3.open(map, markerPosicionVehiculoRuta3);
+						 infoWindowPosicionVehiculoRuta4.open(map, markerPosicionVehiculoRuta4);
+					 }
+				 );
+				 
+				 
+
+				 
+				 //}
+				 
+			 }
+
+
+		 }
+		 
+		 
+	 }
+	 //$('#calificacion').text(valor);
+	 //$('#calificacion').val(valor);
+ }
+
+ 
+ //------ Traer posiciones vehiculo----------------------------------------------------
+ function traerPosicionesVehiculo(datosAsignacionRuta){
+	 var fechaData		= "";
+	 var fechaInicio		= "";
+	 var fechaFin		= "";
+	 
+	 if(datosAsignacionRuta.fechaInicioProgramada != ""){
+		 fechaInicio 	= moment(datosAsignacionRuta.fechaInicioProgramada).format();
+		 
+		 if(datosAsignacionRuta.fechaFinProgramada != ""){
+			 fechaFin 		= moment(datosAsignacionRuta.fechaFinProgramada).format();
+		 }
+		 
+		 if(datosAsignacionRuta.fechaInicioReal != ""){
+			 fechaInicio 	= moment(datosAsignacionRuta.fechaInicioReal).format();
+		 }
+		 
+		 if(datosAsignacionRuta.fechaFinReal != ""){
+			 fechaFin 	    = moment(datosAsignacionRuta.fechaFinReal).format();
+			 //fechaFin 	= "2017-08-16T08:09:08";
+		 }
+		 
+		 
+		 var fechaFin 		= moment(datosAsignacionRuta.fechaFinProgramada).format();
+		 
+	     var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+	                                             'token'   : config.getToken(),
+	                                             'tenant'  : "{{tenant}}",          
+	     },
+	                         'data'          : {  
+	                        	 "id"			: datosAsignacionRuta.idVehiculo,    
+	                        	 "fechaInicio"	: fechaInicio,
+								 "fechaFin"		: fechaFin,
+	                         }
+	         
+			 
+	     };
+		 
+	     var request = $.ajax({
+			 type        : "POST",
+			 url         : "{% url 'wsposicionVehiculoRangoFecha' %}",
+			 data        : {
+	             request :  JSON.stringify(peticion)
+	         },
+			 dataType    : "json"
+			 
+	     }).done(function(respuesta){
+	         if (respuesta.success){
+				 
+	             rutaRecorridaVehiculo = respuesta.data;
+	             webServiceListo =true;
+	             pintarRutaSeguidaDelVehiculo();
+				 actualizarFechaSeleccionada(true,null);
+	         }
+	         else{
+	             notif({
+	                 msg     : respuesta.mensaje,
+	                 type    : "error",
+	                 position: "center"
+	             });
+	         }
+	     }).fail(function(jqXHR, textStatus){
+	         notif({
+	             msg     : "Falló la conexión",
+	             type    : "error",
+	             position: "center"
+	         });
+	     }).always(function(){
+	         
+	     });
+	     
+	 }
+ }
+
+
+
+ // =============================================================================================== //
+
+ function pintarPanelOrigenDestino(datos){
+	 var datosOrigen						= datos.origen;
+	 var datosDestino					= datos.destino;
+	 var horaInicioProgramada			=  moment(datos.fechaInicioProgramada).format("DD/MM/YYYY hh:mm a");
+	 var horaFinProgramada				=  moment(datos.fechaFinProgramada).format("DD/MM/YYYY hh:mm a");
+	 var fechaHoraFinReal				= ""; 
+	 var fechaHoraInicioReal			= ""; 
+	 var tiempoOrigen					= ""; 
+	 var tiempoDestino					= "";
+	 var comentarioOrigen				= "";
+	 var comentarioDestino				= "";
+	 var estiloOrigen                   = ""; //labelRojo, labelVerde, labelAzul;
+	 var estiloDestino                  = "";
+	 
+	 
+	 if(datos.fechaInicioReal != ""){
+		 var momentfechaHoraInicioProgramada			=  moment(datos.fechaInicioProgramada);
+		 var momentfechaHoraInicioReal				=  moment(datos.fechaInicioReal);
+		 fechaHoraInicioReal						    =  moment(datos.fechaInicioReal).format("DD/MM/YYYY hh:mm a");
+		 
+		 var diferenciaSegundos 	= momentfechaHoraInicioReal.diff(momentfechaHoraInicioProgramada,'seconds');
+		 var diferenciaMinutos  	= momentfechaHoraInicioReal.diff(momentfechaHoraInicioProgramada,'minutes');
+		 var diferenciaHours     = momentfechaHoraInicioReal.diff(momentfechaHoraInicioProgramada,'hours');
+		 var diferenciaDays      = momentfechaHoraInicioReal.diff(momentfechaHoraInicioProgramada,'days');
+		 
+		 var diferenciaTiempo            = moment.duration(momentfechaHoraInicioReal.diff(momentfechaHoraInicioProgramada));
+		 var otroTiempo               	= ""+parseInt(diferenciaTiempo.asHours())+"h "+diferenciaTiempo.minutes()+ "min ";
+		 
+		 
+		 //var segundos = (60*60*24*2+60*60*4)*-1;
+		 var segundos = diferenciaSegundos;
+		 
+		 var comentario = "";
+		 var texto = "";
+		 
+		 if(segundos < 0){
+			 comentario   = "Adelantado";
+		 	 segundos     = -1*segundos;
+			 estiloOrigen = "labelVerde";
+		 }else{
+			 comentario = "Retrasado";			 
+			 estiloOrigen = "labelRojo";
+		 }
+		 var minutos  = parseInt(segundos / 60);
+		 var horas    = parseInt(segundos/(60*60));
+		 var dias     = parseInt(segundos/(60*60*24));
+		 
+		 
+		 if(segundos < 60){
+			 texto = segundos+" Segundos";
+		 }else if(minutos < 60){
+			 texto = minutos+" Minutos";
+		 }else if(horas < 24){
+			 var minutosResiduo = parseInt((segundos/60) % 60);
+			 texto = horas+"h "+minutosResiduo+"min"
+		 }else{
+			 var horasResiduo = parseInt((minutos/60) % 24);
+		 	 texto = dias+"días "+horasResiduo+"h."
+		 }
+
+		 tiempoOrigen 	= texto;
+		 comentarioOrigen = comentario;
+
+		 
+	 }
+	 if(datos.fechaFinReal != ""){
+		 fechaHoraFinReal							=  moment(datos.fechaFinReal).format("DD/MM/YYYY hh:mm a");
+		 var momentfechaHoraFinProgramada			=  moment(datos.fechaFinProgramada);
+		 var momentfechaHoraFinReal					=  moment(datos.fechaFinReal);
+		 
+		 
+		 var diferenciaSegundos = momentfechaHoraFinReal.diff(momentfechaHoraFinProgramada,'seconds');
+		 var diferenciaMinutos  = momentfechaHoraFinReal.diff(momentfechaHoraFinProgramada,'minutes');
+		 var diferenciaHours    = momentfechaHoraFinReal.diff(momentfechaHoraFinProgramada,'hours');
+		 
+		 var diferenciaTiempo            = moment.duration(momentfechaHoraFinReal.diff(momentfechaHoraFinProgramada));
+		 var otroTiempo               	= ""+parseInt(diferenciaTiempo.asHours())+"h "+diferenciaTiempo.minutes()+ "min ";
+		 
+		 
+		 var segundos = diferenciaSegundos;
+		 
+		 var comentario = "";
+		 var texto = "";
+		 
+		 if(segundos < 0){
+			 comentario    = "Adelantado";
+		 	 segundos      = -1*segundos;			 
+			 estiloDestino = "labelVerde";
+		 }else{
+			 comentario    = "Retrasado";			 
+			 estiloDestino = "labelRojo";
+		 }
+		 
+		 var minutos  = parseInt(segundos / 60);
+		 var horas    = parseInt(segundos/(60*60));
+		 var dias     = parseInt(segundos/(60*60*24));
+		 
+		 if(segundos < 60){
+			 texto = segundos+" Segundos";
+		 }else if(minutos < 60){
+			 texto = minutos+" Minutos";
+		 }else if(horas < 24){
+			 var minutosResiduo = parseInt((segundos/60) % 60);
+			 texto = horas+"h "+minutosResiduo+"min";
+		 }else{
+			 var horasResiduo = parseInt((minutos/60) % 24);
+		 	 texto = dias+"días "+horasResiduo+"h";
+		 }
+
+		 tiempoDestino = texto;
+		 comentarioDestino = comentario;
+
+		 
+	 }
+	 
+	 $("#right-panel-tableOrigenDestino").empty();
+	 $("#right-panel2-tableOrigenDestino2").empty();	 
+	 $("#right-panel3-tableOrigenDestino3").empty();	 
+	 $("#right-panel4-tableOrigenDestino4").empty();
+	 
+	 //punto origen
+	 var filaRenderizadaOrigen = Mustache.render(
+		 templateOrigenDestino, 
+		 {
+			 imagen    : "{% static 'images/origenCirculo.png' %}",
+			 titulo    : "Punto Origen: ",
+			 direccion : datosOrigen.direccion,
+			 horaProgramada : " "+horaInicioProgramada,
+			 //posicion  : "("+origen.lat()+", "+origen.lng()+")",
+			 posicion  : "("+datosOrigen.latitud+", "+datosOrigen.longitud+")",
+      		 lat            : datosOrigen.latitud,
+      		 lng            : datosOrigen.longitud,
+      		 horaReal       : fechaHoraInicioReal,
+      		 direccion      : datosOrigen.direccion,
+      		 velocidad      : datosOrigen.velocidad+" Km/h",
+      		 tiempoEstado	: tiempoOrigen,
+      		 comentario		: comentarioOrigen,
+			 estilo         : estiloOrigen
+		 }
+	 );
+	 $("#right-panel-tableOrigenDestino").append(filaRenderizadaOrigen);
+	 $("#right-panel2-tableOrigenDestino2").append(filaRenderizadaOrigen);
+	 $("#right-panel3-tableOrigenDestino3").append(filaRenderizadaOrigen);
+	 $("#right-panel4-tableOrigenDestino4").append(filaRenderizadaOrigen);
+
+	 //FABIO pinto todos al mismotiempo que son iguales.
+	 
+	 //punto Destino
+  	 var filaRenderizadaDestino = Mustache.render(
+		 templateOrigenDestino, 
+  		 {
+  			 imagen   : "{% static 'images/destinoCirculo.png' %}",
+  			 titulo    : "Punto Destino: ",
+  			 horaProgramada : " "+horaFinProgramada,
+  			 direccion : datosDestino.direccion,
+  			 //posicion  : "("+latitud+", "+longitud+")",
+  			 posicion  : "("+datosDestino.latitud+", "+datosDestino.longitud+")",
+        	 lat       : datosDestino.latitud,
+        	 lng       : datosDestino.longitud,
+        	 horaReal       : fechaHoraFinReal,
+      		 direccion      : datosDestino.direccion,
+      		 velocidad      : datosDestino.velocidad+" Km/h",
+      		 tiempoEstado	: tiempoDestino,
+      		 comentario		: comentarioDestino,
+			 estilo         : estiloDestino
+  		 }
+  	 );
+	 $("#right-panel-tableOrigenDestino")  .append(filaRenderizadaDestino);
+	 $("#right-panel2-tableOrigenDestino2").append(filaRenderizadaDestino);
+	 $("#right-panel3-tableOrigenDestino3").append(filaRenderizadaDestino);
+	 $("#right-panel4-tableOrigenDestino4").append(filaRenderizadaDestino);
+ }
+
+ //Pintar panel de paradas descarga
+ function pintarPanelParadas(datos){
+     
+     
+     for (i=0; i<datos.length;i++){
+    	 var numParada 				= i+1;
+    	 var parada 					= datos[i];
+    	 var imagen				    = "";
+    	 var tipo					= "";
+    	 var horaInicioParada		= "";
+    	 var horaFinParada			= "";
+    	 var tiempo					= "";
+    	 var comentario				= "";			
+    	 
+    	 if(parada.fechaHoraInicioParada !="" ){
+    		 horaInicioParada	=  moment(parada.fechaHoraInicioParada).format("DD/MM/YYYY hh:mm a");
+    		 
+    		 if(parada.fechaHoraFinParada !=""){
+    			 horaFinParada							=  moment(parada.fechaHoraFinParada).format("DD/MM/YYYY hh:mm a");
+    			 var momentfechaHoraInicioParada			=  moment(parada.fechaHoraInicioParada);
+				 var momentfechaHoraFinParada		    =  moment(parada.fechaHoraFinParada);
+				 
+				 var diferenciaSegundos 					= momentfechaHoraFinParada.diff(momentfechaHoraInicioParada,'seconds');
+				 var diferenciaMinutos  					= momentfechaHoraFinParada.diff(momentfechaHoraInicioParada,'minutes');
+				 var diferenciaHours    					= momentfechaHoraFinParada.diff(momentfechaHoraInicioParada,'hours');
+    			 
+    			 var segundos 							= diferenciaSegundos;
+    			 
+    			 var minutos  = parseInt(segundos / 60);
+				 var horas    = parseInt(segundos/(60*60));
+				 var dias     = parseInt(segundos/(60*60*24));
+				 
+				 var texto ="";
+				 if(segundos < 60){
+					 texto = segundos+" Segundos";
+				 }else if(minutos < 60){
+					 texto = minutos+" Minutos";
+				 }else if(horas < 24){
+					 var minutosResiduo = parseInt((segundos/60) % 60);
+					 texto = horas+"h "+minutosResiduo+"min";
+				 }else{
+					 var horasResiduo = parseInt((minutos/60) % 24);
+				 	 texto = dias+"días "+horasResiduo+"h";
+				 }
+				 
+				 tiempo 		= texto;
+				 comentario 	= "Detenido";
+    		 }
+    	 }
+    	 
+    	 
+    	 if(parada.tipo == "Carga"){
+    		 imagen    = "{% static 'images/cargaCirculo.png' %}";
+    		 tipo	  = "Carga";
+    	 }
+    	 if(parada.tipo == "Descarga"){
+    		 imagen    = "{% static 'images/descargaCirculo.png' %}";
+    		 tipo	  = "Descarga";
+    		 
+    	 }
+		 
+	  	 var filaRenderizada = Mustache.render(
+			 templateParadas, 
+	  		 {
+	  			 imagen    : imagen,
+	  			 //imagen    :"{% static 'images/cargaCirculo.png' %}",
+	  			 titulo    : "Parada "+numParada,
+	  			 tipo		: tipo,
+	  			 direccion : parada.direccion,
+	  			 posicion  : "("+parada.latitud+", "+parada.longitud+")",
+	       	 	 lat       : parada.latitud,
+	        	 lng       : parada.longitud,
+	        	 
+	        	 horaReal     : horaInicioParada,
+	        	 tiempoEstado : tiempo,
+	        	 comentario   : comentario,
+	  		 }
+	  	 );
+	  	 $("#right-panel-table").append(filaRenderizada);	
+		 
+     }
+
+
+ }
+
+
+ // =============================================================================================== //
+
+ //------ Traer detalle seguimiento ruta----------------------------------------------------
+ function traerDatosDetalleSeguimientoRuta(){
+	 
+	 var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+	                                         'token'   : config.getToken(),
+	                                         'tenant'  : "{{tenant}}",          
+	 },
+	                     'data'          : {  
+	                         "idAsignacionRuta": "{{idAsignacionRuta}}"    
+	                         
+	                     }
+		 
+	 };
+	 
+	 var request = $.ajax({
+		 type        : "POST",
+		 url         : "{% url 'wsDetalleSeguimientoAsignacionRuta' %}",
+		 data        : {
+	         request :  JSON.stringify(peticion)
+	     },
+		 dataType    : "json"
+		 
+	 }).done(function(respuesta){
+	     if (respuesta.success){
+	         pintarDatosSeguimiento(respuesta.data);
+	     }
+	     else{
+	         notif({
+	             msg     : respuesta.mensaje,
+	             type    : "error",
+	             position: "center"
+	         });
+	     }
+	 }).fail(function(jqXHR, textStatus){
+	     notif({
+	         msg     : "Falló la conexión",
+	         type    : "error",
+	         position: "center"
+	     });
+	 }).always(function(){
+	     
+	 });
+	 
+	 
+ }
+
+ //Pintar datos seguimiento
+ function pintarDatosSeguimiento(data){
+	 //TODO Repetido.
+	 var datosSeguimiento          = data;
+	 dataSeguimientoAsignacionRuta = data;
+	 
+	 //Sacar datos de ruta
+	 var datosRuta = datosSeguimiento.ruta;
+	 pintarPanelOrigenDestino(datosRuta);
+
+	 //Sacar datos de paradas
+	 var datosParadas = datosSeguimiento.paradas;
+     pintarPanelParadas(datosParadas);
+	 pintarPinesParadas();
+
+	 var datosPuntosDeControl = datosSeguimiento.puntosDeControl;
+	 pintarPanelPuntosDeControl(datosPuntosDeControl);
+	 pintarPinesPuntosDeControl();
+	 //var datosPuntosDeControl = datos
+
+	 
+	 var datosLimitesDeVelocidad = datosSeguimiento.limitesDeVelocidad;
+	 pintarPanelLimitesDeVelocidad(datosLimitesDeVelocidad);
+	 pintarPinesLimitesDeVelocidad();
+	 
+ }
+
+ function pintarPinesParadas(){
+	 if(dataSeguimientoAsignacionRuta != null ){
+
+		 var paradas = dataSeguimientoAsignacionRuta.paradas;
+
+		 for(var i = 0; i < paradas.length ; i++){
+
+			 var parada   = paradas[i];
+			 var posicion = { lat: parseFloat(parada.latitud),  lng: parseFloat(parada.longitud) };
+
+			 var imagen = "";
+			 if(parada.tipo == "Carga"){
+				 imagen = "{% static 'images/cargaPin.png' %}";
+			 }else{
+				 imagen = "{% static 'images/descargaPin.png' %}";
+			 }
+			 
+			 var marker = new google.maps.Marker({
+				 position : posicion,
+				 map      : map,
+				 icon     : imagen,
+				 title    : "Parada "+(i+1),
+				 parada   : parada,
+				 paradaInfoWindow : null
+			 });
+
+			 google.maps.event.addListener(marker, 'click', function() {
+				 var paradaInfoWindow = this.paradaInfoWindow;
+				 var parada           = this.parada;
+
+				 if(paradaInfoWindow == null){
+					 paradaInfoWindow = new google.maps.InfoWindow({
+						 content: ''
+					 });
+				 }else{
+					 paradaInfoWindow.close();
+				 }
+				 
+				 var direccion             = "";
+				 var fechaHoraInicioParada = "";
+				 var fechaHoraFinParada    = "";
+				 
+				 var fechaHora = parada.fechaHoraInicioParada;
+				 if(fechaHora != ""){
+					 fechaHoraInicioParada = moment(fechaHora).format("DD/MM/YYYY hh:mm a");
+				 }
+
+				 fechaHora = parada.fechaHoraFinParada;
+				 if(fechaHora != ""){
+					 fechaHoraFinParada = moment(fechaHora).format("DD/MM/YYYY hh:mm a");
+				 }
+
+				 var marcador = this;
+				 getDireccion(this.getPosition(), function(direccion){
+					 var htmlInfoWindow = Mustache.render(templateInfoWindowParada,{
+						 "direccion"       : direccion,
+						 "fechaHoraInicio" : fechaHoraInicioParada,
+						 "fechaHoraFin"    : fechaHoraFinParada
+					 });
+
+					 infoWindowPosicionVehiculoRuta.setContent(htmlInfoWindow);
+					 infoWindowPosicionVehiculoRuta.open(map,marcador);
+				 });
+				 
+				 
+
+				 
+			 });
+
+
+		 }
+	 }
+ }
+
+ function pintarPinesPuntosDeControl(){
+	 if(dataSeguimientoAsignacionRuta != null ){
+
+		 var puntosDeControl = dataSeguimientoAsignacionRuta.puntosDeControl;
+
+		 for(var i = 0; i < puntosDeControl.length ; i++){
+
+			 var puntoDeControl   = puntosDeControl[i];
+			 var posicion         = { lat: parseFloat(puntoDeControl.latitud),  lng: parseFloat(puntoDeControl.longitud) };
+			 var direccion        = puntoDeControl;
+			 
+			 var imagen = "{% static 'images/controlPin.png' %}";
+
+			 
+			 var marker = new google.maps.Marker({
+				 position : posicion,
+				 map      : map2,
+				 icon     : imagen,
+				 title    : "Punto de control "+(i+1),
+				 puntoDeControl   : puntoDeControl,
+				 puntoDeControlInfoWindow : null
+			 });
+
+			 google.maps.event.addListener(marker, 'click', function() {
+				 var puntoDeControlInfoWindow = this.puntoDeControlInfoWindow;
+				 var puntoDeControl           = this.puntoDeControl;
+
+				 if(puntoDeControlInfoWindow == null){
+					 puntoDeControlInfoWindow = new google.maps.InfoWindow({
+						 content: ''
+					 });
+					 this["puntoDeControlInfoWindow"] = puntoDeControlInfoWindow;
+				 }else{
+					 puntoDeControlInfoWindow.close();
+				 }
+				 
+				 var direccion                = puntoDeControl.direccion;
+				 var fechaHoraCruceProgramada = "";
+				 var fechaHoraCruceReal       = "";
+				 
+				 var fechaHora = puntoDeControl.fechaHoraCruceProgramada;
+				 if(fechaHora != ""){
+					 fechaHoraCruceProgramada = moment(fechaHora).format("DD/MM/YYYY hh:mm a");
+				 }
+
+				 fechaHora = puntoDeControl.fechaHoraCruceReal;
+				 if(fechaHora != ""){
+					 fechaHoraCruceReal = moment(fechaHora).format("DD/MM/YYYY hh:mm a");
+				 }
+				 
+				 var marcador = this;
+				 getDireccion(this.getPosition(), function(direccion){
+					 var htmlInfoWindow = Mustache.render(templateInfoWindowPuntoDeControl,{
+						 "direccion"                : direccion,
+						 "fechaHoraCruceProgramada" : fechaHoraCruceProgramada,
+						 "fechaHoraCruceReal"       : fechaHoraCruceReal
+					 });
+					 
+					 infoWindowPosicionVehiculoRuta.setContent(htmlInfoWindow);
+					 infoWindowPosicionVehiculoRuta.open(map2,marcador);
+				 });
+				 
+				 
+			 });
+
+
+		 }
+	 }
+ }
+
+ function pintarPinesLimitesDeVelocidad(){
+	 if(dataSeguimientoAsignacionRuta != null ){
+
+		 var limitesDeVelocidad = dataSeguimientoAsignacionRuta.limitesDeVelocidad;
+
+		 for(var i = 0; i < limitesDeVelocidad.length ; i++){
+
+			 var limiteDeVelocidad  = limitesDeVelocidad[i];
+			 var posicion           = { lat: parseFloat(limiteDeVelocidad.latitud),  lng: parseFloat(limiteDeVelocidad.longitud) };
+			 var direccion          = limiteDeVelocidad;
+			 
+			 var imagen = "{% static 'images/velocidadPin.png' %}";
+
+			 
+			 var marker = new google.maps.Marker({
+				 position : posicion,
+				 map      : map3,
+				 icon     : imagen,
+				 title    : "LimiteDeVelocidad "+(i+1),
+				 limiteDeVelocidad           : limiteDeVelocidad,
+				 limiteDeVelocidadInfoWindow : null
+			 });
+
+			 if("infracciones" in limiteDeVelocidad){
+				 pintarPinesInfracciones(limiteDeVelocidad.infracciones);
+			 }
+
+			 google.maps.event.addListener(marker, 'click', function() {
+				 var limiteDeVelocidadInfoWindow = this.limiteDeVelocidadInfoWindow;
+				 var limiteDeVelocidad           = this.limiteDeVelocidad;
+
+				 if(limiteDeVelocidadInfoWindow == null){
+					 limiteDeVelocidadInfoWindow = new google.maps.InfoWindow({
+						 content: ''
+					 });
+					 this["limiteDeVelocidadInfoWindow"] = limiteDeVelocidadInfoWindow;
+				 }else{
+					 limiteDeVelocidadInfoWindow.close();
+				 }
+				 
+				 var direccion                 = limiteDeVelocidad.direccion;
+				 var limiteCargado             = parseFloat(limiteDeVelocidad.limiteCargado).toFixed(2);
+				 var limiteDescargado          = parseFloat(limiteDeVelocidad.limiteDescargado).toFixed(2); 
+				 var velocidadMaximaRegistrada = parseFloat(limiteDeVelocidad.velocidadMaximaRegistrada).toFixed(2);
+				 var estado                    = limiteDeVelocidad.estado;
+				 
+				 
+				 var marcador = this;
+				 getDireccion(this.getPosition(), function(direccion){
+					 var htmlInfoWindow = Mustache.render(templateInfoWindowLimiteDeVelocidad,{
+						 "direccion"                 : direccion,
+						 "limiteCargado"             : limiteCargado,
+						 "limiteDescargado"          : limiteDescargado,
+						 "velocidadMaximaRegistrada" : velocidadMaximaRegistrada,
+						 "estado"                    : estado
+					 });
+					 
+					 limiteDeVelocidadInfoWindow.setContent(htmlInfoWindow);
+					 limiteDeVelocidadInfoWindow.open(map3,marcador);
+				 });
+				 
+				 
+			 });
+
+
+		 }
+	 }
+ }
+
+ function pintarPinesInfracciones(infracciones){
+
+	 for(var i = 0; i < infracciones.length ; i++){
+
+		 var infraccion  = infracciones[i];
+		 var posicion    = { lat: parseFloat(infraccion.latitud),  lng: parseFloat(infraccion.longitud) };
+		 var direccion   = infraccion;
+		 
+		 var imagen = "{% static 'images/infraccionPin.png' %}";
+
+		 
+		 var marker = new google.maps.Marker({
+			 position : posicion,
+			 map      : map3,
+			 icon     : imagen,
+			 title    : "Infracción "+(i+1),
+			 infraccion           : infraccion,
+			 infraccionInfoWindow : null
+		 });
+
+
+		 google.maps.event.addListener(marker, 'click', function() {
+			 var infraccionInfoWindow = this.infraccionInfoWindow;
+			 var infraccion           = this.infraccion;
+
+			 if(infraccionInfoWindow == null){
+				 infraccionInfoWindow = new google.maps.InfoWindow({
+					 content: ''
+				 });
+				 this["infraccionInfoWindow"] = infraccionInfoWindow;
+			 }else{
+				 infraccionInfoWindow.close();
+			 }
+			 
+			 var direccion                 = infraccion.direccion;
+			 var fechaHoraInfraccion       = moment(infraccion.fechaHoraInfraccion).format("DD/MM/YYYY hh:mm a")
+			 var velocidad                 = parseFloat(infraccion.velocidad).toFixed(2);
+			 
+			 
+			 var marcador = this;
+			 getDireccion(this.getPosition(), function(direccion){
+				 var htmlInfoWindow = Mustache.render(templateInfoWindowInfraccion,{
+					 "direccion"           : direccion,
+					 "fechaHoraInfraccion" : fechaHoraInfraccion,
+					 "velocidad"           : velocidad
+				 });
+				 
+				 infraccionInfoWindow.setContent(htmlInfoWindow);
+				 infraccionInfoWindow.open(map3,marcador);
+			 });
+			 
+			 
+		 });
+
+
+	 }
+
+ }
+
+ function pintarPanelPuntosDeControl(datosPuntosDeControl){
+	 for (i=0; i<datosPuntosDeControl.length;i++){
+    	 var numPuntoDeControl  	= i+1;
+    	 var puntoDeControl 		= datosPuntosDeControl[i];
+    	 var imagen				    = "";
+    	 
+    	 var fechaHoraCruceProgramada = "";
+    	 var fechaHoraCruceReal		  = "";
+    	 var tiempo					  = "";
+    	 var comentario				  = "";			
+		 var estilo                   = "";
+
+		 
+    	 if(puntoDeControl.fechaHoraCruceProgramada !="" ){
+    		 fechaHoraCruceProgramada	=  moment(puntoDeControl.fechaHoraCruceProgramada).format("DD/MM/YYYY hh:mm a");
+    		 
+    		 if(puntoDeControl.fechaHoraCruceReal !=""){
+    			 fechaHoraCruceReal					=  moment(puntoDeControl.fechaHoraCruceReal).format("DD/MM/YYYY hh:mm a");
+				 
+    			 var momentFechaHoraCruceProgramada	=  moment(puntoDeControl.fechaHoraCruceProgramada);
+				 var momentFechaHoraCruceReal 	    =  moment(puntoDeControl.fechaHoraCruceReal);
+				 
+				 var diferenciaSegundos 			= momentFechaHoraCruceProgramada.diff(momentFechaHoraCruceReal,'seconds');
+				 var diferenciaMinutos  			= momentFechaHoraCruceProgramada.diff(momentFechaHoraCruceReal,'minutes');
+				 var diferenciaHours    			= momentFechaHoraCruceProgramada.diff(momentFechaHoraCruceReal,'hours');
+    			 
+    			 var segundos 						= diferenciaSegundos;
+    			 
+    			 var minutos  = parseInt(segundos / 60);
+				 var horas    = parseInt(segundos/(60*60));
+				 var dias     = parseInt(segundos/(60*60*24));
+				 
+				 var texto ="";
+				 if(segundos < 60){
+					 texto = segundos+" Segundos";
+				 }else if(minutos < 60){
+					 texto = minutos+" Minutos";
+				 }else if(horas < 24){
+					 var minutosResiduo = parseInt((segundos/60) % 60);
+					 texto = horas+"h "+minutosResiduo+"min";
+				 }else{
+					 var horasResiduo = parseInt((minutos/60) % 24);
+				 	 texto = dias+"días "+horasResiduo+"h";
+				 }
+				 
+				 tiempo 		= texto;
+				 if(momentFechaHoraCruceReal.isBefore(momentFechaHoraCruceProgramada)){
+					 comentario 	= "Adelantado";
+					 estilo         = "labelVerde";
+				 }else{
+					 comentario 	= "Atrasado";
+					 estilo         = "labelRojo";
+				 }				 
+    		 }else{
+				 comentario = "No transitado";
+				 estilo     = "labelRojo";
+			 }
+    	 }
+    	 
+
+		 imagen    = "{% static 'images/controlCirculo.png' %}";
+		 
+	  	 var filaRenderizada = Mustache.render(
+			 templatePuntosDeControl, 
+	  		 {
+	  			 imagen    : imagen,
+	  			 titulo    : "Punto de control "+numPuntoDeControl,
+	  			 direccion : puntoDeControl.direccion,
+	  			 posicion  : "("+puntoDeControl.latitud+", "+puntoDeControl.longitud+")",
+	       	 	 lat          : puntoDeControl.latitud,
+	        	 lng          : puntoDeControl.longitud,
+	        	 horaReal     : fechaHoraCruceReal,
+	        	 tiempoEstado : tiempo,
+	        	 comentario   : comentario,
+				 estilo       : estilo
+	  		 }
+	  	 );
+	  	 $("#right-panel2-table2").append(filaRenderizada);	
+		 
+     }
+
+ }
+
+ function pintarPanelLimitesDeVelocidad(datosLimitesDeVelocidad){
+	 for (var i=0; i<datosLimitesDeVelocidad.length;i++){
+     	 var numLimiteDeVelocidad  	= i+1;
+     	 var limiteDeVelocidad 		= datosLimitesDeVelocidad[i];
+     	 var imagen				    = "";
+		 
+		 var limiteCargado             = limiteDeVelocidad.limiteCargado;
+		 var limiteDescargado          = limiteDeVelocidad.limiteDescargado;
+		 var velocidadMaximaRegistrada = 0;
+		 if("velocidadMaximaRegistrada" in limiteDeVelocidad){
+			 velocidadMaximaRegistrada = parseFloat(limiteDeVelocidad.velocidadMaximaRegistrada).toFixed(2);
+		 }
+		 var estado                    = limiteDeVelocidad.estado;
+		 var estilo                    = "";
+
+		 if(estado == "ok"){
+			 estilo = "labelVerde";
+		 }else if(estado == "vigilando"){
+			 estilo = "labelAzul";
+		 }else if(estado == "excedido"){
+			 estilo = "labelRojo";
+		 }
+		 
+	 	 imagen    = "{% static 'images/velocidadCirculo.png' %}";
+		 
+	  	 var filaRenderizada = Mustache.render(
+	 		 templateLimitesDeVelocidad, 
+	  		 {
+	  			 imagen    : imagen,
+	  			 titulo    : "Limite de velocidad "+numLimiteDeVelocidad,
+	  			 direccion : limiteDeVelocidad.direccion,
+	  			 posicion  : "("+limiteDeVelocidad.latitud+", "+limiteDeVelocidad.longitud+")",
+	       	 	 lat       : limiteDeVelocidad.latitud,
+	        	 lng       : limiteDeVelocidad.longitud,
+				 
+				 limiteCargado    : limiteCargado,
+				 limiteDescargado : limiteDescargado,
+				 velocidadMaximaRegistrada : velocidadMaximaRegistrada,
+				 estado                    : estado,
+				 estilo                    : estilo
+	        	 
+	  		 }
+	  	 );
+	  	 $("#right-panel3-table3").append(filaRenderizada);
+
+		 if("infracciones" in limiteDeVelocidad){
+			 pintarPanelInfraccionesDeVelocidad(limiteDeVelocidad.infracciones, limiteCargado, limiteDescargado);
+		 }
+     }
+
+ }
+
+ function pintarPanelInfraccionesDeVelocidad(datosInfracciones, limiteCargado, limiteDescargado){
+	 for (var i=0; i<datosInfracciones.length;i++){
+     	 var numInfraccion  	    = i+1;
+     	 var infraccion     		= datosInfracciones[i];
+     	 var imagen				    = "";
+		 
+		 var velocidad            = parseFloat(infraccion.velocidad).toFixed(2);
+		 var fechaHoraInfraccion  = moment(infraccion.fechaHoraInfraccion).format("DD/MM/YYYY hh:mm a");
+
+		 var diferenciaVelocidad  = 0;
+		 var tipoInfraccion       = infraccion.tipo;
+
+		 if(tipoInfraccion == "Carga"){
+			 diferenciaVelocidad = velocidad - limiteCargado;
+		 }else{
+			 diferenciaVelocidad = velocidad - limiteCargado;			 
+		 }
+
+		 diferenciaVelocidad = parseFloat(diferenciaVelocidad).toFixed(2);
+		 		 
+	 	 imagen    = "{% static 'images/infraccionCirculo.png' %}";
+		 
+	  	 var filaRenderizada = Mustache.render(
+	 		 templateInfraccionDeVelocidad, 
+	  		 {
+	  			 imagen    : imagen,
+	  			 titulo    : "Infracción "+numInfraccion,
+	  			 direccion : infraccion.direccion,
+	  			 posicion  : "("+infraccion.latitud+", "+infraccion.longitud+")",
+	       	 	 lat       : infraccion.latitud,
+	        	 lng       : infraccion.longitud,
+
+				 velocidad : velocidad,
+				 fechaHoraInfraccion : fechaHoraInfraccion,
+				 diferenciaVelocidad : diferenciaVelocidad
+	  		 }
+	  	 );
+	  	 $("#right-panel3-table3").append(filaRenderizada);	
+     }
+
+ }
+
+ 
+ //---------------------------------------
+
+ function getDireccion(location, funcion){
+	 if(geocoder == null){
+		 geocoder = new google.maps.Geocoder;
+	 }
+	 
+	 geocoder.geocode(
+		 {'location': location},
+		 function(results, status) {
+			 
+			 var direccion = "";						   						   
+			 if (status === 'OK') {
+				 if (results[0]) {								   
+					 direccion = results[0].formatted_address;													   
+				 } else {
+					 direccion = "Dirección no definida";
+				 }
+			 } else {
+				 direccion = "Servicio de dirección no disponible";
+			 }
+			 
+			 funcion(direccion);
+		 }
+	 );
+ }
+
+ // === Document ready!!! =======================================================
+ var socket = null;
+ $(document).ready(function() {
+	 
+	 var fechaAhora = moment();
+	 var fechaManana = moment().add(1, 'days');
+	 $('.formRangoFecha').datetimepicker(
+	     { 
+	         pickTime: true,
+	         showToday: true,
+	         pick12HourFormat: true,
+	         minViewMode: "years",
+			 minViewMode: "months",
+			 minViewMode: "days",
+			 minDate: moment(),
+			 language:'es' });
+	 
+	 //traerVehiculos();
+	 //cargarSlider();
+	 
+	 //pintarPanelDestino("3.423441","-76.541062","3.423441","-76.541062", "calle 6 # 38-15", "carrera 28 e6 #72j36");
+	 //FABIO - LEILLY tenia esto aquì
+	 //traerDatosDetalleSeguimientoRuta();
+	 
+	 $('#formRangoFecha1').data('DateTimePicker').setDate(fechaAhora);
+	 $('#formRangoFecha2').data('DateTimePicker').setDate(fechaManana);
+	 
+	 //Valida la fecha y hora inicio programada
+	 
+	 
+	 
+	 //Valida la fecha y hora fin programada
+	 
+	 //Valida la  fecha de cruce programada
+	 
+	 /* $(document).on('change', '#sliderCal', function( values, handle ) {
+		var calificacion	= parseFloat(handle);
+		$('#calificacion').text(calificacion);
+		$('#calificacion').val(calificacion);
+	  * });*/
+	 
+
+	 //=============abortar ruta
+	 $(document).on('click', '#abortarRuta', function(){
+		 //var idRuta 	= $(this).parent().find('.idRuta').val();
+		 $('#formularioAceptarEliminar').modal('show');
+	 });
+
+	 $(document).on('click', '#aceptarAbortarRuta', function(){
+		 
+		 enviarAbortarRuta();
+	 });
+	 
+	 //Validador
+	 
+	 $('#formularioCrearAsignacion').validator().on('submit', function (e) {
+		 if (e.isDefaultPrevented()) {
+			 notif({
+                 msg     : "Invalido campo",
+                 type    : "error",
+                 position: "center"
+             });
+		 } else {
+			 var permitirEnvioRuta		= validarFechasUsuario('#formRangoFecha1', '#formRangoFecha2');
+			 var algo					= "";
+			 
+			 if(permitirEnvioRuta){
+	    		 enviarActualizacionRuta();
+	   		 }
+			 e.preventDefault();
+		 }
+	 });
+
+
+
+	 //Pestanas -------------------------------------------
+	 $('#tabPestana1').on('shown.bs.tab', function (e) {
+
+		 google.maps.event.trigger(map,'resize');
+		 if(map2 != null){
+			 // enfoca el mapa 1 segun el enfoque del mapa 2
+			 map.setZoom(map2.getZoom());
+			 map.setCenter(map2.getCenter());
+		 }
+		 if(pestana3 && map3 != null){
+			 //enfoca el map 1 segun el enfoque del map 3
+			 map.setZoom(map3.getZoom());
+			 map.setCenter(map3.getCenter());
+		 }
+		 if(pestana4 && map4 != null){
+			 //enfoca el map 1 segun el enfoque del map 4
+			 map.setZoom(map4.getZoom());
+			 map.setCenter(map4.getCenter());
+		 }
+		 pestana1 = true; //pestana ruta oprimida
+		 pestana2 = false;
+		 pestana3 = false;
+		 pestana4 = false;		 
+	 });
+
+	 $('#tabPestana2').on('shown.bs.tab', function (e) {
+		 google.maps.event.trigger(map2,'resize');
+		 
+		 if(pestana1 && map!=null){
+			 map2.setZoom(map.getZoom());
+			 map2.setCenter(map.getCenter());
+
+		 }
+		 if(pestana3 && map3!=null){
+			 map2.setZoom(map3.getZoom());
+			 map2.setCenter(map3.getCenter());
+		 }
+		 if(pestana4 && map4!=null){
+			 map2.setZoom(map4.getZoom());
+			 map2.setCenter(map4.getCenter());
+		 }
+		 
+		 //pintarRutaPuntoControl();
+		 pestana1 = false; 
+		 pestana2 = true; // pestana punto control oprimida 
+		 pestana3 = false;
+		 pestana4 = false;		 
+	 });
+
+	 $('#tabPestana3').on('shown.bs.tab', function (e) {
+		 google.maps.event.trigger(map3,'resize');		 
+		 if(pestana1 && map!=null){			 
+			 map3.setZoom(map.getZoom());
+			 map3.setCenter(map.getCenter());
+
+		 }
+		 if(pestana2 && map2!=null){
+			 map3.setZoom(map2.getZoom());
+			 map3.setCenter(map2.getCenter());
+		 }
+
+		 if(pestana4 && map4!=null){
+			 map3.setZoom(map4.getZoom());
+			 map3.setCenter(map4.getCenter());
+		 }
+		 
+		 //pintarRutaLimitesVelocidad();
+		 pestana1 = false; 
+		 pestana2 = false;  
+		 pestana3 = true; //pestana punto control oprimida
+		 pestana4 = false;
+	 });
+
+
+	 $('#tabPestana4').on('shown.bs.tab', function (e) {
+		 google.maps.event.trigger(map4,'resize');
+		 if(pestana1 && map!=null){		
+			 map4.setZoom(map.getZoom());
+			 map4.setCenter(map.getCenter());
+		 }
+		 if(pestana2 && map2!=null){
+			 map4.setZoom(map2.getZoom());
+			 map4.setCenter(map2.getCenter());
+		 }
+		 if(pestana3 && map3!=null){
+			 map4.setZoom(map3.getZoom());
+			 map4.setCenter(map3.getCenter());
+		 }
+		 //pintarRutaPuntosInteres();
+		 pestana1 = false; 
+		 pestana2 = false;  
+		 pestana3 = false;   
+		 pestana4 = true ; //pestana puntos de interes		 		 
+	 });
+
+
+	 //====================================================
+
+ });
+ // --- End document ready ------------------------------------------------------
+
+
+
+</script>
+{% endblock %}
+
+{% block contenido %}
+<body>
+	<div id="page-wrapper" style="  margin: 3em; margin-top: 0;">
+		
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <h1 class="">Detalle Asignación ruta <span id="textoNombre"></span></h1>
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	    <!-- /.row -->
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <div class="panel panel-default">
+	                
+	                <!-- /.panel-heading -->
+
+	                <div class="panel-body">
+						<form data-toggle="validator" role="form" id="formularioCrearAsignacion">
+							<div class="row">
+								<div class="col-md-3">
+									<label> Estado: </label><label id="estadoRuta" style="color:#149911; margin-left: 1em;"><strong></strong></label>
+								</div>
+								<div class="col-md-3">
+									<button id="abortarRuta" style="display: none;" type="button" class="btn btn-raised btn-success">
+										Abortar Ruta
+									</button>
+								</div>	
+								
+							</div>
+							
+							<div class="row">
+								<div class="col-md-3">
+									<div class="form-group">
+					           			<label>Fecha Inicio:</label>
+							            <div class="input-group date formRangoFecha" id="formRangoFecha1">
+							                <input id="inputPeriodoGrafico1" type="text" required="" class="form-control" data-date-format="DD/MM/YYYY hh:mm a" data-error="Ingrese una fecha (DD/MM/YYYY hh:mm)" pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\s[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$">
+							                <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+							                </span>
+						            	</div>
+						            	<div class="help-block with-errors"></div>
+							        </div>
+									<div class="form-group">
+									    <label for="grupoVehiculos">Vehículo</label><label> </label>
+									    <div id="selectConductores">
+											<select class="selectpicker" data-width="fit"  data-live-search="true" title="Seleccionar vehÃ­culo" id="grupoVehiculos" name="grupoVehiculos">
+												
+											</select>
+									    </div>
+									</div>
+									<div class="form-group">
+									    <label  for="grupoConductores">Conductor</label><label> </label>
+									    <div id="selectConductores">
+											<select class="selectpicker" data-width="fit"  data-live-search="true" title="Seleccionar conductor" id="grupoConductores" name="grupoConductores">
+												
+											</select>
+									    </div>
+									</div>
+									
+								</div>
+								
+								<div class="col-md-3">
+									
+									<div class="form-group">
+					           			<label>Fecha Fin:</label>
+							            <div class="input-group date formRangoFecha" id="formRangoFecha2">
+							                <input id="inputPeriodoGrafico2" type="text" required="" class="form-control" data-date-format="DD/MM/YYYY hh:mm a" data-error="Ingrese una fecha (DD/MM/YYYY hh:mm)" pattern="^[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\s[0-9]?[0-9]:[0-9][0-9]\s[(a|A|p|P)][(m|M)]$">
+							                <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
+							                </span>
+						            	</div>
+						            	<div class="help-block with-errors"></div>
+							        </div>
+									<div class="form-group">
+									    <label  for="grupoRutas">Asignar ruta</label><label> </label>
+									    <div id="selectRutas">
+											<select class="selectpicker" data-width="fit"  data-live-search="true" title="Seleccionar ruta" id="grupoRutas" name="grupoRutas">
+												
+											</select>
+									    </div>
+									</div>
+									
+								</div>
+								
+								<div class="col-md-6">
+									<label style="color: #eb2626;">Puntos de control</label>
+									<div class="" style="max-height: 100.65em; overflow:auto;">
+										<div id="menuContenedorPuntosDeControl" style="padding: 1em;">
+		      							</div>
+		      							<label id="textoSinPuntosControl" style="display: none; color:#000000;">La ruta seleccionada no tiene puntos de control definidos.</label>
+	      							</div>
+								</div>
+								
+							</div>
+							
+							<button id="enviarAsignacion" type="submit" class="btn btn-raised btn-success enviarAsignacion positionBoton">
+								Guardar Asignación
+							</button>
+						</form>
+					</div>
+	                <!-- /.panel-body -->
+	            </div>
+	            <!-- /.panel -->
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+		
+	</div>
+	
+	
+	
+	
+	
+	<div id="page-wrapper" style="  margin: 3em; margin-top: 0;">
+		
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <h1 class="">Seguimiento Ruta</h1>
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	    <!-- /.row -->
+	    <div class="row">
+		    <div class="col-lg-12">
+				<!-- /.col-lg-12 -->
+	        	<div class="panel panel-default">
+	      			<div class="panel-body">
+						
+						<!-- Inicio tab creacion de rutas -->
+	      				<div class="tabbable pestana" id="tabs">
+	      					<ul class="nav nav-tabs">
+	      						<li class="active">
+				                    <a id="tabPestana1" href="#1" data-toggle="tab">Ruta</a>
+				                </li>
+				                <li class="tabPuntosControl" >
+				                    <a id="tabPestana2" href="#2" data-toggle="tab">Puntos de control</a>
+				                </li>
+				                <li class="tabLimitesVelocidad" >
+				                    <a id="tabPestana3" href="#3" data-toggle="tab">Límites de velocidad</a>
+				                </li>
+				                <li class="tabPuntosInteres" style="display: none;">
+				                    <a id="tabPestana4" href="#4" data-toggle="tab">Puntos de interes</a>
+				                </li>
+								
+      						</ul>
+			                <div class="tab-content">
+            					<div class="tab-pane active" id="1">
+            						<div class="row">
+            						   	<label style="margin: 1em;">Deslice la barra usando el circulo rojo para seleccionar una hora de la ruta seguida.</label>
+            						   	<div class="col-md-6 col-md-offset-3" style="text-align: center;">
+											<label id="calificacion" class="estiloLabelSlider"> </label>
+										</div>
+            						   	<div class="col-md-6 col-md-offset-3">
+            						   		<div class="slider shor" id="sliderCal" style="margin-bottom: 3em;"></div>
+            						   	</div>
+            						   	
+            						   	
+            						</div>
+            						<div class="row">
+            						   	<div class="col-md-2" style="text-align: right;">
+            						   		<label >Ruta seguida por el conductor </label>
+            						   		<label >Ruta definida </label>
+            						   	</div>
+            						   	<div class="col-md-1" style="text-align: center;">
+            						   		<hr class="claselinea" style="height: 2px; background-color:#eb2626;"/>
+            						   		<hr class="claselinea" style="height: 2px; background-color:#008080;"/>
+            						   	</div>	
+            						</div>
+            						<div id="contenedorMapa" style="">
+
+                  						<div id="map" style="width:100%; height:50em;"></div>
+              							<!-- <div id="right-panel"> -->
+              							<div style="margin-top: 1em;">
+                							
+                							<table class="table tablaEncabezado">
+                								<tr class="row">
+													<th class="col-md-4" style="text-align: center;">Programado</th><th class="col-md-4" style="text-align: center;">Real</th><th class="col-md-4" style="text-align: center;">Estado</th>
+												</tr>
+                							</table>
+                							<hr class="estiloLineaTabla" >
+                							
+                							<table id="right-panel-tableOrigenDestino" class="table">
+                								
+                							</table>
+                							<hr>
+                							<table id="right-panel-table" class="table">
+                							</table>
+              							</div>     
+            						</div>
+			                    </div> 
+			                    <!-- Inicio tab creacion de puntos de control -->
+			                    <div class="tab-pane" id="2" id="contenidoTab2">
+									<div class="row">
+            						   	<label style="margin: 1em;">Deslice la barra usando el circulo rojo para seleccionar una hora de la ruta seguida.</label>
+            						   	<div class="col-md-6 col-md-offset-3" style="text-align: center;">
+											<label id="calificacion2" class="estiloLabelSlider"> </label>
+										</div>
+            						   	<div class="col-md-6 col-md-offset-3">
+            						   		<div class="slider shor" id="sliderCal2" style="margin-bottom: 3em;"></div>
+            						   	</div>
+            						   	
+            						   	
+            						</div>
+            						<div class="row">
+            						   	<div class="col-md-2" style="text-align: right;">
+            						   		<label >Ruta seguida por el conductor </label>
+            						   		<label >Ruta definida </label>
+            						   	</div>
+            						   	<div class="col-md-1" style="text-align: center;">
+            						   		<hr class="claselinea" style="height: 2px; background-color:#eb2626;"/>
+            						   		<hr class="claselinea" style="height: 2px; background-color:#008080;"/>
+            						   	</div>	
+            						</div>
+									
+									<div id="contenedorMapa2">
+
+									 										
+			                            <div id="map2" style="width:100%; height:50em;"></div>
+			                            <!-- <div id="right-panel2" > -->
+			                            <div id="" >
+			                            	<table class="table tablaEncabezado">
+                								<tr class="row">
+													<th class="col-md-4" style="text-align: center;">Programado</th><th class="col-md-4" style="text-align: center;">Real</th><th class="col-md-4" style="text-align: center;">Estado</th>
+												</tr>
+                							</table>
+                							<hr class="estiloLineaTabla" >
+			                                <table id="right-panel2-tableOrigenDestino2" class="table">
+			                                </table>
+			                                <hr>
+			                                <table id="right-panel2-table2" class="table">
+			                                </table>
+			                            </div>
+									 
+			                        </div>
+									
+			                    </div> 
+			                    <!-- Inicio tab creacion de limites de velocidad -->
+			                    <div class="tab-pane" id="3" id="contenidoTab3">
+
+									<div class="row">
+            						   	<label style="margin: 1em;">Deslice la barra usando el circulo rojo para seleccionar una hora de la ruta seguida.</label>
+            						   	<div class="col-md-6 col-md-offset-3" style="text-align: center;">
+											<label id="calificacion3" class="estiloLabelSlider"> </label>
+										</div>
+            						   	<div class="col-md-6 col-md-offset-3">
+            						   		<div class="slider shor" id="sliderCal3" style="margin-bottom: 3em;"></div>
+            						   	</div>
+            						   	
+            						   	
+            						</div>
+            						<div class="row">
+            						   	<div class="col-md-2" style="text-align: right;">
+            						   		<label >Ruta seguida por el conductor </label>
+            						   		<label >Ruta definida </label>
+            						   	</div>
+            						   	<div class="col-md-1" style="text-align: center;">
+            						   		<hr class="claselinea" style="height: 2px; background-color:#eb2626;"/>
+            						   		<hr class="claselinea" style="height: 2px; background-color:#008080;"/>
+            						   	</div>	
+            						</div>
+
+									
+			                        <div id="contenedorMapa3" >
+										
+			                            <div id="map3" style="width:100%; height:50em;"></div>
+			                            <!-- <div id="right-panel3" > -->
+		                            	<div>
+			                                <table class="table tablaEncabezado">
+                								<tr class="row">
+													<th class="col-md-4" style="text-align: center;">Programado</th><th class="col-md-4" style="text-align: center;">Real</th><th class="col-md-4" style="text-align: center;">Estado</th>
+												</tr>
+                							</table>
+                							<hr class="estiloLineaTabla" >
+			                                <table id="right-panel3-tableOrigenDestino3" class="table">
+			                                </table>
+			                                
+			                                <table id="right-panel3-table3" class="table">
+			                                </table>
+			                            </div>     
+			                        </div>
+			                    </div> 
+			                    <!-- Inicio tab creacion puntos interes-->
+			                    <div class="tab-pane" id="4" id="contenidoTab4">
+									<div class="row">
+            						   	<label style="margin: 1em;">Deslice la barra usando el circulo rojo para seleccionar una hora de la ruta seguida.</label>
+            						   	<div class="col-md-6 col-md-offset-3" style="text-align: center;">
+											<label id="calificacion4" class="estiloLabelSlider"> </label>
+										</div>
+            						   	<div class="col-md-6 col-md-offset-3">
+            						   		<div class="slider shor" id="sliderCal4" style="margin-bottom: 3em;"></div>
+            						   	</div>
+            						   	
+            						   	
+            						</div>
+            						<div class="row">
+            						   	<div class="col-md-2" style="text-align: right;">
+            						   		<label >Ruta seguida por el conductor </label>
+            						   		<label >Ruta definida </label>
+            						   	</div>
+            						   	<div class="col-md-1" style="text-align: center;">
+            						   		<hr class="claselinea" style="height: 2px; background-color:#eb2626;"/>
+            						   		<hr class="claselinea" style="height: 2px; background-color:#008080;"/>
+            						   	</div>	
+            						</div>
+
+
+									<div id="contenedorMapa4" >
+										
+			                            <div id="map4" style="width:100%; height:50em;"></div>
+			                            <!-- <div id="right-panel4" > -->
+			                            <div id="right-panel4" >
+			                            	<table class="table tablaEncabezado">
+                								<tr class="row">
+													<th class="col-md-4" style="text-align: center;">Programado</th><th class="col-md-4" style="text-align: center;">Real</th><th class="col-md-4" style="text-align: center;">Estado</th>
+												</tr>
+                							</table>
+                							<hr class="estiloLineaTabla" >			                                
+			                                <table id="right-panel4-tableOrigenDestino4" class="table">
+			                                </table>
+			                                <hr>
+			                                <form data-toggle="validator" role="form" id="formInteres">
+			                                    <table id="right-panel4-table4" class="table">
+			                                    </table>
+			                                </form>
+			                            </div>     
+			                        </div>
+			                    </div>
+	      					</div>
+	      				</div>  
+	    			</div>
+	                <!-- /.panel-body -->
+				</div>
+	        	<!-- /.panel -->
+	  		</div>
+	  		<!-- /.col-lg-12 -->
+		</div>
+	</div>
+	<!-- /#page-wrapper -->
+	<script async defer
+			src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDOqPrm-nuqELi0b_kPt7nP0vHFdUunOHc&signed_in=true&callback=traer_datos_interfaz"></script>
+
+
+
+	<!-- /#MODAL, VENTANA EMERGENTE PARA ACEPTAR ELIMINAR CONDUCTOR-->
+	<div class="modal fade" id="formularioAceptarEliminar" > 
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h3 class="modal-title">Abortar asignación ruta</h3>
+      </div>
+      <div class="modal-body">
+      	<form>
+      	<div class="row">
+			<div class="col-md-10">
+				<input type="hidden" id="formRutaId"/>
+				<span> Â¿EstÃ¡ seguro de abortar la asignación de ruta?</span>
+			</div>
+		</div>
+        
+		</form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-success" id="aceptarAbortarRuta">Abortar asignación</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<!-- /#MODAL, VENTANA EMERGENTE PARA ACEPTAR ELIMINAR CONDUCTOR-->
+
+
+
+</body>
+
+{% endblock %}

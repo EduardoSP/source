@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+import csv
+import couchdb
+
+couch  = couchdb.Server(url='http://localhost:5984')
+db     = couch["geocoder"]
+
+archivoMunicipios = "municipios.csv"
+
+def cargarMunicipios():
+    with open(archivoMunicipios) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            try:
+                #print row
+                latitud      = float(row['latitud'])
+                longitud     = float(row['longitud'])
+                municipio    = row['municipio']            
+                departamento = row['departamento']
+                
+                print(u"{} {} {} {}".format(latitud,longitud,municipio, departamento))
+                doc = {
+
+                }
+                
+            except:
+                pass
+                      
+
+
+
+#------------------------------------
+cargarMunicipios()
+#cargarPostes()
+#cargarPeajes()
+#borrarPuntosReferencia()

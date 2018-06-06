@@ -1,0 +1,358 @@
+{% extends "webfleetbigui/baseSuperAdministrador.html" %}
+{% load staticfiles %}
+{% block titulo %}GPS{% endblock %}
+
+{% block codigoPrincipal %}
+<!-- Estilos -->
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "css/base.css" %}"  rel="stylesheet">
+<link href="{% static "DataTables/datatables.min.css" %}" rel="stylesheet" type="text/css"  />
+
+<!-- Bibliotecas -->
+<script src="{% static "moment/moment-with-locales.js"      %}"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/noUiSlider/6.2.0/jquery.nouislider.min.js"></script>
+<script src="{% static "DataTables/datatables.min.js" %}"   type="text/javascript" ></script>
+<!--<script src="{% static "socketio/socket.io.js" %}"></script>-->
+
+
+<script>
+
+var listadoPedidosCalificacion;
+
+//------ Cargar Tabla tenants fleetBi super administrador----------------------------------------------------
+function cargarGps(){
+   	
+	var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : "{{tenant}}",
+                                                
+                                            },
+                        'data'         : {                     					
+                        				 }
+                      };
+	
+    var request = $.ajax({
+            type: "POST",
+            url		: "{% url 'wslistadoGps' %}",
+            data	: {
+                        request: JSON.stringify(peticion)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+            pintarTablaGps(respuesta["data"]);
+        }else{ }
+    });
+    request.fail(function(jqXHR, textStatus){ });
+};
+
+function pintarTablaGps(data){
+	var dataSet = data;
+
+	if ( ! $.fn.DataTable.isDataTable( '#graficoTabla' ) ) {
+	    $('#graficoTabla').DataTable({
+	        responsive: true,
+	        data: dataSet,
+	        fixedHeader:true,
+	       
+	        "pageLength"	:100,
+	        "aaSorting": [],
+	        language: traduccionDatatables,
+	        columns: [
+	            {  title: "Código",
+	               data : null   },
+	            {  title: "Núm. Simcard",
+	               data : null
+	            },
+			    {  title: "Núm. IMEI",
+			       data : null
+	           },
+	           {  title: "Placa Vehículo",
+			       data : null
+	           },
+	           {  title: "Cliente",
+			       data : null
+	           },
+	           {  title: "Tipo",
+			       data : null
+	           },
+	           {  title: "Estado",
+			       data : null
+	           },
+	
+	        ],
+	        "columnDefs": [
+	        	{ responsivePriority: 1, targets: 0 },
+	        	{ responsivePriority: 2, targets: 1 },
+	           
+	            {
+	                "targets": [0],
+	                "render": function (data, type, full, meta){
+			    	return '<a href="'+guibase+'/{{tenant}}/superAdministradorDetalleGps/'+data.id+'" >'+data.identificadorGPS+'</a>';
+			    	//return data.identificadorGPS;
+	        		}
+	      	    },
+	      	     {
+	      	        "targets": [1],
+					"render": function (data, type, full, meta){
+					    var numSim = "";
+					    if( data.numSimCard != "" ){
+							numSim = data.numSimCard;
+			    		}
+	                    return numSim;
+	                }
+		    	},
+	      	    {
+	      	        "targets": [2],
+					"render": function (data, type, full, meta){
+					    var imei = "";
+					    if( data.imei != "" ){
+							imei = data.imei;
+			    		}
+	                    return imei;
+	                }
+		    	},
+		    {
+				"targets": [3],
+				"render": function (data, type, full, meta){
+			    	var placa = "";
+				    if( data.placaVehiculo != "" ){
+						placa = data.placaVehiculo;
+		    		}
+		    		else placa = "Sin asignación";
+	                return placa;
+	            }
+		    },
+		    
+		    {
+				"targets": [4],
+				"render": function (data, type, full, meta){
+			    	var tenant = "";
+				    if( data.tenant != ""){
+						tenant = data.tenant;
+		    		}
+		    		else tenant = "Sin asignación";
+	                return tenant;
+	            }
+		    },
+		    {
+				"targets": [5],
+				"render": function (data, type, full, meta){
+			    	var tipo = "";
+				    	if(data.tipoGps != ""){
+						tipo = data.tipoGps;
+		    		}
+	                return tipo;
+	            }
+		    },
+		    {
+				"targets": [6],
+				"render": function (data, type, full, meta){
+			    	var estado = "inactivo";
+				    	if(data.activo == true){
+						estado = "activo";
+		    		}
+	                return estado;
+	            }
+		    },
+	        ]
+	    });
+	 }   
+	 else{
+		$('#graficoTabla').DataTable().clear().rows.add(dataSet).draw();
+		
+	}
+}
+
+function cargarSlider(){
+	var slider = document.getElementById('sliderCal');
+	
+	$(".shor").noUiSlider({
+      start: 40,
+      connect: "lower",
+      step:	1,
+      range: {
+        min: 0,
+        max: 10
+      }
+    });
+	
+	var valor 	= parseInt($('#sliderCal').val());
+	$('#calificacion').text(valor);
+	$('#calificacion').val(valor);
+}
+
+
+
+function enviarEliminarTenant(id){
+	var idTenant			= id;
+	var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                                    
+                                            },
+                        'data'         : {  
+                        					'id' : idTenant,
+                                                                      					
+                        				 }
+                      };
+	
+    var request = $.ajax({
+            type: "POST",
+            url		: "#",
+            data	: {
+                        request: JSON.stringify(peticion)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+        	$('#formularioAceptarEliminar').modal('hide');
+            notif({
+                    msg     : "El cliente se eliminó exitosamente",
+                    type    : "success",
+                    position: "center"
+                });
+            cargarGps();    
+        }else{
+        	notif({
+                    msg     : "Error calificación",
+                    type    : "error",
+                    position: "center"
+                });
+        	 }
+    });
+    request.fail(function(jqXHR, textStatus){ });
+}
+
+//Bloquea toda la interfaz para que no hagan nada.
+function bloquearTodo(){
+    $("input")		.prop('disabled', true);
+    $("select")		.prop('disabled', true);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', true);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', true);
+}
+
+//desloquea toda la interfaz para que haga algo.
+function desbloquearTodo(){
+    $("input")      .prop('disabled', false);
+    $("select")     .prop('disabled', false);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', false);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', false);
+}
+
+
+// === Document ready!!! =======================================================
+var socket = null;
+$(document).ready(function() {
+    cargarGps();
+   	
+   	$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+	    $('.dataTable:visible').each( function(e) {
+	    	$(this).DataTable().responsive.recalc();
+	    });
+  	});
+ 
+
+   
+    $(document).on('click', '#crearTenant', function(){
+        window.location.href = "{% url 'superAdministradorCrearGps' tenant=tenant %}";
+    });
+    
+	$(document).on('click', '.eliminarTenant', function(){
+		var idTenant 			= $(this).parent().find('.idTenant').val();
+		
+		$('#formTenantId')   	.val(idTenant);
+		$('#formularioAceptarEliminar').modal('show');
+	});
+		
+	$(document).on('click', '#aceptarEliminarTenant', function(){
+		var idTenant 			= $('#formTenantId')   	.val();
+		enviarEliminarTenant(idTenant);
+	});
+  	
+    
+
+
+ 
+
+});
+// --- End document ready ------------------------------------------------------
+
+
+</script>
+{% endblock %}
+
+{% block contenido %}
+<body>
+	
+	<div id="page-wrapper" style="  margin: 3em; margin-top: 0;">
+	
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <h1 class="">Gps</h1>
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	    <!-- /.row -->
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <div class="panel panel-default">
+	                <!-- /.panel-heading -->
+	                <!-- <button id="crearZona" type="submit" class="btn btn-raised btn-lg btn-success btn-block "> -->
+	                <button id="crearTenant" type="button" class="btn btn-raised btn-success positionBoton">
+							Crear Gps
+						</button>
+	                <div class="panel-body">
+						<div class="tabbable pestana">
+						  <ul class="nav nav-tabs">
+						    <li class="active"><a href="#1" data-toggle="tab">Listado Gps</a></li>
+						  </ul>
+						   <div class="tab-pane active" id="1" >
+						   	
+						      <table id="graficoTabla" class="table table-striped table-bordered display" style="width: 100%">
+		                      </table>
+						   </div>
+						</div>
+					</div>
+	                <!-- /.panel-body -->
+	            </div>
+	            <!-- /.panel -->
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	</div>
+<!-- /#page-wrapper -->
+
+<!-- /#MODAL, VENTANA EMERGENTE PARA ACEPTAR ELIMINAR EQUIPO DE EMERGENCIA-->
+<div class="modal fade" id="formularioAceptarEliminar" > 
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title">Eliminar cliente</h3>
+      </div>
+      <div class="modal-body">
+      	<form>
+      	<div class="row">
+			<div class="col-md-10">
+				<input type="hidden" id="formTenantId"/>
+				<span>Se eliminará el cliente. Apenas sea eliminado no podrá ingresar a la plataforma y el servicio será suspendido.¿Está seguro?</span>
+			</div>
+		</div>
+        
+		</form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-success" id="aceptarEliminarTenant">Eliminar cliente</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<!-- /#MODAL, VENTANA EMERGENTE PARA ACEPTAR ELIMINAR EQUIPO DE EMERGENCIA-->
+
+</body>
+
+
+{% endblock %}

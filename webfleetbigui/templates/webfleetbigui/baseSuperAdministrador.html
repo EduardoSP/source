@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}...titulo...{% endblock %}</title>
+
+    <link rel="icon" type="image/png" href="{% static "images/favicon-32x32.png"									%}/?v=2" sizes="32x32">
+    <link rel="icon" type="image/png" href="{% static "images/android-chrome-192x192.png"							%}/?v=2" sizes="192x192">
+    <link rel="icon" type="image/png" href="{% static "images/favicon-96x96.png"									%}/?v=2" sizes="96x96">
+    <link rel="icon" type="image/png" href="{% static "images/favicon-16x16.png"									%}/?v=2" sizes="16x16">
+
+	<!-- Estilos -->
+    <link href='https://fonts.googleapis.com/css?family=Oxygen:400,700' rel='stylesheet' type='text/css'>
+    <link href="{% static "bootstrap/css/bootstrap.min.css" %}"  rel="stylesheet">
+    <link href="{% static "font-awesome-4.3.0/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css">
+    <link href="{% static "validator/css/bootstrapValidator.min.css" %}" rel="stylesheet" type="text/css">
+    <link href="{% static "notifit/css/notifIt.css" %}" rel="stylesheet" type="text/css">
+    <link href="{% static "material/css/material.min.css" %}"  rel="stylesheet">
+    <link href="{% static "material/css/ripples.min.css"  %}"  rel="stylesheet">
+    <link href="{% static "pace/themes/red/pace-theme-corner-indicator.css" %}" rel="stylesheet" />     
+
+	<!-- Bibliotecas -->
+    <script src="{% static "js/jquery.js" %}"></script>
+    <script src="{% static "bootstrap/js/bootstrap.min.js" %}"></script>
+    <!-- <script src="{% static "validator/js/bootstrapValidator.min.js" %}"></script>
+    <script src="{% static "validator/js/language/es_ES.js" %}"></script> -->
+    <script src="{% static "notifit/js/notifIt.js" %}"></script>
+    <script src="{% static "js/configuracion.js" %}"></script>
+    <script src="{% static "material/js/ripples.min.js" 					%}"></script>
+    <script src="{% static "material/js/material.min.js"					%}"></script>
+    <script src="{% static "mustache/mustache.min.js"					        %}"></script>
+    <script >
+		 paceOptions = {
+		 'ajax' : {
+		 'trackMethods': ['GET', 'POST']
+		 }	 
+		 };
+	</script>
+    <script src="{% static "pace/pace.min.js" %}" ></script>
+
+    <script>
+    function cargarDatosUsuario(){
+
+		verificarEstadoIngreso(
+            "superAdministrador",
+            { 
+                
+                "adminTenant"		 : "{% url 'adminVistaGeneral' tenant=tenant %}",
+                "superAdministrador" : "{% url 'superAdministradorTenants' tenant=tenant  %}",                
+            },
+            "{% url 'loginUnificado' %}",
+			"{{tenant}}"
+        );
+        
+        // var peticion    = {
+            // 'autenticacion': {
+                // 'usuario' : config.getUsuarioLogin(),
+                // 'token'   : config.getToken(),
+                // 'perfil'  : config.getPerfilUsuario(),          
+            // },
+            // 'data'         : {   }
+        // };
+//         
+        // var request = $.ajax({
+	    // type        : "POST",
+	    // url         : "",
+	    // data        : {
+                // request :  JSON.stringify(peticion)
+            // },
+	    // dataType    : "json"
+// 
+        // }).done(function(respuesta){
+            // if (respuesta.success){
+                // var nombres   = respuesta.data.nombres;
+                // var imagenUrl = respuesta.data.imagenUrl;
+                // var numeroNotificacionesPendientes = respuesta.data.numeroNotificacionesPendientes;
+// 
+                // if(numeroNotificacionesPendientes > 0){
+                    // $('#numeroNotificacionesPendientes').text(numeroNotificacionesPendientes);
+                    // $('#numeroNotificacionesPendientes').show();
+                // }else{
+                    // $('#numeroNotificacionesPendientes').text(0);
+                    // $('#numeroNotificacionesPendientes').hide();
+                // }
+//                 
+//                 
+                // $('#nombreUsuario').text(nombres);
+                // if(imagenUrl != ''){
+                    // //$('#imagenUsuario').attr("src",imagenUrl);
+                    // $('.divID').css("background-image", "url(" + imagenUrl + ")");
+                // }
+//                 
+            // }
+            // else{
+                // verificarReinicio(respuesta, "{% url 'loginUsuarios' tenant=tenant %}");                
+            // }
+        // }).fail(function(jqXHR, textStatus){
+            // notif({
+                // msg     : "Falló la conexión",
+                // type    : "error",
+                // position: "center"
+            // });
+        // }).always(function(){        
+        // });
+    }
+
+function cargarDatosTenants(){
+
+    if(config.getTennant() == "{{tenant}}"){
+	$("#selectorTenantSeleccionado").text("Seleccione un item");
+	$(".tenantTab").hide();	
+    }else{
+	$("#selectorTenantSeleccionado").text(config.getTennant());	
+	$(".tenantTab").show();
+    }
+    
+    
+    
+    var peticion    = {
+        'autenticacion': {
+            'usuario' : config.getUsuarioLogin(),
+            'token'   : config.getToken(),
+	    'tenant'  : "{{tenant}}",
+            'perfil'  : config.getPerfilUsuario(),          
+        },
+        'data'         : {   }
+    };
+    
+    var request = $.ajax({
+	type        : "POST",
+	url         : "{% url 'wsPickerTenants' %}",
+	data        : {
+            request :  JSON.stringify(peticion)
+        },
+	dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+            var plantilla = '{% verbatim %}<li><a class="selectorTenantTenant" href="#">{{nombre}}<input type="hidden" value="{{id}}"/></a></li>{% endverbatim %}';
+
+	    for(var i = 0 ; i < respuesta.data.length ; i++){
+		var dato        = respuesta.data[i];
+		var renderizado = Mustache.render(plantilla, dato);
+		$("#selectorTenantContenedorOpciones").append(renderizado);	
+	    }
+
+	    //Agrego un desabilitar
+	    /*
+	    if(config.getTennant() != "{{tenant}}"){
+		var renderizado = Mustache.render(plantilla, {
+		    "id" : "administracion",
+		    "nombre" : "Seleccionar ninguno"
+		});
+		$("#selectorTenantContenedorOpciones").append(renderizado);	
+	    }*/
+            
+        }
+        else{
+	    notif({
+		msg     : respuesta.mensaje,
+		type    : "error",
+		position: "center"
+            });
+            
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){        
+    });
+}
+
+$(document).ready(function() {
+    // This command is used to initialize some elements and make them work properly
+    $.material.init();
+    $('#nombreUsuario').text(" "+config.getUsuarioLogin());
+    cargarDatosUsuario();
+    cargarDatosTenants();
+    
+    $('#cerrarSesion').on('click',function() {
+	config.setLogueado(false);
+	config.setToken("");
+	window.location.href = "{% url 'loginUsuarios' tenant=tenant %}";
+    });
+
+    $(document).on("click",".selectorTenantTenant",function(e) {
+	e.preventDefault();
+	var tenantSeleccionado = $(this).find("input").val();
+	config.setTennant(tenantSeleccionado);
+	location.reload(true);	
+    });
+
+    $('#miCuenta').on('click',function() {
+        window.location.href = "{% url 'miCuenta' tenant=tenant %}";
+    });   
+    
+});
+        </script>
+	<!-- Código principal librerias, css, estilos-->
+	{% block codigoPrincipal %}...codigoPrincipal...{% endblock %}
+</head>
+<body class="fondoTodo">
+	
+	<div id="wrapper" >
+        <nav class="navbar navbar-default shadow-z-2">
+		  <div class="container-fluid">
+		    <div class="navbar-header">
+		      <!-- <a class="navbar-brand" href="#">Biod</a> -->
+		      <a class="navbar-brand" href="#">
+		          <img src="{% static "images/logoBlanco.png" %}" style="height: 2em;"/>
+		      </a>
+		    </div>
+		    <div>
+		      <ul class="nav navbar-nav">
+	            <li class="{% if pintarPestana == "pestanaSuperAdminTenants"  %} active {% endif %}"><a href="{% url 'superAdministradorTenants' tenant=tenant %}">Clientes</a></li>
+	            <li class="{% if pintarPestana == "pestanaSuperAdminGps" %} active {% endif %}"><a href="{% url 'superAdministradorGps' tenant=tenant %}">GPS</a></li>
+
+
+		    <!-- Seciones de un tenant ------------------------------------------>
+		    	<li style="display : none;" class="tenantTab {% if pintarPestana == "pestanaAdminVistaGeneral" %} active {% endif %}"><a href="{% url 'adminVistaGeneral' tenant=tenant %}">Mapa Tenant</a></li>
+                <li style="display : none;" class="tenantTab {% if pintarPestana == "pestanaAdminVehiculos" %} active {% endif %}"><a href="{% url 'adminVehiculos' tenant=tenant %}">Vehículos Tenant</a></li>
+                <li style="display : none;" class="tenantTab {% if pintarPestana == "pestanaAdminVigilancia" %} active {% endif %}"><a href="{% url 'adminVigilancia' tenant=tenant %}">Vigilancia Tenant</a></li>
+		    <!-------------------------------------------------------------------->
+
+		      </ul>
+		       <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+			 <ul class="nav navbar-nav navbar-right">
+			   <!-- Dropdown Tenant selector ----------------------------------------------------------- -->
+			   <li class="dropdown">
+			     <a href="#" class="dropdown-toggle"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="true" style="padding-bottom: 0; padding-top: 1.33em;">			       			       
+			       <span id="selectorTenantSeleccionado">Seleccione un item </span> <span class="caret"></span></a>
+			     <ul id="selectorTenantContenedorOpciones" class="dropdown-menu">
+			       <!-- <li><a class="selectorTenantTenant" href="#">DEMO <input type="hidden" value="demo"/></a></li>-->
+			       
+			     </ul>
+			   </li>
+			   <!-- -------------------------------------------------------------------------------------- -->
+			   
+			        <li class="dropdown">
+			          <a href="#" class="dropdown-toggle"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="true" style="padding-bottom: 0; padding-top: 1.33em;">
+			            <!-- <img id="imagenUsuario" class="img-circle" src="{% static "images/userimage.png" %}" style="height: 2em;"/> -->
+			          	<span id="divID" class="divID circle-avatar"></span>
+			          	<span id="nombreUsuario"> NombreUsuario</span> <span class="caret"></span></a>
+			          <ul class="dropdown-menu">
+			          	<li><a id="miCuenta" href="#"><i class="fa fa-user fa-fw"></i>Mi cuenta</a></li>
+			            <li><a id="cerrarSesion" href="#"><i class="fa fa-sign-out fa-fw"></i>Cerrar Sesión</a></li>
+			          </ul>
+			        </li>
+			      </ul>
+			  </div><!-- /.navbar-collapse -->
+
+		    </div>
+		  </div>
+		</nav>
+
+    	{% block contenido %}...contenido...{% endblock %}
+
+    </div>
+    <!-- /#wrapper -->
+
+</body>
+</html>

@@ -1,0 +1,234 @@
+{
+    "ws"         : "http://localhost:8080/ws/enviarRuta",
+    "idVehiculo" : "20160801",
+	"fechaHoraInicial" : "2017-01-02T08:00:00",
+    "ping"       : "1",
+	"reversar"   : false,
+    "ruta" : [
+		
+		{
+			"tipoPaso": "avance",
+			"lat": "3.9096704608244397",
+			"lon": "-76.30690958786619",
+			"velocidad": "20",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.907486868960204",
+			"lon": "-76.30781081009519",
+			"velocidad": "20",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.9033765629745925",
+			"lon": "-76.3110723762573",
+			"velocidad": "20",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.889761030807752",
+			"lon": "-76.31223109055173",
+			"velocidad": "20",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.8803413514574374",
+			"lon": "-76.31326105881345",
+			"velocidad": "50",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.8604740472787347",
+			"lon": "-76.2969532280029",
+			"velocidad": "50",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.829644552331012",
+			"lon": "-76.30158808518064",
+			"velocidad": "50",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.8162847591346307",
+			"lon": "-76.30742457199705",
+			"velocidad": "50",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.787509115106364",
+			"lon": "-76.31961252976072",
+			"velocidad": "50",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.7765467129414843",
+			"lon": "-76.32579233933103",
+			"velocidad": "60",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.7320105346214647",
+			"lon": "-76.32270243454587",
+			"velocidad": "60",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.7138528277948635",
+			"lon": "-76.31961252976072",
+			"velocidad": "70",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.685416423889917",
+			"lon": "-76.30587961960447",
+			"velocidad": "40",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.6717118077954436",
+			"lon": "-76.29866984177244",
+			"velocidad": "40",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.6511544894767276",
+			"lon": "-76.29557993698728",
+			"velocidad": "40",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.632995133370938",
+			"lon": "-76.29352000046384",
+			"velocidad": "40",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.614492772072466",
+			"lon": "-76.30862620163572",
+			"velocidad": "40",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.586395872705606",
+			"lon": "-76.32270243454587",
+			"velocidad": "40",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.5490462194549415",
+			"lon": "-76.33815195847166",
+			"velocidad": "40",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.5137511224292397",
+			"lon": "-76.33677866745603",
+			"velocidad": "40",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.4921622002967907",
+			"lon": "-76.32785227585447",
+			"velocidad": "40",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.4592638415786365",
+			"lon": "-76.33574869919431",
+			"velocidad": "40",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.443842342183172",
+			"lon": "-76.34261515427244",
+			"velocidad": "40",
+			"variacionVelocidad": "20"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.4167684397299767",
+			"lon": "-76.35016825485837",
+			"velocidad": "40",
+			"variacionVelocidad": "20"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.3955200316500687",
+			"lon": "-76.35394480515134",
+			"velocidad": "40",
+			"variacionVelocidad": "20"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.37290024482682",
+			"lon": "-76.3182392387451",
+			"velocidad": "40",
+			"variacionVelocidad": "20"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.3646747371235874",
+			"lon": "-76.30965616989744",
+			"velocidad": "50",
+			"variacionVelocidad": "40"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.357134627402067",
+			"lon": "-76.296609905249",
+			"velocidad": "50",
+			"variacionVelocidad": "40"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.3657029293867375",
+			"lon": "-76.28974345017087",
+			"velocidad": "50",
+			"variacionVelocidad": "40"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.365360198752919",
+			"lon": "-76.28734019089353",
+			"velocidad": "10",
+			"variacionVelocidad": "4"
+		},
+		{
+			"tipoPaso": "parada",
+			"lat": "3.365360198752919",
+			"lon": "-76.28734019089353",
+			"duracionParada": "10",
+			"estaMotorEncendido": true
+		},
+		{
+			"tipoPaso": "parada",
+			"lat": "3.3657029293867375",
+			"lon": "-76.28493693161619",
+			"duracionParada": "480",
+			"estaMotorEncendido": false
+		}
+	]
+}

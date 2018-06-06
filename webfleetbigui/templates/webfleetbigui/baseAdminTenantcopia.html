@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}...titulo...{% endblock %}</title>
+
+    <link rel="icon" type="image/png" href="{% static "images/favicon-32x32.png"									%}/?v=2" sizes="32x32">
+    <link rel="icon" type="image/png" href="{% static "images/android-chrome-192x192.png"							%}/?v=2" sizes="192x192">
+    <link rel="icon" type="image/png" href="{% static "images/favicon-96x96.png"									%}/?v=2" sizes="96x96">
+    <link rel="icon" type="image/png" href="{% static "images/favicon-16x16.png"									%}/?v=2" sizes="16x16">
+
+	<!-- Estilos -->
+    <link href='https://fonts.googleapis.com/css?family=Oxygen:400,700' rel='stylesheet' type='text/css'>
+    <link href="{% static "bootstrap/css/bootstrap.min.css" %}"  rel="stylesheet">
+    <link href="{% static "font-awesome-4.3.0/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css">
+    <link href="{% static "validator/css/bootstrapValidator.min.css" %}" rel="stylesheet" type="text/css">
+    <link href="{% static "notifit/css/notifIt.css" %}" rel="stylesheet" type="text/css">
+    <link href="{% static "material/css/material.min.css" %}"  rel="stylesheet">
+    <link href="{% static "material/css/ripples.min.css"  %}"  rel="stylesheet">
+    <link href="{% static "pace/themes/red/pace-theme-corner-indicator.css" %}" rel="stylesheet" />     
+
+	<!-- Bibliotecas -->
+    <script src="{% static "js/jquery.js" %}"></script>
+    <script src="{% static "bootstrap/js/bootstrap.min.js" %}"></script>
+    <!-- <script src="{% static "validator/js/bootstrapValidator.min.js" %}"></script>
+    <script src="{% static "validator/js/language/es_ES.js" %}"></script> -->
+    <script src="{% static "notifit/js/notifIt.js" %}"></script>
+    <script src="{% static "js/configuracion.js" %}"></script>
+    <script src="{% static "material/js/ripples.min.js" 					%}"></script>
+    <script src="{% static "material/js/material.min.js"					%}"></script>
+    <script src="{% static "socketio/socket.io.js"                          %}"></script>
+    <script >
+		 paceOptions = {
+		 'ajax' : {
+		 'trackMethods': ['GET', 'POST']
+		 }	 
+		 };
+	</script>
+    <script src="{% static "pace/pace.min.js" %}" ></script>
+    
+    <script>
+    function cargarDatosUsuario(){	
+        verificarEstadoIngreso(
+            "adminTenant",
+            { 
+                
+                "adminTenant"		 : "{% url 'adminVistaGeneral' tenant=tenant %}",
+                "superAdministrador" : "{% url 'superAdministradorTenants' tenant=tenant  %}",
+                
+            },
+            "{% url 'loginUnificado' %}",
+			"{{tenant}}"
+        );                               
+    };
+
+
+function mostrarAlarmasNoVistasUsuario(){
+    var peticion    = {
+		'autenticacion': {
+			'usuario' : config.getUsuarioLogin(),
+			'token'   : config.getToken(),
+			'tenant'  : config.getTennant(),
+			
+		},
+        'data' : {
+			
+        }
+    };
+    
+    var request = $.ajax({
+        type : "POST",
+        url  : "{% url 'wsmostrarAlarmasNoVistasUsuario' %}",
+        data : {
+            request: JSON.stringify(peticion)
+        },
+        dataType: "json"
+    });
+    
+    request.done(function(respuesta){
+        if(respuesta.success){
+            var numeroNotificacionesPendientes = respuesta.mensaje;
+            if(numeroNotificacionesPendientes > 0){
+                $('#numeroNotificacionesPendientes').text(numeroNotificacionesPendientes);
+                $('#numeroNotificacionesPendientes').show();
+            }else{
+                $('#numeroNotificacionesPendientes').text(0);
+                $('#numeroNotificacionesPendientes').hide();
+            }   
+        }else{
+		}
+    });
+    request.fail(function(jqXHR, textStatus){ });
+};
+
+
+var socket = null;
+$(document).ready(function() {    
+    //muestar la cantidad de alarmas no visualizadas por el usuarario
+    mostrarAlarmasNoVistasUsuario();
+    // This command is used to initialize some elements and make them work properly
+    $.material.init();
+    $('#nombreUsuario').text(" "+config.getUsuarioLogin());
+    cargarDatosUsuario();
+    $('#cerrarSesion').on('click',function() {
+	config.setLogueado(false);
+	config.setToken("");
+		//window.location.href = "{% url 'loginUsuarios' tenant=tenant %}";		
+		window.location.href = "{% url 'loginUnificado' %}";
+    });
+
+    socket = io(notierbase, { query: "usuario="+config.getUsuarioLogin()+"&token="+config.getToken()+"&tenant="+config.getTennant()+"" });
+
+	socket.on('notificacion', function(msg){
+	   console.log(msg); 
+       var jsonMensaje = JSON.parse(msg);          
+       notif({
+                msg      : jsonMensaje.mensaje,
+                type     : "warning",
+                position : "center"
+            }); 
+        //muestar la cantidad de alarmas no visualizadas por el usuarario
+        mostrarAlarmasNoVistasUsuario();
+    });
+
+    $('#miCuenta').on('click',function() {
+        window.location.href = "{% url 'miCuenta' tenant=tenant %}";
+    });    
+    
+});
+        </script>
+	<!-- Código principal librerias, css, estilos-->
+	{% block codigoPrincipal %}...codigoPrincipal...{% endblock %}
+</head>
+<body class="fondoTodo">
+  
+  <div id="wrapper" >
+    <nav class="navbar navbar-default">
+	  <div class="container-fluid">
+	    <!-- Brand and toggle get grouped for better mobile display -->
+	    <div class="navbar-header">
+	      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+	        <span class="sr-only">Toggle navigation</span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	      </button>
+	      <a class="navbar-brand" href="#">Brand</a>
+	    </div>
+	
+	    <!-- Collect the nav links, forms, and other content for toggling -->
+	    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+	      <ul class="nav navbar-nav">
+	        <li class="active"><a href="#">Link <span class="sr-only">(current)</span></a></li>
+	        <li><a href="#">Link</a></li>
+	        <li class="dropdown">
+	          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Dropdown <span class="caret"></span></a>
+	          <ul class="dropdown-menu">
+	            <li><a href="#">Action</a></li>
+	            <li><a href="#">Another action</a></li>
+	            <li><a href="#">Something else here</a></li>
+	            <li role="separator" class="divider"></li>
+	            <li><a href="#">Separated link</a></li>
+	            <li role="separator" class="divider"></li>
+	            <li><a href="#">One more separated link</a></li>
+	          </ul>
+	        </li>
+	      </ul>
+	      <form class="navbar-form navbar-left">
+	        <div class="form-group">
+	          <input type="text" class="form-control" placeholder="Search">
+	        </div>
+	        <button type="submit" class="btn btn-default">Submit</button>
+	      </form>
+	      <ul class="nav navbar-nav navbar-right">
+	        <li><a href="#">Link</a></li>
+	        <li class="dropdown">
+	          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Dropdown <span class="caret"></span></a>
+	          <ul class="dropdown-menu">
+	            <li><a href="#">Action</a></li>
+	            <li><a href="#">Another action</a></li>
+	            <li><a href="#">Something else here</a></li>
+	            <li role="separator" class="divider"></li>
+	            <li><a href="#">Separated link</a></li>
+	          </ul>
+	        </li>
+	      </ul>
+	    </div><!-- /.navbar-collapse -->
+	  </div><!-- /.container-fluid -->
+	</nav>
+
+    {% block contenido %}...contenido...{% endblock %}
+
+  </div>
+  <!-- /#wrapper -->
+
+</body>
+</html>

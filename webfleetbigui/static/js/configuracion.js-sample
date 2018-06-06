@@ -1,0 +1,436 @@
+//var wsbase     = "http://localhost:8080/ws"; //Raiz de los servicios web.
+//var guibase    = "http://localhost/webfleetbigui"; //Raiz de los servicios web.
+//var guiImagePuntoControl    = "http://localhost/"; //Ruta imagen crear punto de control
+
+
+var wsbase     = "http://localhost:8080/ws"; //Raiz de los servicios web.
+var guibase    = "http://localhost:8080/webfleetbigui"; //Raiz de los servicios web.
+var notierbase = "http://localhost:3000";
+var guiImagePuntoControl    = "http://192.168.0.31:8080"; //Ruta imagen crear punto de control
+var urlAccesoGeneradorCarga = guibase+"/"+"loginGeneradorCarga"; // url acceso para los generadores de carga
+var catidadDiasCaducidadGeneradorCarga  = 7; // cantidad de dias maximo caducidad codigos de acceso 
+
+
+//Funciones estado de usuario. --------------------------------------------
+var config = {
+	
+	//Funciones.
+	setLogueado: function(estado){//indica si el usuario está logueado o no.
+		if(estado) { localStorage.setItem('isLogueado','true');  }
+		      else { localStorage.setItem('isLogueado','false'); }
+	},
+
+	getLogueado: function (){
+		var resultado = false;
+		if(localStorage.getItem('isLogueado') != 'true'){
+			resultado = false;
+		}else{
+			resultado = true;
+		}
+		return resultado;
+	},
+
+	setEsGeneradorCarga: function(estado){//indica si es o no un generador de carga.
+		if(estado) { localStorage.setItem('esGeneradorCarga','true');  }
+		      else { localStorage.setItem('esGeneradorCarga','false'); }
+	},
+
+	getEsGeneradorCarga: function (){
+		var resultado = false;
+		if(localStorage.getItem('esGeneradorCarga') != 'true'){
+			resultado = false;
+		}else{
+			resultado = true;
+		}
+		return resultado;
+	},
+
+
+	//Token de autenticación
+	setToken: function(nuevo){	localStorage.setItem('usuarioToken', nuevo); 	},
+	getToken: function(){ return localStorage.getItem('usuarioToken');	},
+	
+	//nombre de usuario
+	setNombreUsuario: function(nuevo){
+		localStorage.setItem('nombreUsuario', nuevo);
+		},
+	getNombreUsuario: function(){ return localStorage.getItem('nombreUsuario');	},
+	
+	// Id Usuario
+	setIdUsuario: function(nuevo){
+		localStorage.setItem('idUsuario', nuevo);
+		},
+	getIdUsuario: function(){ return localStorage.getItem('idUsuario');	},
+
+	// Id Sesion
+	setIdSesion: function(nuevo){
+		localStorage.setItem('idSesion', nuevo);
+		},
+	getIdSesion: function(){ return localStorage.getItem('idSesion');	},
+
+	//Estado notificacion leida alerta de seguridad
+	setNotificacionAlertaLeida: function(nuevo){	localStorage.setItem('notificacionAlertaLeida', nuevo); 	},
+	getNotificacionAlertaLeida: function(){ return localStorage.getItem('notificacionAlertaLeida');	},
+
+	//Mensaje de alerta de seguridad
+	setMensajeAlerta: function(nuevo){	localStorage.setItem('mensajeAlerta', nuevo); 	},
+	getMensajeAlerta: function(){ return localStorage.getItem('mensajeAlerta');	},
+
+	//login
+	setUsuarioLogin: 	function(nuevo){	localStorage.setItem('usuarioLogin', nuevo); 	},
+	getUsuarioLogin: 	function(){return   localStorage.getItem('usuarioLogin'); },
+	
+	//Perfil de usuario
+	setPerfilUsuario: 	function(nuevo){	localStorage.setItem('perfilUsuario', nuevo); 	},
+	getPerfilUsuario: 	function(){return localStorage.getItem('perfilUsuario'); },
+	
+	//Tennat 
+	setTennant: function(nuevo){	localStorage.setItem('tennant', nuevo); 	},
+	getTennant: function(){ return localStorage.getItem('tennant');	},
+	
+
+	//Almacena el codigo de acceso del generador de carga 
+	setCodigoAcceso: function(nuevo){	localStorage.setItem('codigoAcceso', nuevo); 	},
+	getCodigoAcceso: function(){ return localStorage.getItem('codigoAcceso');	},
+
+	//Almacena la fecha de generacion del cod de acceso 
+	setFechaGeneracion: function(nuevo){	localStorage.setItem('fechaGeneracion', nuevo); 	},
+	getFechaGeneracion: function(){ return localStorage.getItem('fechaGeneracion');	},
+
+	//Almacena la fecha de caducidad del cod de acceso 
+	setFechaCaducidad: function(nuevo){	localStorage.setItem('fechaCaducidad', nuevo); 	},
+	getFechaCaducidad: function(){ return localStorage.getItem('fechaCaducidad');	},
+
+	//Almacena el nombre del generador 
+	setNombreGenerador: function(nuevo){	localStorage.setItem('nombreGenerador', nuevo); 	},
+	getNombreGenerador: function(){ return localStorage.getItem('nombreGenerador');	},
+
+	setListaOpcionesHabilitadasPlataforma: function(nuevo){	localStorage.setItem('opcionesHabilitadas', nuevo); 	},
+	getListaOpcionesHabilitadasPlataforma: function(){ return localStorage.getItem('opcionesHabilitadas');	},
+
+	//Retorna true si el tenantNombre esta configurado, de lo contrario es false
+	isConfigured:		function(){
+							var result 		= true;
+							var tenantRaw 	= localStorage.getItem('config');
+							if( tenant != null ){
+								// var tenant = JSON.parse(tenantRaw);
+								// config			= tenant.id;
+								// config = tenant.nombreCompleto;
+								// config.tenantNombreCorto 	= tenant.nombreCorto;
+								// config.tenantLogo			= tenant.logo;
+								result = true;
+							}else{
+								result = false;
+							}
+							return result;
+						},
+
+	//Recibe un objeto json con la nueva configuración.
+	setConfiguration	: function(nuevaConfiguracion){
+								//TODO validar la nueva configuración
+								localStorage.setItem('config', JSON.stringify(nuevaConfiguracion));
+							},
+
+	//funciòn de padding ceros
+	zeroPadding: function(numero){
+	    var padding = 4;
+	    numero = numero.toString();
+	    while( numero.length < padding ){
+			numero = "0"+numero;
+	    }
+	    return numero;
+	},
+	
+	//funcion par configurar el tiempo de recarga mapa vista general
+	getTIEMPO_RECARGA_MAPA_VISTA_GENERAL: function(numero){
+	    return 10000;
+	},
+
+};
+
+
+var traduccionDatatables = {
+    "lengthMenu"  	: "Mostrar _MENU_ registros por página",
+    "zeroRecords" 	: "No se encontraron registros",
+    "info"        	: "Mostrando página _PAGE_ de _PAGES_",
+    "infoEmpty"   	: "No existen registros disponibles",
+    "infoFiltered"	: "(filtrado de _MAX_ registros totales)",
+    "search"		: "Buscar:",
+    "paginate": {
+        "first":      "Primero",
+        "last":       "Último",
+        "next":       "Siguiente",
+        "previous":   "Anterior"
+    },
+};
+
+function verificarReinicio(respuesta, url){
+    if('debeReiniciar' in  respuesta){
+        if(respuesta.debeReiniciar){                        
+            window.location.href = url;
+        }
+    }  
+}
+
+function verificarEstadoIngreso(perfil, urlsBase, urlLogin){
+    if(config.getLogueado()){
+        var pefilUsuario = config.getPerfilUsuario();
+        if(!(config.getEsGeneradorCarga())){
+	        if(config.getPerfilUsuario() != perfil){
+	        	var destino = urlsBase[config.getPerfilUsuario()];
+	        	if(typeof destino != 'undefined'){
+	        	    window.location.href = urlsBase[config.getPerfilUsuario()];
+			    //console.log("ERROR REINICIANDO");
+	        	}
+	        	else{
+	        		config.setLogueado(false);
+	        	}
+	        }
+	    }
+    }else{
+       window.location.href = urlLogin;
+    }    
+}
+
+function validarFechasUsuario(formRangoFecha1, formRangoFecha2){
+    var fechaInicial = $(formRangoFecha1).data('DateTimePicker').date.format();
+    var fechaFinal = $(formRangoFecha2).data('DateTimePicker').date.format();
+    if(fechaFinal>fechaInicial)
+    {
+        return true;
+    }else{
+		notif({
+        	msg     : "La fecha Fin debe ser mayor a la fecha Inicio",
+        	type    : "warning",
+        	position: "center"
+    	});
+        return false;
+    }
+}
+
+
+function validarFechasGeneradorCarga(formRangoFecha1, formRangoFecha2, formatoFechaMensaje){
+	//valida las fechas de ingreso con las fechas permitidas del generador de carga
+	var respuesta = {};
+	var fechaInicial 	= $(formRangoFecha1).data('DateTimePicker').date.format();
+    var fechaFinal	 	= $(formRangoFecha2).data('DateTimePicker').date.format();
+    var fechaGeneracion = moment(config.getFechaGeneracion()).format();
+    var fechaCaducidad  = moment(config.getFechaCaducidad()).format();
+    if(fechaInicial >= fechaGeneracion && fechaFinal <= fechaCaducidad){
+    	respuesta.success 	= true;
+		respuesta.tipoFecha = "";
+    	return respuesta;
+    }else{
+    	if(!(fechaInicial >= fechaGeneracion)){
+			notif({
+		    	//msg     : "La fecha inicio ingresada no está habilitada se asignará la fecha " + moment(fechaGeneracion).format("DD/MM/YYYY h:mm a"),
+		    	msg     : "La fecha inicio ingresada no está habilitada se asignará la fecha " + moment(fechaGeneracion).format(formatoFechaMensaje),
+		    	type    : "warning",
+		    	multiline: true,
+		    	position: "center"
+			});
+			respuesta.success 	= false;
+		 	respuesta.tipoFecha = "fechaGeneracion";
+			return respuesta;   		
+    	}else if(!(fechaFinal <= fechaCaducidad)){
+				notif({
+			    	//msg        : "La fecha fin ingresada no está habilitada se asignará la fecha"+ moment(fechaCaducidad).format("DD/MM/YYYY h:mm a"),
+			    	msg        : "La fecha fin ingresada no está habilitada se asignará la fecha "+ moment(fechaCaducidad).format(formatoFechaMensaje),
+			    	type       : "warning",
+			    	multiline  : true,
+			    	position: "center"
+				}); 
+				//respuesta = {succes: false, tipoFecha: "fechaCaducidad"};
+				respuesta.success 	= false;
+			 	respuesta.tipoFecha = "fechaCaducidad";
+				return respuesta;
+    	}
+
+    }
+
+
+}
+
+function validarUnaFechaGeneradorCarga(formRangoFecha1, formatoFechaMensaje){
+	var respuesta;
+	var fechaFormulario 	= $(formRangoFecha1).data('DateTimePicker').date.format();
+	var fechaGeneracion = moment(config.getFechaGeneracion()).format();
+    var fechaCaducidad  = moment(config.getFechaCaducidad()).format();
+    if (fechaFormulario >= fechaGeneracion && fechaFormulario <= fechaCaducidad){
+    	respuesta = true;
+    }else{
+    	if(!(fechaFormulario >= fechaGeneracion) || !(fechaFormulario <= fechaCaducidad)){
+			notif({
+		    	//msg     : "La fecha inicio ingresada no está habilitada se asignará la fecha " + moment(fechaGeneracion).format("DD/MM/YYYY h:mm a"),
+		    	msg     : "La fecha ingresada no está habilitada se asignará la fecha " + moment(fechaGeneracion).format(formatoFechaMensaje),
+		    	type    : "warning",
+		    	multiline: true,
+		    	position: "center"
+			});
+			respuesta = false;
+			return respuesta;   		
+    }
+    return respuesta;
+}
+
+}
+
+var imagenPDF = 'data:image/png;base64,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';
+
+// Array para el select picker super administrador opciones a visualizar cliente en la plataforma por vehiculo
+var opcionesAdicionalesPlataforma = [
+	{ idOpcionPlataforma: "1", descripcionOpcion: "Imagen manual" },
+	{ idOpcionPlataforma: "2", descripcionOpcion: "Audio manual" },
+	{ idOpcionPlataforma: "3", descripcionOpcion: "Rutas" },
+	{ idOpcionPlataforma: "4", descripcionOpcion: "Seguridad Vial" },
+	{ idOpcionPlataforma: "5", descripcionOpcion: "Reportes estadísticos" },
+	{ idOpcionPlataforma: "6", descripcionOpcion: "Reporte paradas vehículos - zonas" },
+	{ idOpcionPlataforma: "7", descripcionOpcion: "Reporte kilometraje por hora" },
+	{ idOpcionPlataforma: "8", descripcionOpcion: "Reporte calificación conductores" },
+	{ idOpcionPlataforma: "9", descripcionOpcion: "Reporte conducción fuera horario permitido" },
+	{ idOpcionPlataforma: "10", descripcionOpcion: "Generadores de carga" },
+	{ idOpcionPlataforma: "11", descripcionOpcion: "Imagen botón de panico" },
+	{ idOpcionPlataforma: "12", descripcionOpcion: "Audio botón de panico" },
+	{ idOpcionPlataforma: "13", descripcionOpcion: "Imagen zona alarma" },
+	{ idOpcionPlataforma: "14", descripcionOpcion: "Audio zona alarma" },
+	{ idOpcionPlataforma: "15", descripcionOpcion: "Imagen programacion vigilancia" },
+	{ idOpcionPlataforma: "16", descripcionOpcion: "Audio programacion vigilancia" },
+	{ idOpcionPlataforma: "17", descripcionOpcion: "Llamada automatica botón de panico" },
+	{ idOpcionPlataforma: "18", descripcionOpcion: "Mensaje automatico SMS botón de panico" },
+	{ idOpcionPlataforma: "19", descripcionOpcion: "Cadena de Frio" }
+]
+
+//Lista donde estan los codigos de las opciones habilitadas por un tenant.
+// var listaOpcionesHabilitadasPlataforma = [];
+
+//habilita las opciones configuradas por el tenant. Se muestran si al menos un vehiculo tiene configurada la opcion
+function habilitarPestanasAdminTenant(){
+	var listaOpcionesHabilitadasPlataforma = [];
+	var listaOpcionesHabilitadasPlataformaString = config.getListaOpcionesHabilitadasPlataforma();
+	if (listaOpcionesHabilitadasPlataformaString != null){
+		listaOpcionesHabilitadasPlataforma = listaOpcionesHabilitadasPlataformaString.split(",");
+	}
+	$("#pestanaAdminRutas").css("display", "none");
+	$("#pestanaConfiguracionLimitesVelocidad").css("display", "none");
+	$("#pestanaAdminSeguridadVial").css("display", "none");
+	$("#pestanaConfiguracionPausaActiva").css("display", "none");
+	$("#pestanaConfiguracionConduccionContinua").css("display", "none");
+	$("#pestanaAdminReportes").css("display", "none");
+	$("#pestanaAdminParadasVehiculos").css("display", "none");
+	$("#pestanaAdminActividadVehiculos").css("display", "none");
+	$("#pestanaAdminCalificacionConductores").css("display", "none");
+	$("#pestanaConfiguracionCalificacionConductores").css("display", "none");
+	$("#pestanaAdminConduccionHorarioPermitido").css("display", "none");
+	$("#pestanaAdminGeneradoresCarga").css("display", "none");
+	$("#pestanaAdminCadenaFrio").css("display", "none");
+	$("#pestanaAdminReportesCadenaFrio").css("display", "none");
+	$('#pestanaConfiguracionGeneradoresCarga').css("display", "none");
+	for (var index = 0; index < listaOpcionesHabilitadasPlataforma.length; index++) {
+		if(listaOpcionesHabilitadasPlataforma[index] == "3"){
+			//Rutas
+			$("#pestanaAdminRutas").css("display", "block");
+			$("#pestanaConfiguracionLimitesVelocidad").css("display", "block");
+		}
+		if(listaOpcionesHabilitadasPlataforma[index] == "4"){
+			//seguridad vial
+			$("#pestanaAdminSeguridadVial").css("display", "block");
+			$("#pestanaConfiguracionPausaActiva").css("display", "block");
+			$("#pestanaConfiguracionConduccionContinua").css("display", "block");
+		}
+		if(listaOpcionesHabilitadasPlataforma[index] == "5"){
+			//Reportes estadisticos
+			$("#pestanaAdminReportes").css("display", "block");
+		}
+		if(listaOpcionesHabilitadasPlataforma[index] == "6"){
+			//Reporte paradas vehiculos - zonas
+			$("#pestanaAdminParadasVehiculos").css("display", "block");
+		}
+		if(listaOpcionesHabilitadasPlataforma[index] == "7"){
+			//Reporte kilometraje por hora
+			$("#pestanaAdminActividadVehiculos").css("display", "block");
+		}
+		if(listaOpcionesHabilitadasPlataforma[index] == "8"){
+			//Reporte calificacion conductores
+			$("#pestanaAdminCalificacionConductores").css("display", "block");
+			$("#pestanaConfiguracionCalificacionConductores").css("display", "block");
+		}
+		if(listaOpcionesHabilitadasPlataforma[index] == "9"){
+			//Reporte conduccion fuera horario permitido
+			$("#pestanaAdminConduccionHorarioPermitido").css("display", "block");
+		}
+		if(listaOpcionesHabilitadasPlataforma[index] == "10"){
+			//Generadores de carga
+			$("#pestanaAdminGeneradoresCarga").css("display", "block");
+			$('#pestanaConfiguracionGeneradoresCarga').css("display", "block");
+		}
+		if(listaOpcionesHabilitadasPlataforma[index] == "19"){
+			//Cadena de frio
+			$("#pestanaAdminCadenaFrio").css("display", "block");
+			$("#pestanaAdminReportesCadenaFrio").css("display", "block");
+		}
+		
+	}
+	//activa la primera pestana de configuraciones
+	activarPestanaConfiguracion();
+}
+
+function activarPestanaConfiguracion(){
+	//funcio que activa la primera pestana
+	if($("#pestanaConfiguracionLimitesVelocidad").css("display") == "none"){
+		$( "#pestanaConfiguracionPausaActiva" ).addClass( "active" );
+		$("#2").addClass("active");
+	}
+	if($("#pestanaConfiguracionLimitesVelocidad").css("display") == "none" && $("#pestanaConfiguracionPausaActiva").css("display") == "none"){
+		$( "#pestanaConfiguracionCalificacionConductores" ).addClass( "active" );
+		$( "#1" ).removeClass( "active" );
+		$( "#2" ).removeClass( "active" );
+		$("#4").addClass("active");
+	}
+	if($("#pestanaConfiguracionLimitesVelocidad" ).css("display") == "none" && $("#pestanaConfiguracionPausaActiva" ).css("display") == "none" && $("#pestanaConfiguracionCalificacionConductores" ).css("display") == "none"){
+		$( "#pestanaConfiguracionGeneradoresCarga" ).addClass( "active" );
+		$( "#1" ).removeClass( "active" );
+		$( "#2" ).removeClass( "active" );
+		$("#4").removeClass("active");
+		$("#5").addClass("active");
+
+	}
+
+	if($("#pestanaConfiguracionLimitesVelocidad").css("display") != "none"){
+		//pestana limites velocidad activada pestana 1
+		$("#1").addClass("active");
+
+	}
+
+}
+
+function convertirFechaEspanol(fecha){
+	return moment(fecha).locale('es');
+}
+
+//Determina el navegador del dispositivo
+var isMobile = {
+	Android: function() {
+		return navigator.userAgent.match(/Android/i);
+	},
+	BlackBerry: function() {
+		return navigator.userAgent.match(/BlackBerry/i);
+	},
+	iOS: function() {
+		return navigator.userAgent.match(/iPhone|iPad|iPod/i);
+	},
+	Opera: function() {
+		return navigator.userAgent.match(/Opera Mini/i);
+	},
+	Windows: function() {
+		return navigator.userAgent.match(/IEMobile/i);
+	},
+	any: function() {
+		return (isMobile.Android() || isMobile.BlackBerry() || isMobile.iOS() || isMobile.Opera() || isMobile.Windows());
+	}
+};
+
+
+$(document).ready(function() {
+	//habilita las opciones configuradas para la plataforma
+	habilitarPestanasAdminTenant();
+});

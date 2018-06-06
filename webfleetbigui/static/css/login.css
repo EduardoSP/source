@@ -1,0 +1,177 @@
+
+body{
+	font-family: 'Poppins', sans-serif;
+}
+
+.panel-body{
+	padding: 5px;
+}
+
+.panel-body-generador{
+  padding: 60px;
+}
+
+.opcion-generador{
+  white-space: nowrap;
+
+}
+
+.panel-title{
+	font-weight: 500;
+}
+
+.panel-heading{
+	background-color: rgba(255,255,255,0.5) !important;
+	color: rgba(255,255,255,1.0);
+}
+
+.login-panel{
+	/*background-color: rgba(255,255,255,0.7);*/
+	width: 500px;
+	/*background: -webkit-linear-gradient(210deg, #315b75, #315b75);*/ /* For Safari 5.1 to 6.0 */
+  	/*background: -o-linear-gradient(210deg, #315b75, #315b75); *//* For Opera 11.1 to 12.0 */
+  	/*background: -moz-linear-gradient(210deg, #315b75, #315b75);*/ /* For Firefox 3.6 to 15 */
+  	/*background: linear-gradient(210deg, #315b75, #315b75);*/ /* Standard syntax */
+  	background-color: rgba(0,0,0,0.6);
+}
+
+
+#contenedorLogo{
+	text-align	: center;
+}
+
+.filapanel{
+	padding-left: 15.5em;
+	padding-top: 16em;
+}
+
+.lbldatos{
+	color: rgba(249, 247, 247, 0.77);
+	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+	font-weight: 500;
+	padding-top: 0.5em;
+}
+
+
+.fondoDosPartes{
+  /*width           : 100%;
+  height          : 30em;
+  background: -webkit-linear-gradient(120deg, #003A84, #69C3D1);
+  background: -o-linear-gradient(120deg, #003A84, #69C3D1);
+  background: -moz-linear-gradient(120deg, #003A84, #69C3D1);
+  background: linear-gradient(120deg, #003A84, #69C3D1);
+  top             : 0;
+  position        : absolute;*/
+  width           : 100%;
+  height          : 30em;
+  background: -webkit-linear-gradient(210deg, #315b75, #315b75); /* For Safari 5.1 to 6.0 */
+  background: -o-linear-gradient(210deg, #315b75, #315b75); /* For Opera 11.1 to 12.0 */
+  background: -moz-linear-gradient(210deg, #315b75, #315b75); /* For Firefox 3.6 to 15 */
+  background: linear-gradient(210deg, #315b75, #315b75); /* Standard syntax */
+  top             : 0;
+  position        : absolute;
+}
+
+
+.fondoImagen{
+  /*width           : 100%;
+  height          : 30em;
+  background: -webkit-linear-gradient(120deg, #003A84, #69C3D1);
+  background: -o-linear-gradient(120deg, #003A84, #69C3D1);
+  background: -moz-linear-gradient(120deg, #003A84, #69C3D1);
+  background: linear-gradient(120deg, #003A84, #69C3D1);
+  top             : 0;
+  position        : absolute;*/
+  width           : 100%;
+  height          : 100%;
+  /*background: -webkit-linear-gradient(210deg, #315b75, #315b75); /* For Safari 5.1 to 6.0 */
+  /*background: -o-linear-gradient(210deg, #315b75, #315b75); /* For Opera 11.1 to 12.0 */
+  /*background: -moz-linear-gradient(210deg, #315b75, #315b75); /* For Firefox 3.6 to 15 */
+  /*background: linear-gradient(210deg, #315b75, #315b75); /* Standard syntax */
+  background: url("../images/fleetbifondo.png") no-repeat center center fixed;
+  top             : 0;
+  position        : absolute;
+  background-size : cover;
+}
+
+
+/*.btn-success{
+	background-color: #eb2626 !important;
+}*/
+
+.container-fluid{
+	/*background-color: #0086b6 !important;*/
+}
+
+.olvidasteContrasena{
+	text-align: center;
+	
+}
+
+.textContrasena{
+	color: #e4e4e4 !important;
+}
+
+.espacioFila{
+	    padding-left: 1.2em;
+}
+
+.colorTexto{
+	color:#EEEEEE;
+}
+
+.form-control {
+	    background-image: linear-gradient(#eb2626,#eb2626),linear-gradient(#d2d2d2,#d2d2d2);
+}
+
+.lbldatos {
+    color: rgba(249, 247, 247, 0.77);
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-weight: 500;
+    padding-top: 0.5em;
+    margin-right: 1em;
+
+}
+
+.footer {
+    position: fixed;
+    left: 0px;
+    bottom: 0px;
+    height: 45px;
+    width: 100%;
+    background-color: rgba(0,0,0,.5);
+    text-align: center;
+    padding-top: 0.5em;
+    padding-left: 4em;
+}
+
+
+.panel-body-generadorCarga{
+  padding: 2em
+
+}
+
+
+/* unvisited link */
+a.link-rojo:link {
+    color: #f44336 !important;
+}
+
+/* visited link */
+a.link-rojo:visited {
+    color: #f44336 !important;
+}
+
+/* mouse over link */
+a.link-rojo:hover {
+    color: #f44336 !important;
+}
+
+/* selected link */
+a.link-rojo:active {
+    color: #f44336 !important;
+}
+
+.positionBoton{
+  float: right;
+}

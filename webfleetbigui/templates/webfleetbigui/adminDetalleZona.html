@@ -1,0 +1,819 @@
+{% extends baseTemplate %}
+{#% extends "webfleetbigui/baseAdminTenant.html" %#}
+{% load staticfiles %}
+{% block titulo %}Detalle zona{% endblock %}
+
+{% block codigoPrincipal %}
+
+<!-- Estilos -->
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "css/base.css" %}"  rel="stylesheet">
+<link href="{% static "DataTables/datatables.min.css" %}" rel="stylesheet" type="text/css"  />
+
+<link href="{% static "datetimepicker/css/bootstrap-datetimepicker.min.css" %}"           rel="stylesheet">
+<link href="{% static "mapsPicker/jquery-gmaps-latlon-picker.css" %}" rel="stylesheet" type="text/css" />
+
+<!-- Bibliotecas -->
+<script src="{% static "select/js/bootstrap-select.min.js" %}"></script>
+<script src="{% static "moment/moment-with-locales.js"      %}"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/noUiSlider/6.2.0/jquery.nouislider.min.js"></script>
+<script src="{% static "DataTables/datatables.min.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapsPicker/jquery-gmaps-latlon-picker.js" %}" ></script>
+<!--<script src="{% static "socketio/socket.io.js" %}"></script>-->
+<script src="{% static "datetimepicker/js/bootstrap-datetimepicker.min.js"      %}"></script>
+<script src="{% static "validatorNuevo/validator.js" %}"></script>
+
+<script>
+
+var estaMapaCargado   = false;
+var tenant = config.getTennant();
+var idZona = "{{idZona}}";
+function initMap(){
+
+    estaMapaCargado = true;
+
+}
+
+ 
+function editarZona(){
+//editando
+    var nombre      = $('#formNombre').val();
+    var descripcion = $('#formDescripcion').val();
+    var registrarAudio = $("input[name='audio']").is(":checked");
+    var registrarImagen = $("input[name='imagenes']").is(":checked");
+	var tiempoMaxGrabAudio = $('#formTiempoGrabacion').val();
+	var numeroCapturasMax = $('#formCapturasMax').val();
+	var latitud = $('#formLatitud').val();
+	var longitud = $('#formLongitud').val();
+	var radio = $('#formRadio').val();
+
+	var tipoZona 	= "" ;
+    if($('#grupoTipoZona').val() != null){
+    	tipoZona = $('#grupoTipoZona').val();
+    }
+
+    var datos 				= { 
+    							'id'				: idZona,
+								'nombre'	: nombre,
+                    			'descripcion' : descripcion,
+                    			'registrarAudio' : registrarAudio,
+                    			'registrarImagen' : registrarImagen,
+                    		    'tiempoMaxGrabAudio' : tiempoMaxGrabAudio,
+                    		    'numeroCapturasMax' : numeroCapturasMax,
+                    		    'latitud' : latitud,
+                    		    'longitud': longitud,
+                    		    'radio': radio,
+                    		    'tipoZona':tipoZona,
+                    		    
+								};
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                                      
+                                         },
+                        'data'         : datos
+                      };
+    bloquearTodo();
+    var request = $.ajax({
+	type        : "POST",
+	url         : "{% url 'wseditarZona'  %}",
+	data        : {
+            request :  JSON.stringify(peticion)
+        },
+	dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+    		notif({
+                msg     : "La zona se ha actualizado",
+                type    : "success",
+                multiline: true,
+                position: "center"
+        	});
+        setTimeout(function() { window.location.href 	= "{% url 'adminVigilancia' tenant=tenant %}"; 
+				  }, 
+		       3000);	
+        
+        }
+        else{
+            notif({
+                msg     : respuesta.error,
+                type    : "error",
+                position: "center"
+            });
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        desbloquearTodo();
+    });
+}
+
+/* 	==================================================================================== 	*/
+function cargarPickerTipoZona(tipoZona){
+	var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                                
+                                            },
+                        'data'         : {                     					
+                        				 }
+                      };
+	
+    var request = $.ajax({
+            type: "POST",
+            url		: "{% url 'wsListarTiposZonas' %}",
+            data	: {
+                        request: JSON.stringify(peticion)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+            pintarPickerTipoZona(respuesta["data"],tipoZona);
+        }else{ }
+    });
+    request.fail(function(jqXHR, textStatus){ });
+};
+
+function pintarPickerTipoZona(data, tipoZona) {
+    datos   = data;                                                 
+    // console.log (JSON.stringify (data, null, 3));
+    for (i=0; i<datos.length; i++){  
+        var dato   = datos[i];
+        // console.log ("id: "+ dato.id +"  nombre: "+ dato.nombre );
+        $("#grupoTipoZona").append('<option value="'+dato.id+'">'+dato.nombre+'</option>');
+    }
+    /*
+    $('#grupoTipoZona').selectpicker('refresh');
+    $('#grupoTipoZona').selectpicker('deselectAll');
+    $('#grupoTipoZona').selectpicker('refresh');  
+    // inicializamos los el picker con el tipo zona */
+
+    // $('#grupoTipoZona').selectpicker('val', tipoZona); // 
+    $('#grupoTipoZona').val(tipoZona);
+	$('#grupoTipoZona').selectpicker('refresh');  
+}
+
+/* 	==================================================================================== 	*/
+//Bloquea toda la interfaz para que no hagan nada.
+function bloquearTodo(){
+    $("input")		.prop('disabled', true);
+    //$("select")		.prop('disabled', true);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', true);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', true);
+}
+
+//desloquea toda la interfaz para que haga algo.
+function desbloquearTodo(){
+    $("input")      .prop('disabled', false);
+    $("select")     .prop('disabled', false);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', false);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', false);
+}
+
+
+//inicio zoom circulo enfocar
+/*
+function getZoom(radio){
+	var zoom = (15 + (radio -100) * (-1*(1.0/450.0))); 
+	return (15 + (radio -100) * (-1*(1.0/450.0)));
+}
+*/
+function getZoom(radio, valorZoom){
+	var valorPintarZoom = 0;
+	if(radio >= 1 && radio < 100){
+		valorPintarZoom = 21.0303 - (0.030303 * radio);
+	}else if(radio >= 100 && radio < 1000){
+		valorPintarZoom = 18.3333 - (0.00333333 * radio); 
+	}else if(radio >= 1000 && radio < 10000){
+		valorPintarZoom = 15.3333 - (0.000333333 * radio); 
+	}else if(radio >= 10000 && radio < 100000){
+		valorPintarZoom = 12.4444 - (0.0000444444 * radio); 
+	}else if(radio >= 100000 && radio <= 1000000){
+		valorPintarZoom = 8.33333 - ((3.33333 * Math.pow(10, -6)) *radio); 
+	} 
+	return valorPintarZoom;
+}
+
+function zoomCirculo(latitud, longitud, radio){
+	var valorZoom = parseFloat(copiaMap1.getZoom());
+	console.log(valorZoom);
+	if(cityCircle == null){
+
+		cityCircle = new google.maps.Circle({
+		  strokeColor: '#03A9F4',
+		  strokeOpacity: 0.8,
+		  strokeWeight: 2,
+		  fillColor: '#4FC3F7',
+		  fillOpacity: 0.35,
+		  map: copiaMap1
+		});
+	}
+	cityCircle.setCenter({lat: latitud, lng: longitud});
+	//cityCircle.setRadius(radio);
+	copiaMap1.setCenter({lat: latitud, lng: longitud});
+	copiaMap1.setZoom(Math.round(getZoom(radio, valorZoom)));
+}
+
+//fin zoom circulo enfocar
+
+
+//====Inicio Pinta el circulo deacuerdo a la longitud y el radio digitado===
+/*
+var latitud = 4.5981;
+var longitud = -74.0758;
+var radio = 0;
+var cityCircle = null;
+var copiaMap1 = null;
+*/
+var latitud = null;
+var longitud = null;
+var radio = 0;
+var cityCircle = null;
+var copiaMap1 = null;
+function pintarCirculo(formLatitud, formLongitud, radio){
+	if(cityCircle == null){
+		cityCircle = new google.maps.Circle({
+		  strokeColor: '#03A9F4',
+		  strokeOpacity: 0.8,
+		  strokeWeight: 2,
+		  fillColor: '#4FC3F7',
+		  fillOpacity: 0.35,
+		  map: copiaMap1
+		});
+	}
+	cityCircle.setCenter({lat: formLatitud, lng: formLongitud});
+	cityCircle.setRadius(radio);
+	copiaMap1.setCenter({lat: formLatitud, lng: formLongitud});
+}
+
+//====Fin Pinta el circulo deacuerdo a la longitud y el radio digitado===
+
+// Inicio cargar datos
+function traerDatosZona(){
+	var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                              
+                                            },
+                        'data'         : { 
+                        					'id': "{{idZona}}",
+                        				 }
+                      };               
+    var request = $.ajax({
+		            type        : "POST",
+		            url         : "{% url 'wslistarDetalleZona' %}",
+		            data        : {
+                        request :  JSON.stringify(peticion)
+                    },
+		            dataType    : "json"
+
+		        }).done(function(respuesta){
+                	if (respuesta.success){
+                        cargarDatosDetalleZona(respuesta.data);
+                       }
+                       else{
+                       	notif({
+                            msg     : respuesta.mensaje,
+                            type    : "error",
+                            position: "center"
+                        });
+                       }
+                }).fail(function(jqXHR, textStatus){
+                    notif({
+                        msg     : "Falló la conexión",
+                        type    : "error",
+                        position: "center"
+                    });
+                }).always(function(){
+                });
+}
+
+function cargarDatosDetalleZona(data){
+	//DATOS GENERALES
+	cargarPickerTipoZona(data.tipoZona); 
+
+	$("#formNombre").val(data.nombre);
+	$('#formDescripcion').val(data.descripcion);
+	$("#audio").prop("checked", data.registrarAudio);
+	$("#imagenes").prop("checked", data.registrarImagen);
+
+    if( $("#audio").is(':checked') ){
+    // Hacer algo si el checkbox ha sido seleccionado
+	$('.formTiempoGrabacion').show(); 
+	$('#formTiempoGrabacion').val(data.tiempoMaxGrabAudio);
+    } else {
+        // Hacer algo si el checkbox ha sido deseleccionado
+     	$('.formTiempoGrabacion').hide();
+       	$('.formTiempoGrabacion').val("0");
+    }
+
+    if( $("#imagenes").is(':checked') ){
+    // Hacer algo si el checkbox ha sido seleccionado
+	$('.formCapturasMax').show(); 
+	$('#formCapturasMax').val(data.numeroCapturasMax);
+    } else {
+        // Hacer algo si el checkbox ha sido deseleccionado
+     	$('.formCapturasMax').hide();
+       	$('.formCapturasMax').val("0");
+    }
+	$('#formLatitud').val(data.latitud);
+	$('#formLongitud').val(data.longitud);
+	$('#formRadio').val(data.radio);
+	latitud = parseFloat(data.latitud);
+	longitud = parseFloat(data.longitud);
+	radio = parseFloat(data.radio);
+//Inicio establece latitud y longitud en el mapa	
+    var latlng = new google.maps.LatLng(latitud, longitud);
+    var map = new google.maps.Map(document.getElementById('map1'), {
+        center: latlng,
+        zoom: 6,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+    });
+    var marker = new google.maps.Marker({
+        position: latlng,
+        map: map,
+        title: 'Set lat/lon values for this property',
+        draggable: true
+    });
+    copiaMap1 = map;
+    google.maps.event.addListener(marker, 'dragend', function(a) {
+        /*
+        console.log(a.latLng.lat().toFixed(4) );
+        console.log(a.latLng.lng().toFixed(4) );*/
+
+        latitud = a.latLng.lat().toFixed(4);
+        longitud = a.latLng.lng().toFixed(4);
+        $(".formLatitud").val(latitud);
+        $(".formLongitud").val(longitud);
+        pintarCirculo(parseFloat(latitud), parseFloat(longitud), radio);
+
+    });
+
+//Fin establece latitud y longitud en el mapa
+
+}
+
+// fin cargar datos
+
+//------ Cargar Tabla alarma zona--------------------------------------------------
+
+
+function pintarTablaZonaAlarma(data){
+	var dataSet = data;
+	if ( ! $.fn.DataTable.isDataTable( '#graficoTabla' ) ) {
+	    $('#graficoTabla').DataTable({
+	        responsive: true,
+	        data: dataSet,
+	        fixedHeader:true,
+	      
+	        "pageLength"	:100,
+	        "aaSorting": [],
+	        language: traduccionDatatables,
+	        columns: [
+
+
+	            {  title: "Vehículo",
+	               data : null
+	            },
+
+	            {  title: "Fecha",
+	               data : null
+	            },	        
+	            {  title: "Horario",
+	               data : null   },
+
+	            {  title: "Estado",
+	               data : null
+	            },
+
+	            {  title: "Acción",
+	               data : null
+	            },
+	            
+	        ],
+	        "columnDefs": [
+	        	{ responsivePriority: 1, targets: 0 },
+	        	{ responsivePriority: 2, targets: 1 },
+	           
+	      	    {
+	      	        "targets": [0],
+					"render": function (data, type, full, meta){
+					    var placaVehiculo = "";
+					    if( data.placaVehiculo != "" ){
+							placaVehiculo = data.placaVehiculo;
+			    		}
+	                    return placaVehiculo;
+	                }
+		    	},
+		    	{
+	      	        "targets": [1],
+					"render": function (data, type, full, meta){
+					    var fecha = "";
+					    if( data.fecha != "" ){
+							fecha = moment(data.fecha).format("YYYY-MM-DD");
+			    		}
+	                    return fecha;
+	                }
+
+		    	},
+
+		    	{
+	      	        "targets": [2],
+					"render": function (data, type, full, meta){
+					    var horaInicio = "";
+					    var horaFin = "";
+					    if( data.horaInicio != ""){
+							horaInicio = moment(data.horaInicio).format("h:mm a");
+							
+							//horaFin = data.horaFin;
+			    		}
+			    		if(data.horaFin != ""){
+			    			horaFin = moment(data.horaFin).format("h:mm a");
+			    		}
+			    		//console.log(data.horaInicio)
+	                    //return horaInicio +" - "+horaFin;
+	                    return horaInicio +" - "+ horaFin;
+	                }
+		    	},
+
+		    	{
+	      	        "targets": [3],
+					"render": function (data, type, full, meta){
+					    var estado = "";
+					    if( data.estado != "" ){
+							estado = data.estado;
+			    		}
+	                    return estado;
+	                }
+		    	},
+		    	
+		    	{
+	      	        "targets": [4],
+			    "render": function (data, type, full, meta){
+			    	//return '<a href="'+guibase+'/'+config.getTennant()+'/adminDetalleZonaAlarma/'+data.idZonaAlarma+'" > Ver detalle</a>';
+				return '<a href="'+guibase+'/{{tenant}}/adminDetalleZonaAlarma/'+data.idZonaAlarma+'" > Ver detalle</a>';
+	                    return "Ver resultado";
+	                }
+		    	},
+
+	        ]
+	    });
+	 }   
+	 else{
+		$('#graficoTabla').DataTable().clear().rows.add(dataSet).draw();
+		
+	}
+}
+
+
+function cargarTablaZonaAlarma(){
+   	
+	var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                              
+                                            },
+                        'data'         : { 
+                        					'id': "{{idZona}}",
+                        				 }
+                      };
+
+	// valida si la peticion es de un generador de carga
+    if(config.getEsGeneradorCarga()){
+		//si la peticion es de un generador de carga entonces a la autenticación se le agrega el codigo de acceso
+    	peticion["autenticacion"]["codigoAcceso"] = config.getCodigoAcceso();
+    }
+    var request = $.ajax({
+            type: "POST",
+            url		: "{% url 'wslistarDetalleZonaAlarma' %}",
+            data	: {
+                        request: JSON.stringify(peticion)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+            pintarTablaZonaAlarma(respuesta["data"]);
+        }else{ }
+    });
+    request.fail(function(jqXHR, textStatus){ });
+};
+
+//habilita las opciones de imagen y audio si por lo menos un vehiculo tiene las opciones configuradas 
+function habilitarOpcionesImagenAudioZonaAlarma(){
+	var listaOpcionesHabilitadasPlataforma = [];
+	var listaOpcionesHabilitadasPlataformaString = config.getListaOpcionesHabilitadasPlataforma();
+	if (listaOpcionesHabilitadasPlataformaString != null){
+		listaOpcionesHabilitadasPlataforma = listaOpcionesHabilitadasPlataformaString.split(",");
+	}
+	for (var index = 0; index < listaOpcionesHabilitadasPlataforma.length; index++) {
+		if(listaOpcionesHabilitadasPlataforma[index] == "13"){
+			//imagen zona alarma
+			$("#opcionImagen").css("display", "block");
+		}
+		
+		// else{
+		// // 	$("#opcionImagen").css("display", "none");
+		// // }
+		if(listaOpcionesHabilitadasPlataforma[index] == "14"){
+			//audio zona alarma
+			$("#opcionAudio").css("display", "block");
+		}
+
+	}
+}
+// === Document ready!!! =======================================================
+$(document).ready(function() {
+	habilitarOpcionesImagenAudioZonaAlarma();
+	//Campos ocultos y deshabilitados
+	$("button").hide();
+	$("#editarCampos").show();
+	$("input").prop('disabled', true);
+	//fin campos ocultos y deshabilitados
+	traerDatosZona();
+	$(".formLatitud").val(latitud);
+	$(".formLongitud").val(longitud);
+	$('#contenedorMapa').show();
+
+//Trae el valor del campo de texto cada vez  que se digite 
+	$("#formRadio").keyup(function(){
+		formRadio = $('#formRadio').val();
+		radio =formRadio;
+		formLatitud = $("#formLatitud").val();
+	    formLongitud = $("#formLongitud").val();
+		pintarCirculo(parseFloat(formLatitud), parseFloat(formLongitud), parseFloat(formRadio));
+	});
+
+	$( "#enfocarMapa" ).click(function() {
+	    zoomCirculo(parseFloat(latitud), parseFloat(longitud), radio);
+	});
+
+//Inicio Botón guardar zona
+
+	$('#formularioCrearZona').validator().on('submit', function (e) {
+	  if (e.isDefaultPrevented()) {
+		notif({
+                msg     : "Invalido campo",
+                type    : "error",
+                position: "center"
+            });
+	  } else {
+	    editarZona();
+	    e.preventDefault();
+	  }
+	});
+//Fin botón guardar zona
+
+//Inicio boton editar campos
+	$( "#editarCampos" ).click(function() {
+		//Campos ocultos y deshabilitados
+		$("button").show();
+		$("input").prop('disabled', false);
+		$("#formLatitud").prop('disabled', true);
+		$("#formLongitud").prop('disabled', true);
+		formRadio = $('#formRadio').val();
+		radio =formRadio;
+		formLatitud = $("#formLatitud").val();
+	    formLongitud = $("#formLongitud").val();
+		pintarCirculo(parseFloat(formLatitud), parseFloat(formLongitud), parseFloat(formRadio));
+		//fin campos ocultos y deshabilitados    
+	});
+//Fin boton editar campos
+
+//carga tabla resultados
+cargarTablaZonaAlarma();
+
+
+
+//inicio funcionalidad checkbox
+
+	$( '#audio' ).on( 'click', function() {
+	    if( $(this).is(':checked') ){
+	        // Hacer algo si el checkbox ha sido seleccionado
+			$('.formTiempoGrabacion').show();
+	    	$('.formTiempoGrabacion').val("");
+	    } else {
+	        // Hacer algo si el checkbox ha sido deseleccionado
+	       	$('.formTiempoGrabacion').hide();
+	       	$('.formTiempoGrabacion').val("0");
+	    }
+	});
+
+	$( '#imagenes' ).on( 'click', function() {
+	    if( $(this).is(':checked') ){
+	        // Hacer algo si el checkbox ha sido seleccionado
+	    	$('.formCapturasMax').show();
+	    	$('.formCapturasMax').val("");
+	    
+	    } else {
+	        // Hacer algo si el checkbox ha sido deseleccionado
+	     	$('.formCapturasMax').hide();
+	       	$('.formCapturasMax').val("0");
+	    }
+	});
+
+
+//Fin funcionalidad checkbox
+
+
+
+
+});
+
+
+// --- End document ready ------------------------------------------------------
+</script>
+{% endblock %}
+
+
+{% block contenido %}
+<body>
+	
+	<div id="page-wrapper" style="  margin: 3em; margin-top: 0;">
+	
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <h1 class="">Detalle Zona</h1>
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	    <!-- /.row -->
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <div class="panel panel-default">
+	                <!-- /.panel-heading -->
+	                <div class="panel-body">
+						<form data-toggle="validator" role="form" id="formularioCrearZona">
+							<div class="row">
+								<div class="col-md-4">
+									<div class="form-group">
+										<label>Título</label>
+										<input id="formNombre" name="formNombre" required type="text" class="form-control formNombre" data-error="Ingrese una zona ej. Zona de descargue"/>
+										<div class="help-block with-errors"></div>
+									</div>
+								</div>
+								<div class="col-md-4">
+									<div class="form-group">
+										<label>Tipo de Vigilancia</label>
+										     <div id="opcionAudio" class="row" style="display: none;">
+							                     <div class="col-md-6">
+								                       <div class="checkbox zonaCheckbox checkbox-danger">
+								                         <label><input type="checkbox" name="audio" id="audio"/> Audio</label>
+								                       </div>
+							                       </div>
+							                   </div>
+							                   <div id="opcionImagen" style="display: none;" class="row" {% if paquete in 'basico'|slice:',' %}  {% endif %}>
+							                     <div class="col-md-6">
+								                       <div class="checkbox zonaCheckbox checkbox-success">
+								                         <label><input type="checkbox" name="imagenes" id="imagenes"/> Imágenes</label>
+								                       </div>
+							                       </div>
+							                   </div>
+							                  
+										<!--
+										<input type="checkbox" name="audio" id="audio"value="true">Audio
+ 										<input type="checkbox" name="imagenes" id="imagenes"value="true">Imágenes--> 
+									</div>
+								</div>
+								
+
+			                    <div class="col-md-2" >
+
+			                     	<div class="form-group">
+										<label>Tipo Zona </label>
+										<div id="selectTipoZona">
+											<!--
+											multiple data-actions-box="true" 
+											data-live-search="true" 
+											name="TipoZona" 
+											-->
+											<select id="grupoTipoZona" 
+													class="selectpicker"  
+													data-width="fit"
+													title="Seleccionar Tipo de Zona">
+													<!--
+													<option value="1">Reporte vehículo por día</option>
+								                    <option value="2">Reporte paradas</option>
+								                    -->
+
+											</select>
+										</div>
+									</div>
+			        			</div>
+			        			<div class="col-md-2" style=" text-align: right;">
+									<button id="editarCampos" type="button" class="btn btn-success btn-lg">    
+						    			<i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+						    				Editar
+					    			</button>
+								</div>
+							                  
+
+							</div>
+							<div class="row">
+								<div class="col-md-4">
+									<div class="form-group">
+										<label>Descripción</label>
+										<input id="formDescripcion" name="formDescripcion" required type="text" class="form-control formDescripcion" data-error="Ingrese una descripción ej. Nota del proceso"/>
+										<div class="help-block with-errors"></div>
+									</div>
+								</div>
+								<div class="col-md-4">
+									<div class="form-group">
+										<label>Tiempo máximo grabación(Minutos)</label>
+										<input id="formTiempoGrabacion" name="formTiempoGrabacion" type="number" class="form-control formTiempoGrabacion" required data-error="Ingrese el tiempo máximo de grabación ej. 30"/>
+										<div class="help-block with-errors"></div>
+									</div>
+								</div>
+								<div class="col-md-4" {% if paquete in 'basico'|slice:',' %}  {% endif %}>
+									<div class="form-group">
+										<label>Número de capturas máximo</label>
+										<input id="formCapturasMax" name="formCapturasMax" type="number" class="form-control formCapturasMax" required data-error="Ingrese el número de capturas máximo ej. 5"/>
+										<div class="help-block with-errors"></div>
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-md-8">
+									<div class="form-group">
+										<label>Seleccione posición de la zona</label>
+									  	<div id="contenedorMapa" style="display:none">
+			    							<div id="map1" style="width:100%; height:30em;"></div>    
+										</div>	
+										<div id="map1"></div>
+									</div>
+
+								</div>
+								<div class="col-md-2">
+									<div class="form-group">
+										<label>Digite el valor del radio en metros</label>
+										<input id="formRadio" name="formRadio" type="text" class="form-control formRadio" required data-error="Ingrese un valor del radio en metros ej. 500"/>
+
+										<div class="help-block with-errors"></div>										
+									</div>
+									<div class="form-group">
+										<label>Valor latitud</label>
+										<input id="formLatitud" name="formLatitud" type="text" class="form-control formLatitud" required data-error="Ingrese un valor de la latitud. 35.44" disabled/>
+										<div class="help-block with-errors"></div>
+									</div>						
+									<div class="form-group">
+										<label>Valor longitud</label>
+										<input id="formLongitud" name="formLongitud" type="text" class="form-control formLongitud" required data-error="Ingrese un valor de la longitud. -1.562" disabled/>
+										<div class="help-block with-errors"></div>
+									</div>													
+								</div>
+								<div class="col-md-2">
+									<!--<div class="form-group">-->
+										<button id="enfocarMapa" type="button" class="btn btn-success btn-lg">    
+									    	<i class="fa fa-bullseye" aria-hidden="true"></i>
+									    	Enfocar
+								    	</button>
+									<!--</div>-->
+									
+								</div>
+							</div>
+                            <div class="row" style="margin:0em;">
+                            	<div class="col-mod-8 pull-right">
+									<button id="crearZona" type="submit" class="btn btn-raised btn-lg btn-success btn-block ">
+										Guardar
+									</button>
+                            	</div>
+                            </div>	
+						</form>
+					    <div class="row">
+					        <div class="col-lg-12">
+					            <h4>Resultado</h4>
+					            <div class="tabbable pestana">
+								 	<ul class="nav nav-tabs">
+									   <div class="tab-pane active" id="1" >
+									   	
+									      <table id="graficoTabla" class="table table-striped table-bordered display" style="width: 100%">
+					                      </table>
+									   </div>
+								</div>
+					        </div>
+					        <!-- /.col-lg-12 -->
+					    </div>
+					</div>
+	                <!-- /.panel-body -->
+	            </div>
+	            <!-- /.panel -->
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	</div>
+<!-- /#page-wrapper -->
+
+<script async defer
+
+     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDOqPrm-nuqELi0b_kPt7nP0vHFdUunOHc&signed_in=true&callback=initMap"></script>
+
+</body>
+
+
+{% endblock %}

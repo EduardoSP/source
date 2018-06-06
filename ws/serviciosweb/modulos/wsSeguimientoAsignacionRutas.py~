@@ -1,0 +1,411 @@
+# -*- coding: utf-8 -*-
+from django.shortcuts           import render
+from django.http                import HttpResponse
+import json
+from ProtocoloComunicacion      import responder, validarProtocoloPeticion
+from jsonschema                 import validate, ValidationError
+from datetime                   import datetime, timedelta
+
+from rutas                      import rutas
+from asignacionRutas            import asignacionRutas
+from permisos                   import permisos
+
+
+#--------------------------------------------------------------
+def wsListarAsignacionesRutas(request):
+    respuestaRaw = {'success'        : False,
+                    'data'           : { }    }
+
+    validacionProtocolo = validarProtocoloPeticion(request)
+    if not validacionProtocolo['success']:
+        return responder(validacionProtocolo)
+
+    requestRaw  = request.POST['request']
+    peticion    = json.loads(requestRaw)
+
+    validacionPeticion = validacionWsListarAsignacionesRutas(peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPeticion)
+
+    validacionPermisos = permisos.validacionPermisos("wsListarAsignacionesRutas",peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPermisos)
+
+    respuestaRaw = asignacionRutas.listarAsignacionesRutas(peticion)
+    
+    return responder(respuestaRaw)
+
+
+def validacionWsListarAsignacionesRutas(peticion):
+    success = True
+    error   = ''    
+    try:                
+        schema = {
+            'type'        : 'object',
+            'properties'  : {
+                "autenticacion" : {
+                    'type'        : 'object',
+                    'properties'  : {
+                        'usuario' : { 'type' : 'string' },
+                        'token'   : { 'type' : 'string' },
+                    },
+                    'required' : [
+                        'usuario',
+                        'token'
+                    ]
+                },
+                "data"  : {
+                    'type'        : 'object',
+                    'properties'  : {                        
+                    }
+                    
+                }    
+            },
+            'required' : [
+                'autenticacion'
+            ]
+        }
+        validate(peticion ,schema)        
+    except ValidationError as e:
+        error   = e.message
+        success = False
+    except ValueError:
+        error = 'Error desconocido-R001'
+        success = False
+
+    respuestaRaw = { 'success'        : success,
+                     'error'          : error}    
+    return respuestaRaw
+#===============================================================================
+
+#--------------------------------------------------------------
+def wsCrearAsignacionRuta(request):
+    respuestaRaw = {'success'        : False,
+                    'data'           : { }    }
+
+    validacionProtocolo = validarProtocoloPeticion(request)
+    if not validacionProtocolo['success']:
+        return responder(validacionProtocolo)
+
+    requestRaw  = request.POST['request']
+    peticion    = json.loads(requestRaw)
+
+    validacionPeticion = validacionWsCrearAsignacionRuta(peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPeticion)
+
+    validacionPermisos = permisos.validacionPermisos("wsCrearAsignacionRuta",peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPermisos)
+
+    respuestaRaw = asignacionRutas.crearAsignacionRuta(peticion)
+    
+    return responder(respuestaRaw)
+
+
+def validacionWsCrearAsignacionRuta(peticion):
+    success = True
+    error   = ''    
+    try:                
+        schema = {
+            'type'        : 'object',
+            'properties'  : {
+                "autenticacion" : {
+                    'type'        : 'object',
+                    'properties'  : {
+                        'usuario' : { 'type' : 'string' },
+                        'token'   : { 'type' : 'string' },
+                    },
+                    'required' : [
+                        'usuario',
+                        'token'
+                    ]
+                },
+                "data"  : {
+                    'type'        : 'object',
+                    'properties'  : {                        
+                    }
+                }    
+            },
+            'required' : [
+                'autenticacion'
+            ]
+        }
+        validate(peticion ,schema)        
+    except ValidationError as e:
+        error   = e.message
+        success = False
+    except:
+        error = 'Error desconocido-R001'
+        success = False
+
+    respuestaRaw = { 'success'        : success,
+                     'error'          : error}    
+    return respuestaRaw
+#===============================================================================
+
+#--------------------------------------------------------------
+def wsDetalleAsignacionRuta(request):
+    respuestaRaw = {'success'        : False,
+                    'data'           : { }    }
+
+    validacionProtocolo = validarProtocoloPeticion(request)
+    if not validacionProtocolo['success']:
+        return responder(validacionProtocolo)
+
+    requestRaw  = request.POST['request']
+    peticion    = json.loads(requestRaw)
+
+    validacionPeticion = validacionWsDetalleAsignacionRuta(peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPeticion)
+
+    validacionPermisos = permisos.validacionPermisos("wsDetalleAsignacionRuta",peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPermisos)
+
+    respuestaRaw = asignacionRutas.detalleAsignacionRuta(peticion)
+    
+    return responder(respuestaRaw)
+
+
+def validacionWsDetalleAsignacionRuta(peticion):
+    success = True
+    error   = ''    
+    try:                
+        schema = {
+            'type'        : 'object',
+            'properties'  : {
+                "autenticacion" : {
+                    'type'        : 'object',
+                    'properties'  : {
+                        'usuario' : { 'type' : 'string' },
+                        'token'   : { 'type' : 'string' },
+                    },
+                    'required' : [
+                        'usuario',
+                        'token'
+                    ]
+                },
+                "data"  : {
+                    'type'        : 'object',
+                    'properties'  : {                        
+                    }
+                }    
+            },
+            'required' : [
+                'autenticacion'
+            ]
+        }
+        validate(peticion ,schema)        
+    except ValidationError as e:
+        error   = e.message
+        success = False
+    except:
+        error = 'Error desconocido-R001'
+        success = False
+
+    respuestaRaw = { 'success'        : success,
+                     'error'          : error}    
+    return respuestaRaw
+#===============================================================================
+
+
+#--------------------------------------------------------------
+def wsEditarAsignacionRuta(request):
+    respuestaRaw = {'success'        : False,
+                    'data'           : { }    }
+
+    validacionProtocolo = validarProtocoloPeticion(request)
+    if not validacionProtocolo['success']:
+        return responder(validacionProtocolo)
+
+    requestRaw  = request.POST['request']
+    peticion    = json.loads(requestRaw)
+
+    validacionPeticion = validacionWsEditarAsignacionRuta(peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPeticion)
+
+    validacionPermisos = permisos.validacionPermisos("wsEditarAsignacionRuta",peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPermisos)
+
+    respuestaRaw = asignacionRutas.editarAsignacionRuta(peticion)
+    
+    return responder(respuestaRaw)
+
+
+def validacionWsEditarAsignacionRuta(peticion):
+    success = True
+    error   = ''    
+    try:                
+        schema = {
+            'type'        : 'object',
+            'properties'  : {
+                "autenticacion" : {
+                    'type'        : 'object',
+                    'properties'  : {
+                        'usuario' : { 'type' : 'string' },
+                        'token'   : { 'type' : 'string' },
+                    },
+                    'required' : [
+                        'usuario',
+                        'token'
+                    ]
+                },
+                "data"  : {
+                    'type'        : 'object',
+                    'properties'  : {                        
+                    }
+                }    
+            },
+            'required' : [
+                'autenticacion'
+            ]
+        }
+        validate(peticion ,schema)        
+    except ValidationError as e:
+        error   = e.message
+        success = False
+    except:
+        error = 'Error desconocido-R001'
+        success = False
+
+    respuestaRaw = { 'success'        : success,
+                     'error'          : error}    
+    return respuestaRaw
+#===============================================================================
+
+#--------------------------------------------------------------
+def wsEliminarAsignacionRuta(request):
+    respuestaRaw = {'success'        : False,
+                    'data'           : { }    }
+
+    validacionProtocolo = validarProtocoloPeticion(request)
+    if not validacionProtocolo['success']:
+        return responder(validacionProtocolo)
+
+    requestRaw  = request.POST['request']
+    peticion    = json.loads(requestRaw)
+
+    validacionPeticion = validacionWsEliminarAsignacionRuta(peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPeticion)
+
+    validacionPermisos = permisos.validacionPermisos("wsEliminarAsignacionRuta",peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPermisos)
+
+    respuestaRaw = asignacionRutas.eliminarAsignacionRuta(peticion)
+    
+    return responder(respuestaRaw)
+
+
+def validacionWsEliminarAsignacionRuta(peticion):
+    success = True
+    error   = ''    
+    try:                
+        schema = {
+            'type'        : 'object',
+            'properties'  : {
+                "autenticacion" : {
+                    'type'        : 'object',
+                    'properties'  : {
+                        'usuario' : { 'type' : 'string' },
+                        'token'   : { 'type' : 'string' },
+                    },
+                    'required' : [
+                        'usuario',
+                        'token'
+                    ]
+                },
+                "data"  : {
+                    'type'        : 'object',
+                    'properties'  : {                        
+                    }
+                }    
+            },
+            'required' : [
+                'autenticacion'
+            ]
+        }
+        validate(peticion ,schema)        
+    except ValidationError as e:
+        error   = e.message
+        success = False
+    except:
+        error = 'Error desconocido-R001'
+        success = False
+
+    respuestaRaw = { 'success'        : success,
+                     'error'          : error}    
+    return respuestaRaw
+#===============================================================================
+
+#--------------------------------------------------------------
+def wsAbortarAsignacionRuta(request):
+    respuestaRaw = {'success'        : False,
+                    'data'           : { }    }
+
+    validacionProtocolo = validarProtocoloPeticion(request)
+    if not validacionProtocolo['success']:
+        return responder(validacionProtocolo)
+
+    requestRaw  = request.POST['request']
+    peticion    = json.loads(requestRaw)
+
+    validacionPeticion = validacionWsAbortarAsignacionRuta(peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPeticion)
+
+    validacionPermisos = permisos.validacionPermisos("wsAbortarAsignacionRuta",peticion)
+    if not validacionPeticion['success']:
+        return responder(validacionPermisos)
+
+    respuestaRaw = asignacionRutas.abortarAsignacionRuta(peticion)
+    
+    return responder(respuestaRaw)
+
+
+def validacionWsAbortarAsignacionRuta(peticion):
+    success = True
+    error   = ''    
+    try:                
+        schema = {
+            'type'        : 'object',
+            'properties'  : {
+                "autenticacion" : {
+                    'type'        : 'object',
+                    'properties'  : {
+                        'usuario' : { 'type' : 'string' },
+                        'token'   : { 'type' : 'string' },
+                    },
+                    'required' : [
+                        'usuario',
+                        'token'
+                    ]
+                },
+                "data"  : {
+                    'type'        : 'object',
+                    'properties'  : {                        
+                    }
+                }    
+            },
+            'required' : [
+                'autenticacion'
+            ]
+        }
+        validate(peticion ,schema)        
+    except ValidationError as e:
+        error   = e.message
+        success = False
+    except:
+        error = 'Error desconocido-R001'
+        success = False
+
+    respuestaRaw = { 'success'        : success,
+                     'error'          : error}    
+    return respuestaRaw
+#===============================================================================
+

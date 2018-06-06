@@ -1,0 +1,314 @@
+{% extends "webfleetbigui/baseSuperAdministrador.html" %}
+{% load staticfiles %}
+{% block titulo %}Admin-CrearGps{% endblock %}
+
+{% block codigoPrincipal %}
+
+<!-- Estilos -->
+<link href="{% static "sbadmin/css/plugins/dataTables.bootstrap.css" %}"  rel="stylesheet">
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "datetimepicker/css/bootstrap-datetimepicker.min.css" %}"           rel="stylesheet">
+<!-- <link href="{% static "bootstrapSwitch/css/bootstrap-switch.min.css" %}"           rel="stylesheet"> -->
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<!-- <link href="{% static "validator/css/bootstrapValidator.min.css" %}" rel="stylesheet" type="text/css"> -->
+<link href="{% static "css/base.css" %}"  rel="stylesheet">
+
+<!-- Bibliotecas -->
+<script src="{% static "sbadmin/js/plugins/dataTables/jquery.dataTables.js"     %}"></script>
+<script src="{% static "sbadmin/js/plugins/dataTables/dataTables.bootstrap.js"  %}"></script>
+<script src="{% static "moment/moment-with-locales.js"      %}"></script>
+<script src="{% static "datetimepicker/js/bootstrap-datetimepicker.min.js"      %}"></script>
+<script src="{% static "archivo/bootstrap-filestyle.min.js" %}"></script>
+<script src="{% static "select/js/bootstrap-select.min.js" %}"></script>
+<script src="{% static "mustache/mustache.js"                                   %}"></script>
+<script src="{% static "validatorNuevo/validator.js" %}"></script>
+<!-- <script src="{% static "validator/js/language/es_ES.js" %}"></script> -->
+<!-- <script src="{% static "bootstrapSwitch/js/bootstrap-switch.min.js" %}"></script>-->
+
+{% verbatim %}{% endverbatim %}
+
+
+<script>
+
+function enviarGps(){
+    var identificadorGps           	= $('#formIdentificador')	.val();
+    var numeroSim           		= $('#formNumero')			.val();
+    var tipo           				= $('#formTipo')	.val();
+    var imei           				= $('#formImei')		.val();
+    var observaciones           	= $('#formObservaciones')		.val();
+    
+    var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : "{{tenant}}",
+                                            
+                                         },
+                        'data'         : {  
+		                        			'identificadorGPS'  	: identificadorGps,
+											"numSimCard" 			: numeroSim,
+											"tipo"					: tipo,
+											"imei" 					: imei,
+											"observaciones" 		: observaciones,
+											
+		                        		 }
+	
+                      };
+    bloquearTodo();
+    var request = $.ajax({
+	type        : "POST",
+	url         : "{% url 'wsCrearGps' %}",
+	data        : {
+            request :  JSON.stringify(peticion)
+        },
+	dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+    		notif({
+                msg     : "El Gps "+identificadorGps+" se creo exitosamente",
+                type    : "success",
+                multiline: true,
+                position: "center"
+        	});
+        setTimeout(function() { window.location.href 	= "{% url 'superAdministradorGps' tenant=tenant %}"; 
+				  }, 
+		       3000);	
+        
+        }
+        else{
+        	var mensaje = "";
+        	if(respuesta.data.existeIdentificador && respuesta.data.existeNumSimCard && respuesta.data.existeImei){
+        		mensaje = "El identificador gps, el numero simcard y el Imei ya existen"
+        	}
+        	else{
+	        	if(respuesta.data.existeIdentificador){
+	        		mensaje = "El identificador gps ya existe"
+	        	}
+	        	if(respuesta.data.existeNumSimCard){
+	        		mensaje = "El numero simcard ya existe"
+	        	} 
+	        	if(respuesta.data.existeImei){
+	        		mensaje = "El Imei ya existe"
+	        	} 
+
+        	}
+
+            notif({
+                msg     : mensaje,
+                type    : "error",
+                position: "center"
+            });
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        desbloquearTodo();
+    });
+}
+
+//Cambia imagen en pantalla la guarda en Nisabu y crea una copia local
+function enviarImagen(input){
+    var peticion    = {
+    };
+	
+    var iinput		= input;
+    var archivo     = $(input)[0].files[0];
+    var formData    = new FormData();
+    formData.append("request", JSON.stringify(peticion));
+    if(typeof archivo != 'undefined'){
+		formData.append("archivo", archivo);
+    }
+
+    bloquearTodo();
+    request = $.ajax({
+	type        : "POST",
+	url         : wsbase+'/enviarImagen',
+	data        : formData,
+	dataType    : "json",
+	cache       : false,
+	processData : false,
+	contentType : false
+    }).done(function(respuesta){
+	if (respuesta.success){
+	    notif({
+	        msg     : "Archivo cargado",
+	        type    : "success",
+	        position: "center"
+	    });
+	    console.log(respuesta.url);
+	    //agregarImagen(respuesta.id, respuesta.url, iinput);	    
+	    $("#formImagen").attr("src", respuesta.url);
+	    $("#idImagen").val(respuesta.id);	    
+	    $(iinput).filestyle('clear');
+	}
+	else{
+	    notif({
+	        msg     : respuesta.mensaje,
+	        type    : "error",
+	        position: "center"
+	    });
+	}
+    }).fail(function(jqXHR, textStatus){
+		if (text_status != "abort") {
+		    notif({
+		        msg     : "error",
+		        type    : "error",
+		        position: "center"
+		    });
+		}
+    }).always(function(){
+	desbloquearTodo();
+    });
+
+}
+
+
+
+
+//Bloquea toda la interfaz para que no hagan nada.
+function bloquearTodo(){
+    $("input")		.prop('disabled', true);
+    //$("select")		.prop('disabled', true);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', true);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', true);
+}
+
+//desloquea toda la interfaz para que haga algo.
+function desbloquearTodo(){
+    $("input")      .prop('disabled', false);
+    $("select")     .prop('disabled', false);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', false);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', false);
+}
+
+
+// === Document ready!!! =======================================================
+$(document).ready(function() {
+
+	$('#formularioCrearGps').validator().on('submit', function (e) {
+	  if (e.isDefaultPrevented()) {
+		notif({
+                msg     : "Invalido campo",
+                type    : "error",
+                position: "center"
+            });
+	  } else {
+	    enviarGps();
+	    e.preventDefault();
+	  }
+	});
+	
+	$(document).on('change', '#inputImagen', function() {
+    	enviarImagen(this);
+    });
+	
+	
+});
+// --- End document ready ------------------------------------------------------
+
+
+</script>
+{% endblock %}
+
+{% block contenido %}
+<body>
+	
+	<div id="page-wrapper" style="  margin: 3em; margin-top: 0;">
+	
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <h1 class="">Gps<small > Registro Nuevo Gps</small></h1>
+	             <!-- <div class="pos"> 
+	            <form class="form-inline" role="form" >-->
+					<!-- <a href="#" id="editarCliente" class="editarCliente"><i class="fa fa-pencil fa-fw" style="font-size: 1.5em;"></i> </a> -->
+						<!-- div class="form-group inner-addon left-addon">
+			  				<i class="mdi-action-search" style="position: absolute !important; color: #d2d2d2;"></i>
+			    			<div class="form-group  divBuscar">
+		                      <input id="inputBuscar" type="text" class="form-control buscarInput" placeholder="Buscar">
+		                    </div>
+			  			</div>
+						<button id="guardarDatosEditados" type="button" class="btn btn-success positionGuardar">
+							Buscar
+						</button>
+				</form>
+				</div> --> 
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	    <!-- /.row -->
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <div class="panel panel-default">
+	                <!-- /.panel-heading -->
+	                <div class="panel-body">
+						<form data-toggle="validator" role="form" id="formularioCrearGps">
+							<div class="row">
+								<div class="col-md-4">
+									<div class="form-group">
+										<label>Identificador GPS</label>
+										<input id="formIdentificador" name="formIdentificador" type="text" class="form-control formIdentificador" required data-error="Ingrese un identificador de Gps ej. 59784526-0"/>
+										<div class="help-block with-errors"></div>
+										
+									</div>
+									<div class="form-group">
+										<label>Número SimCard</label>
+										<input id="formNumero" name="formNumero" type="text" required class="form-control formNumero" required data-error="Ingrese un número de simCard ej. 3125268954"/>
+										<div class="help-block with-errors"></div>
+									</div> 
+									<div class="form-group">
+										<label>Tipo</label>
+										<input id="formTipo" name="formTipo" required type="text" class="form-control formTipo" required data-error="Ingrese un tipo de GPS ej. VT1000"/>
+										<div class="help-block with-errors"></div>
+									</div>
+									
+									<div class="form-group">
+										<label>Imei</label>
+										<input id="formImei" name="formImei" type="number" class="form-control formImei" required data-error="Ingrese un imei ej. 123456789012345"/>
+										<div class="help-block with-errors"></div>
+									</div>
+									
+									
+								</div>
+								<div class="col-md-3" style="margin-left: 4em;">
+									<div class="form-group">
+										<label>Observaciones</label>
+										<textarea id="formObservaciones" name="formObservaciones" type="text" class="form-control formObservaciones" data-error="Ingrese un comentario sobre el GPS"></textarea>
+										<div class="help-block with-errors"></div>
+										
+									</div>
+									
+								</div>
+								
+							</div>
+							
+							<!-- <div id="menuContenedorPedidosAdicionales">
+							</div>
+							<div id="menuContenedorPedidosAdicionalesExworks">
+							</div> -->
+								
+							<!-- <button id="" type="submit" class="btn btn-success">
+								Guardar cliente
+							</button> -->
+							
+							<button id="crearTenant" type="submit" class="btn btn-raised btn-success positionBoton">
+								Crear Gps
+							</button>
+						</form>
+					</div>
+	                <!-- /.panel-body -->
+	            </div>
+	            <!-- /.panel -->
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	
+	</div>
+<!-- /#page-wrapper -->
+
+</body>
+
+
+{% endblock %}

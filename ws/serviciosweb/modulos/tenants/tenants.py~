@@ -1,0 +1,54 @@
+# -*- coding: utf-8 -*-
+import hashlib
+import uuid
+import logging
+import time
+from django.core.urlresolvers import reverse
+from django.conf              import settings
+from ..conexion               import conexion
+from datetime                 import datetime
+from ..autenticacion          import autenticacion as moduloAutenticacion
+import time
+from twilio.rest import TwilioRestClient
+
+#-------------------------------------------------------------
+
+def pickerTenants( peticion ):
+    autenticacion = peticion['autenticacion']
+    datos         = peticion['data']
+    usuario       = autenticacion['usuario']
+    tenant        = autenticacion['tenant']
+    
+    db = conexion.getConexionTenant(tenant)
+
+    if db == None:
+        return { 'success' : False, 'mensaje': "existe el tenant" }
+
+    try:
+        dataRaw = []
+        filas = db.view(
+            '_design/tenant/_view/visualizarTenants',
+            include_docs  = True
+        )
+        
+        for fila in filas:
+          key = fila.key
+          value = fila.value
+          doc = fila.doc
+          
+          dataRaw.append(
+              {
+          	  'id'         : doc.get('cliente',       ''),
+          	  'nombre'     : doc.get('nombreGeneral', '')
+              }
+          )            
+        return {
+            'success' : True,
+            'data'    : dataRaw
+        }
+    except ValueError:
+        pass
+
+    return { 'success' : False, 'mensaje':"error desconocido" }
+
+

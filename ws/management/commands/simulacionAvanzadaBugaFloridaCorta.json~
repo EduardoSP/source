@@ -1,0 +1,25 @@
+{
+    "ws"         : "http://localhost:8080/ws/enviarRuta",
+    "idVehiculo" : "20160801",
+	"fechaHoraInicial" : "2017-01-09T09:49:00",
+    "ping"       : "1",
+	"reversar"   : false,
+    "ruta" : [
+		
+		{
+			"tipoPaso": "avance",
+			"lat": "3.9096704608244397",
+			"lon": "-76.30690958786619",
+			"velocidad": "20",
+			"variacionVelocidad": "5"
+		},
+		{
+			"tipoPaso": "avance",
+			"lat": "3.907486868960204",
+			"lon": "-76.30781081009519",
+			"velocidad": "20",
+			"variacionVelocidad": "5"
+		}
+
+	]
+}

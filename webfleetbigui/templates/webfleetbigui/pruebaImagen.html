@@ -1,0 +1,74 @@
+
+{% extends "webfleetbigui/base.html" %}
+{% load staticfiles %}
+{% block titulo %}Imagen{% endblock %}
+
+{% block codigoPrincipal %}
+
+
+<script src="{% static "archivo/bootstrap-filestyle.min.js" %}"></script>
+
+
+
+<script>
+$(document).ready(function() {
+
+    $('#botonEnviar' ).click(function() {
+        var rawRequest    = new Object();
+        rawRequest.nombre = $('#nombreArchivo').val();
+        var jsonsample    = JSON.stringify(rawRequest);
+        var archivo       = $('#inputImagen')[0].files[0];
+        var formData      = new FormData();
+        formData.append("request", jsonsample);
+        formData.append("archivo", archivo);
+
+
+
+        var request = $.ajax({
+            type        : "POST",
+            url         : 'http://localhost/webfleetbigui/enviarImagen',
+            data        : formData,
+            dataType    : "json",
+            cache       : false,
+            processData : false,
+            contentType : false
+        });
+        request.done(function(respuesta){
+			if(respuesta.success){
+				notif({
+                msg     : "La imagen se creo exitosamente",
+                type    : "success",
+                multiline: true,
+                position: "center"
+        	});
+			}
+        });
+        request.fail(function(jqXHR, textStatus){
+
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% block contenido %}
+<div class="container">
+	<form role="form">
+	    <div class="form-group">
+            <label for="nombreArchivo">Nombre</label>
+            <input class="form-control" id="nombreArchivo" >
+        </div>
+        <div class="form-group">
+            <label for="archivo">Archivo</label>
+            <input type="file" class="form-control" id="archivo">
+        </div>
+        <div class="form-group" id="formSeleccionarImagen">
+									      <input type="hidden" id="idImagen" value="">
+									      <input type="file"  id="inputImagen" class="filestyle" data-buttonName="btn-primary" data-buttonText="" placeholder="Cambiar imagen">
+									    </div>
+									    <script>$(":file").filestyle({buttonName: "btn-success" , buttonText:"", id:"formSeleccionarImagen"});
+									    </script>
+	</form>
+	<button id="botonEnviar" class="btn btn-default">Enviar</button>
+</div>
+{% endblock %}

@@ -1,0 +1,624 @@
+{% extends baseTemplate %}
+{#% extends "webfleetbigui/baseAdminTenant.html" %#}
+{% load staticfiles %}
+{% block titulo %}Configuración{% endblock %}
+
+{% block codigoPrincipal %}
+<!-- Estilos -->
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "css/base.css" %}"  rel="stylesheet">
+<link href="{% static "DataTables/datatables.min.css" %}" rel="stylesheet" type="text/css"  />
+<link href="{% static "datetimepicker/css/bootstrap-datetimepicker.min.css" %}"           rel="stylesheet">
+<link href="{% static "mapsPicker/jquery-gmaps-latlon-picker.css" %}" rel="stylesheet" type="text/css" />
+<link href="{% static "bootstrap-player/css/bootstrap3_player.css" %}" rel="stylesheet" type="text/css" />
+
+<!-- Bibliotecas -->
+<script src="{% static "select/js/bootstrap-select.min.js" %}"></script>
+<script src="{% static "moment/moment-with-locales.js"      %}"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/noUiSlider/6.2.0/jquery.nouislider.min.js"></script>
+<script src="{% static "DataTables/datatables.min.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapsPicker/jquery-gmaps-latlon-picker.js" %}" ></script>
+<!--<script src="{% static "socketio/socket.io.js" %}"></script>-->
+<script src="{% static "datetimepicker/js/bootstrap-datetimepicker.min.js"      %}"></script>
+<script src="{% static "validatorNuevo/validator.js" %}"></script>
+<script src="{% static "bootstrap-player/js/bootstrap3_player.js" %}"   type="text/javascript" ></script>
+
+<script>
+
+
+function cargarDatosConfiguracion(){
+	var peticion    = {
+		'autenticacion': {
+			'usuario' : config.getUsuarioLogin(),
+            'token'   : config.getToken(),
+            'tenant'  : config.getTennant()
+        },
+        'data'         : { 
+        }
+    };
+    
+    var request = $.ajax({
+		type        : "POST",
+		url         : "{% url 'wsListarConfiguraciones' %}",
+		data        : {
+            request :  JSON.stringify(peticion)
+        },
+		dataType    : "json"
+		
+	}).done(function(respuesta){
+        if (respuesta.success){
+			var data = respuesta.data;
+			if('LIMITEDEVELOCIDAD' in data){
+				$("#formLimiteDeVelocidad").val(data['LIMITEDEVELOCIDAD']);
+			}
+            if('PAUSAACTIVATIEMPOCONDUCCION' in data){
+                $("#tiempoConduccionPA").val(data['PAUSAACTIVATIEMPOCONDUCCION']);
+            }
+            if('PAUSAACTIVATIEMPOPAUSAACTIVA' in data){
+                $("#tiempoPausaActivaPA").val(data['PAUSAACTIVATIEMPOPAUSAACTIVA']);
+            }
+            if('PAUSAACTIVATIEMPOTOLERANCIA' in data){
+                $("#tiempoToleranciaPA").val(data['PAUSAACTIVATIEMPOTOLERANCIA']);
+            }
+            if('CONDUCCIONCONTINUATIEMPOMAXCONDUCCION' in data){
+                $("#tiempoMaxConduccionCC").val(data['CONDUCCIONCONTINUATIEMPOMAXCONDUCCION']);
+            }
+            if('CONDUCCIONCONTINUATIEMPONOCONDUCCION' in data){
+                $("#tiempoNoConduccionCC").val(data['CONDUCCIONCONTINUATIEMPONOCONDUCCION']);
+            }
+            if('CONDUCCIONCONTINUATIEMPOTOLERANCIA' in data){
+                $("#tiempoToleranciaCC").val(data['CONDUCCIONCONTINUATIEMPOTOLERANCIA']);
+            }
+			if('PENALIZACIONACELERACIONES' in data){
+                $("#inputPenalizacionAceleraciones").val(data['PENALIZACIONACELERACIONES']);
+            }
+			if('PENALIZACIONFRENADAS' in data){
+                $("#inputPenalizacionFrenadas").val(data['PENALIZACIONFRENADAS']);
+            }
+			if('PENALIZACIONMOVIMIENTOSABRUPTOS' in data){
+                $("#inputPenalizacionMoviemientosAbruptos").val(data['PENALIZACIONMOVIMIENTOSABRUPTOS']);
+            }
+			if('PENALIZACIONEXCESOSVELOCIDAD' in data){
+                $("#inputPenalizacionExcesosVelocidad").val(data['PENALIZACIONEXCESOSVELOCIDAD']);
+            }
+            if('CONFIGURACIONGENERADORCARGA' in data){
+                var diccionarioRadio = {todaInformacion: "radio1", soloGenerador : "radio2", generadorMiInformacion : "radio3"};
+                $('#'+diccionarioRadio[data['CONFIGURACIONGENERADORCARGA']]+'').prop('checked',true);
+            }
+			
+        }
+        else{
+            notif({
+                msg     : respuesta.mensaje,
+                type    : "error",
+                position: "center"
+            });
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        
+    });
+}
+
+
+function guardarConfiguracion(){
+
+	var limiteDeVelocidad       = $("#formLimiteDeVelocidad").val();
+	limiteDeVelocidad           = parseInt(limiteDeVelocidad);
+
+    var tiempoConduccionPA      = $("#tiempoConduccionPA").val();
+    tiempoConduccionPA          = parseInt(tiempoConduccionPA);
+
+    var tiempoPausaActivaPA     = $("#tiempoPausaActivaPA").val();
+    tiempoPausaActivaPA         = parseInt(tiempoPausaActivaPA);
+
+    var tiempoToleranciaPA      = $("#tiempoToleranciaPA").val();
+    tiempoToleranciaPA          = parseInt(tiempoToleranciaPA);
+
+    var tiempoMaxConduccionCC   = $("#tiempoMaxConduccionCC").val();
+    tiempoMaxConduccionCC       = parseInt(tiempoMaxConduccionCC);
+
+    var tiempoNoConduccionCC    = $("#tiempoNoConduccionCC").val();
+    tiempoNoConduccionCC        = parseInt(tiempoNoConduccionCC);
+
+    var tiempoToleranciaCC      = $("#tiempoToleranciaCC").val();
+    tiempoToleranciaCC          = parseInt(tiempoToleranciaCC);
+
+	var penalizacionAceleraciones = $("#inputPenalizacionAceleraciones").val();
+    penalizacionAceleraciones     = parseInt(penalizacionAceleraciones);
+
+	var penalizacionFrenadas      = $("#inputPenalizacionFrenadas").val();
+    penalizacionFrenadas          = parseInt(penalizacionFrenadas);
+
+	var penalizacionMovimientosAbruptos  = $("#inputPenalizacionMoviemientosAbruptos").val();
+    penalizacionMovimientosAbruptos      = parseInt(penalizacionMovimientosAbruptos);
+
+	var penalizacionExcesosVelocidad     = $("#inputPenalizacionExcesosVelocidad").val();
+    penalizacionExcesosVelocidad         = parseInt(penalizacionExcesosVelocidad);
+
+
+    var opcionRadio = $('input:radio[name=radioGenerador]:checked').val();
+
+	var peticion    = {
+		'autenticacion': {
+			'usuario' : config.getUsuarioLogin(),
+            'token'   : config.getToken(),
+            'tenant'  : config.getTennant()
+        },
+        'data'         : { 
+            "LIMITEDEVELOCIDAD"                             : limiteDeVelocidad,
+            "PAUSAACTIVATIEMPOCONDUCCION"                   : tiempoConduccionPA,
+            "PAUSAACTIVATIEMPOPAUSAACTIVA"                  : tiempoPausaActivaPA,
+            "PAUSAACTIVATIEMPOTOLERANCIA"                   : tiempoToleranciaPA,
+            "CONDUCCIONCONTINUATIEMPOMAXCONDUCCION"         : tiempoMaxConduccionCC,
+            "CONDUCCIONCONTINUATIEMPONOCONDUCCION"          : tiempoNoConduccionCC,
+            "CONDUCCIONCONTINUATIEMPOTOLERANCIA"            : tiempoToleranciaCC,
+			
+            "PENALIZACIONACELERACIONES"                     : penalizacionAceleraciones,
+            "PENALIZACIONFRENADAS"                          : penalizacionFrenadas,
+            "PENALIZACIONMOVIMIENTOSABRUPTOS"               : penalizacionMovimientosAbruptos,
+            "PENALIZACIONEXCESOSVELOCIDAD"                  : penalizacionExcesosVelocidad,
+
+            "CONFIGURACIONGENERADORCARGA"                   : opcionRadio,
+        }
+    };
+    
+    var request = $.ajax({
+		type        : "POST",
+		url         : "{% url 'wsActualizarConfiguracion' %}",
+		data        : {
+            request :  JSON.stringify(peticion)
+        },
+		dataType    : "json"
+		
+	}).done(function(respuesta){
+        if (respuesta.success){
+			notif({
+                    msg     : "Configuración actualizada",
+                    type    : "success",
+                    position: "center"
+                });			
+        }
+        else{
+            notif({
+                msg     : respuesta.mensaje,
+                type    : "error",
+                position: "center"
+            });
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){
+        
+    });
+}
+
+
+//Bloquea toda la interfaz para que no hagan nada.
+function bloquearTodo(){
+    $("input")		.prop('disabled', true);
+    //$("select")		.prop('disabled', true);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', true);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', true);
+}
+
+//desloquea toda la interfaz para que haga algo.
+function desbloquearTodo(){
+    $("input")      .prop('disabled', false);
+    $("select")     .prop('disabled', false);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', false);
+    $('input[type="submit"], input[type="button"], button').prop('disabled', false);
+}
+
+// === Document ready!!! =======================================================
+var socket = null;
+$(document).ready(function() {
+    // //habilita las opciones configuradas para la plataforma
+    // habilitarPestanasAdminTenant();
+    
+    cargarDatosConfiguracion();
+	
+	$('#formularioConfiguracion').validator().on('submit', function (e) {
+		if (e.isDefaultPrevented()) {
+			notif({
+                msg     : "Invalido campo",
+                type    : "error",
+                position: "center"
+            });
+		} else {
+			e.preventDefault();
+			guardarConfiguracion();			
+		}
+    });
+
+	$('#formularioConfiguracionPausaActiva').validator().on('submit', function (e) {
+        if (e.isDefaultPrevented()) {
+            notif({
+                msg     : "Invalido campo",
+                type    : "error",
+                position: "center"
+            });
+        } else {
+            e.preventDefault();
+            guardarConfiguracion();         
+        }
+    });
+
+	$('#formularioConfiguracionConduccionContinua').validator().on('submit', function (e) {
+        if (e.isDefaultPrevented()) {
+            notif({
+                msg     : "Invalido campo",
+                type    : "error",
+                position: "center"
+            });
+        } else {
+            e.preventDefault();
+            guardarConfiguracion();         
+        }
+	});
+
+	$('#formularioConfiguracionCalificacionConductores').validator().on('submit', function (e) {
+        if (e.isDefaultPrevented()) {
+            notif({
+                msg     : "Invalido campo",
+                type    : "error",
+                position: "center"
+            });
+        } else {
+            e.preventDefault();
+            guardarConfiguracion();         
+        }
+	});
+
+	
+    $('#formularioConfiguracionGeneradoresCarga').validator().on('submit', function (e) {
+        //formulario configuracion generadores de carga
+        if (e.isDefaultPrevented()) {
+            notif({
+                msg     : "Invalido campo",
+                type    : "error",
+                position: "center"
+            });
+        } else {
+            e.preventDefault();
+            guardarConfiguracion();         
+        }
+    });
+
+
+});
+// --- End document ready ------------------------------------------------------
+
+
+
+</script>
+{% endblock %}
+
+{% block contenido %}
+<body>
+	
+	<div id="page-wrapper" style="  margin: 3em; margin-top: 0;">
+	
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <h1 class="">Configuración</h1>
+	        </div>
+	    </div>
+
+	    <div class="row">
+	      <div class="col-lg-12">
+    	        <div class="panel panel-default">	        
+    	          <div class="panel-body">
+                        <div class="tabbable pestana">
+                                <ul class="nav nav-tabs">
+                                    <li id="pestanaConfiguracionLimitesVelocidad"  style="display : none;" class="active"><a href="#1" data-toggle="tab">Límite de velocidad</a></li>
+                                    <li id="pestanaConfiguracionPausaActiva"  style="display : none;"><a href="#2" data-toggle="tab">Pausa activa</a></li>
+                                    <li id="pestanaConfiguracionConduccionContinua" style="display : none;" ><a href="#3" data-toggle="tab">Conducción continua</a></li>
+									<li id="pestanaConfiguracionCalificacionConductores" style="display : none;"><a href="#4" data-toggle="tab">Calificación Conductores</a></li>
+                                    <li id="pestanaConfiguracionGeneradoresCarga" style="display : none;"><a href="#5" data-toggle="tab">Generadores de carga</a></li>
+                                </ul>  
+                                <div class="tab-content">
+
+                                    <div class="tab-pane" id="1">
+                                            <h3>Límite de velocidad</h3>
+                                            <!-- Formulario de datos ----------------------------- -->
+                                                <form data-toggle="validator" role="form" id="formularioConfiguracion">
+                                                    <div class="row">
+                                                            <div class="col-md-2" style="padding-right: 0;">
+                                                                    <div class="form-group estiloFormGroup">
+                                                                            <label>Límite de velocidad</label>
+                                                                                <div>
+                                                                                    <span>
+                                                                                        <i class=""></i></br>
+                                                                                        <i class=""></i>
+                                                                                    </span>
+                                                                                    <input id="formLimiteDeVelocidad" name="formLimiteDeVelocidad" class="form-control" type="number"  pattern="^\d{1,2}(\.\d{1,2})?$" data-error="Ingrese tiempo en horas, ej: 120"  style="margin-top: -1.2em;padding-left: 1.4em;" value="" min="0">
+                                                                                </div>
+                                                                    </div>
+                                                            </div>
+                                                            <div class="col-md-2"  style="padding-left: 0;">
+                                                                <div class="form-group estiloFormGroup">
+                                                                    <label style="margin-top: 2.7em;">km/h</label>
+                                                                </div>
+                                                            </div>
+                                                    </div>    
+                                                      <button id="botonGuardar" type="submit" class="btn btn-success enviarDatos">
+                                                        Guardar datos
+                                                      </button>
+                                                  
+                                                 </form>
+                                                <!-- ------------------------------------------------- -->
+                                    </div>
+
+                                    <div class="tab-pane" id="2">
+                                    <!-- Formulario de datos ----------------------------- -->
+                                        <h3>Pausa activa</h3>
+                                        <form data-toggle="validator" role="form" id="formularioConfiguracionPausaActiva">
+                                              <div class="row">
+                                                    <div class="col-md-2" style="padding-right: 0;">
+                                                            <div class="form-group estiloFormGroup">
+                                                                    <label>Tiempo Conducción</label>
+                                                                        <div>
+                                                                            <span>
+                                                                                <i class=""></i></br>
+                                                                                <i class=""></i>
+                                                                            </span>
+                                                                            <input id="tiempoConduccionPA" name="tiempoConduccionPA" class="form-control" type="number"  pattern="^\d{1,2}(\.\d{1,2})?$" data-error="Ingrese tiempo en horas, ej: 120"  style="margin-top: -1.2em;padding-left: 1.4em;" value="" min="0">
+                                                                        </div>
+                                                            </div>
+                                                    </div>
+                                                    <div class="col-md-2"  style="padding-left: 0;">
+                                                        <div class="form-group estiloFormGroup">
+                                                            <label style="margin-top: 2.7em;">horas</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-2" style="padding-right: 0;">
+                                                            <div class="form-group estiloFormGroup">
+                                                                    <label>Pausa Activa</label>
+                                                                        <div>
+                                                                            <span>
+                                                                                <i class=""></i></br>
+                                                                                <i class=""></i>
+                                                                            </span>
+                                                                            <input id="tiempoPausaActivaPA" name="tiempoPausaActivaPA" class="form-control" type="number"  pattern="^\d{1,2}(\.\d{1,2})?$" data-error="Ingrese tiempo en minutos, ej: 120"  style="margin-top: -1.2em;padding-left: 1.4em;" value="" min="0">
+                                                                        </div>
+                                                            </div>
+                                                    </div>
+                                                    <div class="col-md-2"  style="padding-left: 0;">
+                                                        <div class="form-group estiloFormGroup">
+                                                            <label style="margin-top: 2.7em;">minutos</label>
+                                                        </div>
+                                                    </div>
+                                
+
+                                                    <div class="col-md-2" style="padding-right: 0;">
+                                                            <div class="form-group estiloFormGroup">
+                                                                    <label>Tiempo Tolerancia</label>
+                                                                        <div>
+                                                                            <span>
+                                                                                <i class="fa fa-plus"></i></br>
+                                                                                <i class="fa fa-minus"></i>
+                                                                            </span>
+                                                                            <input id="tiempoToleranciaPA" name="tiempoToleranciaPA" class="form-control" type="number"  pattern="^\d{1,2}(\.\d{1,2})?$" data-error="Ingrese tiempo en minutos, ej: 120"  style="margin-top: -2.5em;padding-left: 1.4em;" value="" min="0">
+                                                                        </div>
+                                                            </div>
+                                                    </div>
+                                                    <div class="col-md-2"  style="padding-left: 0;">
+                                                        <div class="form-group estiloFormGroup">
+                                                            <label style="margin-top: 2.7em;">minutos</label>
+                                                        </div>
+                                                    </div>
+
+                                            </div>
+
+                                              <button id="botonGuardar" type="submit" class="btn btn-success enviarDatos">
+                                                Guardar datos
+                                              </button>
+                                          
+                                         </form>
+                                        <!-- ------------------------------------------------- -->
+                                    </div>
+
+
+                                    <div class="tab-pane" id="3">
+                                        <!-- Formulario de datos ----------------------------- -->
+                                            <h3>Conducción continua</h3>
+                                            <form data-toggle="validator" role="form" id="formularioConfiguracionConduccionContinua">
+                                                  <div class="row">
+                                                        <div class="col-md-2" style="padding-right: 0;">
+                                                                <div class="form-group estiloFormGroup">
+                                                                        <label>Tiempo Máximo de conducción</label>
+                                                                            <div>
+                                                                                <span>
+                                                                                    <i class=""></i></br>
+                                                                                    <i class=""></i>
+                                                                                </span>
+                                                                                <input id="tiempoMaxConduccionCC" name="tiempoMaxConduccionCC" class="form-control" type="number"  pattern="^\d{1,2}(\.\d{1,2})?$" data-error="Ingrese tiempo en horas, ej: 120"  style="margin-top: -1.2em;padding-left: 1.4em;" value="" min="0">
+                                                                            </div>
+                                                                </div>
+                                                        </div>
+                                                        <div class="col-md-2"  style="padding-left: 0;">
+                                                            <div class="form-group estiloFormGroup">
+                                                                <label style="margin-top: 4.3em;">horas</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-2" style="padding-right: 0;">
+                                                                <div class="form-group estiloFormGroup">
+                                                                        <label>Tiempo no conducción</label>
+                                                                            <div>
+                                                                                <span>
+                                                                                    <i class=""></i></br>
+                                                                                    <i class=""></i>
+                                                                                </span>
+                                                                                <input id="tiempoNoConduccionCC" name="tiempoNoConduccionCC" class="form-control" type="number"  pattern="^\d{1,2}(\.\d{1,2})?$" data-error="Ingrese tiempo en minutos, ej: 120"  style="margin-top: 0.4em;padding-left: 1.4em;" value="" min="0">
+                                                                            </div>
+                                                                </div>
+                                                        </div>
+                                                        <div class="col-md-2"  style="padding-left: 0;">
+                                                            <div class="form-group estiloFormGroup">
+                                                                <label style="margin-top: 4.3em;">horas</label>
+                                                            </div>
+                                                        </div>
+                                    
+
+                                                        <div class="col-md-2" style="padding-right: 0;">
+                                                                <div class="form-group estiloFormGroup">
+                                                                        <label>Tiempo Tolerancia</label>
+                                                                            <div style="margin-top: 2em;">
+                                                                                <span>
+                                                                                    <i class="fa fa-plus"></i></br>
+                                                                                    <i class="fa fa-minus"></i>
+                                                                                </span>
+                                                                                <input id="tiempoToleranciaCC" name="tiempoToleranciaCC" class="form-control" type="number"  pattern="^\d{1,2}(\.\d{1,2})?$" data-error="Ingrese tiempo en minutos, ej: 120"  style="margin-top: -2.5em;padding-left: 1.4em;" value="" min="0">
+                                                                            </div>
+                                                                </div>
+                                                        </div>
+                                                        <div class="col-md-2"  style="padding-left: 0;">
+                                                            <div class="form-group estiloFormGroup">
+                                                                <label style="margin-top:4.3em;">minutos</label>
+                                                            </div>
+                                                        </div>
+
+                                                </div>
+
+                                                  <button id="botonGuardar" type="submit" class="btn btn-success enviarDatos">
+                                                    Guardar datos
+                                                  </button>
+                                              
+                                             </form>
+                                            <!-- ------------------------------------------------- -->
+                                    </div>
+
+
+									<div class="tab-pane" id="4">
+                                      <!-- Formulario de datos ----------------------------- -->
+                                      <h3>Calificación conductores</h3>
+
+									  <br/>
+									  <p>Especifique cuantos puntos de 100 se descontará de cada conductor diariamente en cada una de las posibles infracciones.</p>
+									  <br/>
+									  
+									  <form data-toggle="validator" role="form" id="formularioConfiguracionCalificacionConductores">
+                                        <div class="row">
+
+										  <div class="col-md-3" style="padding-right: 0;">
+                                            <div class="form-group estiloFormGroup">
+                                              <label>Penalización Aceleraciones</label>
+                                              <div>                                                
+                                                <input id="inputPenalizacionAceleraciones" name="penalizacionAceleraciones" class="form-control" type="number"  pattern="^\d{1,2}(\.\d{1,2})?$" data-error="Ingrese valor en puntos, ej: 3"  placeholder="puntos" value="" min="0" max="100">
+                                              </div>
+                                            </div>
+                                          </div>
+										  
+                                          
+										  <div class="col-md-3" style="padding-right: 0;">
+                                            <div class="form-group estiloFormGroup">
+                                              <label>Penalización Frenadas</label>
+                                              <div>                                                
+                                                <input id="inputPenalizacionFrenadas" name="penalizacionFrenadas" class="form-control" type="number"  pattern="^\d{1,2}(\.\d{1,2})?$" data-error="Ingrese valor en puntos, ej: 3"   placeholder="puntos" value="" min="0" max="100">
+                                              </div>
+                                            </div>
+                                          </div>
+										  
+                                          
+										  <div class="col-md-3" style="padding-right: 0;">
+                                            <div class="form-group estiloFormGroup">
+                                              <label>Penalización Mov. Abruptos</label>
+                                              <div>                                                
+                                                <input id="inputPenalizacionMoviemientosAbruptos" name="penalizacionMovimientosAbruptos" class="form-control" type="number"  pattern="^\d{1,2}(\.\d{1,2})?$" data-error="Ingrese valor en puntos, ej: 3"   placeholder="puntos" value="" min="0" max="100">
+                                              </div>
+                                            </div>
+                                          </div>
+
+										  <div class="col-md-3" style="padding-right: 0;">
+                                            <div class="form-group estiloFormGroup">
+                                              <label>Penalización Exc. Velocidad</label>
+                                              <div>                                                
+                                                <input id="inputPenalizacionExcesosVelocidad" name="penalizacionExcesosVelocidad" class="form-control" type="number"  pattern="^\d{1,2}(\.\d{1,2})?$" data-error="Ingrese valor en puntos, ej: 3"  placeholder="Puntos" value="" min="0" max="100">
+                                              </div>
+                                            </div>
+                                          </div>
+										  
+                                          
+                                                                                    
+
+                                        </div>
+
+                                        <button id="botonGuardar" type="submit" class="btn btn-success enviarDatos">
+                                          Guardar datos
+                                        </button>
+                                        
+                                      </form>
+                                      <!-- ------------------------------------------------- -->
+                                    </div>
+
+
+                                    <div class="tab-pane" id="5">
+                                      <!-- Formulario de datos ----------------------------- -->
+                                      <h3>Generadores de carga</h3>
+
+                                      <br/>
+                                      <p>Seleccione una configuración del sistema para los generadores de carga</p>
+                                      <br/>
+                                      
+                                      <form data-toggle="validator" role="form" id="formularioConfiguracionGeneradoresCarga">
+                                            <div class="form-check">
+                                              <label class="form-check-label">
+                                                <input class="form-check-input" type="radio" name="radioGenerador" id="radio1" value="todaInformacion" checked>
+                                                <label style="color: #333; font-size: 14px;">
+                                                    Ver y editar toda la información
+                                                </label>
+                                              </label>
+                                            </div>
+                                            <div class="form-check">
+                                              <label class="form-check-label">
+                                                <input class="form-check-input" type="radio" name="radioGenerador" id="radio2" value="soloGenerador">
+                                                   <label style="color: #333; font-size: 14px;">
+                                                     Ver y editar solamente la información del generador de carga
+                                                    </label>
+                                              </label>
+                                            </div>
+                                            <div class="form-check">
+                                              <label class="form-check-label">
+                                                <input class="form-check-input" type="radio" name="radioGenerador" id="radio3" value="generadorMiInformacion">
+                                                   <label style="color: #333; font-size: 14px;">
+                                                     Ver y editar mi información y la del generador de carga
+                                                    </label>
+                                              </label>
+                                            </div>
+                                            <button id="botonGuardar" type="submit" class="btn btn-success enviarDatos">
+                                              Guardar datos
+                                            </button>
+                                        
+                                      </form>
+                                      <!-- ------------------------------------------------- -->
+                                    </div>
+									
+
+                                </div>  
+                        </div>
+                    </div>
+                    <!-- /.panel-body -->
+                </div>
+                <!-- /.panel -->
+            </div>
+            <!-- /.col-lg-12 -->
+        </div>
+    </div>
+<!-- /#page-wrapper -->
+
+</body>
+
+
+
+
+{% endblock %}

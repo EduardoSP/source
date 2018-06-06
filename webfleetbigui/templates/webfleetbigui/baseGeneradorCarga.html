@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}...titulo...{% endblock %}</title>
+
+    <link rel="icon" type="image/png" href="{% static "images/favicon-32x32.png"									%}/?v=2" sizes="32x32">
+    <link rel="icon" type="image/png" href="{% static "images/android-chrome-192x192.png"							%}/?v=2" sizes="192x192">
+    <link rel="icon" type="image/png" href="{% static "images/favicon-96x96.png"									%}/?v=2" sizes="96x96">
+    <link rel="icon" type="image/png" href="{% static "images/favicon-16x16.png"									%}/?v=2" sizes="16x16">
+
+	<!-- Estilos -->
+    <link href='https://fonts.googleapis.com/css?family=Oxygen:400,700' rel='stylesheet' type='text/css'>
+    <link href="{% static "bootstrap/css/bootstrap.min.css" %}"  rel="stylesheet">
+    <link href="{% static "font-awesome-4.3.0/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css">
+    <link href="{% static "validator/css/bootstrapValidator.min.css" %}" rel="stylesheet" type="text/css">
+    <link href="{% static "notifit/css/notifIt.css" %}" rel="stylesheet" type="text/css">
+    <link href="{% static "material/css/material.min.css" %}"  rel="stylesheet">
+    <link href="{% static "material/css/ripples.min.css"  %}"  rel="stylesheet">
+    <link href="{% static "pace/themes/red/pace-theme-corner-indicator.css" %}" rel="stylesheet" />     
+
+	<!-- Bibliotecas -->
+    <script src="{% static "js/jquery.js" %}"></script>
+    <script src="{% static "bootstrap/js/bootstrap.min.js" %}"></script>
+    <!-- <script src="{% static "validator/js/bootstrapValidator.min.js" %}"></script>
+    <script src="{% static "validator/js/language/es_ES.js" %}"></script> -->
+    <script src="{% static "notifit/js/notifIt.js" %}"></script>
+    <script src="{% static "js/configuracion.js" %}"></script>
+    <script src="{% static "material/js/ripples.min.js" 					%}"></script>
+    <script src="{% static "material/js/material.min.js"					%}"></script>
+    <script src="{% static "mustache/mustache.min.js"					        %}"></script>
+    <script >
+		 paceOptions = {
+		 'ajax' : {
+		 'trackMethods': ['GET', 'POST']
+		 }	 
+		 };
+	</script>
+    <script src="{% static "pace/pace.min.js" %}" ></script>
+
+    <script>
+    function cargarDatosUsuario(){
+
+/*		verificarEstadoIngreso(
+            "superAdministrador",
+            { 
+                
+                "adminTenant"		 : "{% url 'adminVistaGeneral' tenant=tenant %}",
+                "superAdministrador" : "{% url 'superAdministradorTenants' tenant=tenant  %}",                
+            },
+            "{% url 'loginUnificado' %}",
+			"{{tenant}}"
+        );
+        */
+    }
+
+var diccionarioCodigosAcceso = []; // crea un array vacio para almacenar el codigoAcceso y el tenant
+function cargarDatosTenants(){
+
+    if(config.getTennant() == "{{tenant}}"){
+        //window.location.href            = urlLoginGeneradorCarga;
+	   $("#selectorTenantSeleccionado").text("Seleccione un item");
+	  $(".tenantTab").hide();
+    }else{
+        $("#selectorTenantSeleccionado").text(config.getCodigoAcceso() +" - "+config.getTennant());	
+	    $(".tenantTab").show();
+    }
+    
+    var peticion    = {
+        'autenticacion': {
+            'usuario' : config.getUsuarioLogin(),
+            'token'   : config.getToken(),
+	    'tenant'  : "{{tenant}}",
+            'perfil'  : config.getPerfilUsuario(),          
+        },
+        'data'         : {   }
+    };
+    
+    var request = $.ajax({
+	type        : "POST",
+	url         : "{% url 'wsClientesCodGenerados' %}",
+	data        : {
+            request :  JSON.stringify(peticion)
+        },
+	dataType    : "json"
+
+    }).done(function(respuesta){
+        if (respuesta.success){
+            var plantilla = '{% verbatim %}<li><a class="selectorTenantTenant" href="#">{{nombre}}<input type="hidden" value="{{codigoAcceso}}"/></a></li>{% endverbatim %}';
+
+	    for(var i = 0 ; i < respuesta.data.length ; i++){
+    		var dato        = respuesta.data[i];
+            //cuarga los datos en el diccionarioCodigosAcceso
+            diccionarioCodigosAcceso.push({
+                codigoAcceso: dato.codigoAcceso,
+                tenant: dato.tenant,
+                fechaGeneracion : dato.fechaGeneracion,
+                fechaCaducidad  : dato.fechaCaducidad
+            });
+    		var renderizado = Mustache.render(plantilla, dato);
+    		$("#selectorTenantContenedorOpciones").append(renderizado);	
+	    }
+
+	    //Agrego un desabilitar
+	    /*
+	    if(config.getTennant() != "{{tenant}}"){
+		var renderizado = Mustache.render(plantilla, {
+		    "id" : "administracion",
+		    "nombre" : "Seleccionar ninguno"
+		});
+		$("#selectorTenantContenedorOpciones").append(renderizado);	
+	    }*/
+            
+        }
+        else{
+	    notif({
+		msg     : respuesta.mensaje,
+		type    : "error",
+		position: "center"
+            });
+            
+        }
+    }).fail(function(jqXHR, textStatus){
+        notif({
+            msg     : "Falló la conexión",
+            type    : "error",
+            position: "center"
+        });
+    }).always(function(){        
+    });
+}
+
+
+function cerrarSesionGeneradorCarga(){
+	var autenticar          = new Object();
+	autenticar.accion       = 'cerrar';
+	autenticar.usuario 		= config.getUsuarioLogin();
+	autenticar.token        = config.getToken();
+    var request = $.ajax({
+            type: "POST",
+            url		: "{% url 'wsAutenticarGeneradorCargaLogin' %}",
+            data	: {
+                        request: JSON.stringify(autenticar)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+        	config.setLogueado(false);
+			config.setToken("");
+			window.location.href = "{% url 'loginUnificado'%}";
+        }else{ 
+        	 notif({
+ 				msg		: respuesta.mensaje,
+  				type	: "warning",
+  				position: "center"
+			});
+		}
+    });
+    request.fail(function(jqXHR, textStatus){ });
+}
+
+
+$(document).ready(function() {
+    // This command is used to initialize some elements and make them work properly
+    $.material.init();
+    //$('#nombreUsuario').text(" "+config.getNombreUsuario());
+    $('#nombreUsuario').text(" "+config.getNombreGenerador());
+    //cargarDatosUsuario();
+    cargarDatosTenants();
+    
+    $('#cerrarSesion').on('click',function() {
+        cerrarSesionGeneradorCarga();
+        config.setListaOpcionesHabilitadasPlataforma(null);
+/*	config.setLogueado(false);
+	config.setToken("");
+	window.location.href = "{% url 'loginUnificado'%}";*/
+    });
+
+    $(document).on("click",".selectorTenantTenant",function(e) {
+        e.preventDefault();
+        //limpia permisos cada vez que se cambia de codigo
+        config.setListaOpcionesHabilitadasPlataforma(null);
+    	var codigoAccesoSeleccionado = $(this).find("input").val();
+        // busco el tenant segun el codigoAccesoSeleccionado y lo asigno a las variable de configuraciones
+        for (var i = 0; i < diccionarioCodigosAcceso.length; i++) {
+            if(diccionarioCodigosAcceso[i].codigoAcceso == codigoAccesoSeleccionado){
+                // asigna el tenant y el codigo de acceso a las funciones de configuracion
+                config.setTennant(diccionarioCodigosAcceso[i].tenant);
+                config.setCodigoAcceso(diccionarioCodigosAcceso[i].codigoAcceso);
+                config.setFechaGeneracion(diccionarioCodigosAcceso[i].fechaGeneracion);
+                config.setFechaCaducidad(diccionarioCodigosAcceso[i].fechaCaducidad);
+
+            }
+        }
+
+        window.location.href = "{% url 'adminVistaGeneral' tenant=tenant %}";
+
+    });
+
+    $('#miCuenta').on('click',function() {
+        window.location.href = "{% url 'miCuentaGeneradorCarga' tenant=tenant %}";
+    });   
+    //habilita las opciones configuradas para la plataforma
+	habilitarPestanasAdminTenant();
+});
+        </script>
+	<!-- Código principal librerias, css, estilos-->
+	{% block codigoPrincipal %}...codigoPrincipal...{% endblock %}
+</head>
+<body class="fondoTodo">
+	
+	<div id="wrapper" >
+        <nav class="navbar navbar-default shadow-z-2">
+		  <div class="container-fluid">
+		    <div class="navbar-header">
+		      <!-- <a class="navbar-brand" href="#">Biod</a> -->
+		      <a class="navbar-brand" href="#">
+		          <img src="{% static "images/logoBlanco.png" %}" style="height: 2em;"/>
+		      </a>
+		    </div>
+		    <div>
+		      <ul class="nav navbar-nav">
+	            <li class="{% if pintarPestana == "pestanaGeneradorCodigosAcceso"  %} active {% endif %}" ><a href="{% url 'codigosAccesoGenerador' tenant=tenant %}">Acceso</a></li>
+
+		    <!-- Seciones de un tenant ------------------------------------------>
+
+            <li style="display : none;" class="tenantTab {% if pintarPestana == "pestanaAdminVistaGeneral" %} active {% endif %}"><a href="{% url 'adminVistaGeneral' tenant=tenant %}">  Vista General</a></li>
+
+            <li style="display : none;" class="tenantTab dropdown {% if pintarPestana == "pestanaAdminTransporte" %} active {% endif %}">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    Transporte
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li class="{% if pintarSubPestana == 'pestanaAdminVehiculos' %} active {% endif %}">
+                        <a href= "{% url 'adminVehiculos' tenant=tenant %}"> Vehículos </a>
+                    </li>
+                    <li class="{% if pintarSubPestana == 'pestanaAdminConductores' %}   active {% endif %}">
+                        <a href= "{% url 'adminConductores' tenant=tenant %}">Conductores </a>
+                    </li>
+                </ul>
+            </li>
+
+<!--             <li style="display : none;" class="tenantTab {% if pintarPestana == "pestanaAdminVehiculos" %}    active {% endif %}"><a href="{% url 'adminVehiculos' tenant=tenant %}">     Vehículos</a></li>
+            <li style="display : none;" class="tenantTab {% if pintarPestana == "pestanaAdminConductores" %}  active {% endif %}"><a href="{% url 'adminConductores' tenant=tenant %}">   Conductores</a></li> -->
+            <!-- <li class="{% if pintarPestana == "pestanaAdminRutas" %}        active {% endif %}"><a href="{% url 'adminRutas' tenant=tenant %}">         Rutas</a></li> -->
+            
+            <li style="display : none;" id="pestanaAdminRutas" class="tenantTab dropdown {% if pintarPestana == "pestanaAdminRutas" %} active {% endif %}">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    Rutas
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li class="{% if pintarSubPestana == 'pestanaAdminRutas' %} active {% endif %}">
+                        <a href= "{% url 'adminRutas' tenant=tenant %}"> Listado rutas </a>
+                    </li>
+                    <li class="{% if pintarSubPestana == 'pestanaAdminAsignacionesRutas' %}   active {% endif %}">
+                        <a href= "{% url 'adminListadoAsignacionesRutas' tenant=tenant %}"> Asignación rutas </a>
+                    </li>
+                </ul>
+            </li>
+            <!--
+            <li class="{% if pintarPestana == "pestanaAdminVigilancia" %}   active {% endif %}"><a href="{% url 'adminVigilancia' tenant=tenant %}">    Vigilancia</a></li>
+            -->
+            <li style="display : none;" class="tenantTab dropdown {% if pintarPestana == "pestanaAdminVigilancia" %} active {% endif %}">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    Vigilancia
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li class="{% if pintarSubPestana == 'pestanaAdminTipoZona' %}   active {% endif %}">
+                            <a href= "{% url 'adminTipoZona' tenant=tenant %}">   Tipo Zona </a>
+                    </li>
+                    <li class="{% if pintarSubPestana == 'pestanaAdminVigilancia' %} active {% endif %}">
+                        <a href= "{% url 'adminVigilancia' tenant=tenant %}"> Vigilancia General </a>
+                    </li>
+                    <li id="pestanaAdminSeguridadVial" class="{% if pintarSubPestana == 'pestanaAdminSeguridadVial' %}   active {% endif %}">
+                        <a href= "{% url 'adminSeguridadVial' tenant=tenant %}"> Seguridad Vial </a>
+                    </li>
+                </ul>
+            </li>
+            <!---->
+            <li style="display : none;" class="tenantTab {% if pintarPestana == "pestanaAdminAlarmas" %} active {% endif %}"><a href="{% url 'adminAlarmas' tenant=tenant %}">       Alarmas <span id="numeroNotificacionesPendientes" class="badge"></span></a></li>
+            <li style="display : none;" id="pestanaAdminCadenaFrio"  class="tenantTab {% if pintarPestana == "pestanaAdminCadenaFrio" %} active {% endif %}"><a href="{% url 'adminCadenaFrio' tenant=tenant %}">Cadena de frío</a></li>
+<!--             <li style="display : none;" class="tenantTab {% if pintarPestana == "pestanaAdminSeguridadVial" %} active {% endif %}"><a href="{% url 'adminSeguridadVial' tenant=tenant %}">Seguridad Vial</a></li> -->
+            
+            <li style="display : none;" class="tenantTab dropdown {% if pintarPestana == "pestanaAdminReportes" %} active {% endif %}">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    Reportes
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li id="pestanaAdminReportes" class="{% if pintarSubPestana == 'pestanaAdminReportes' %} active {% endif %}">
+                        <a href= "{% url 'adminReportes' tenant=tenant %}"> Reportes estadísticos </a>
+                    </li>
+                    <li id= "pestanaAdminParadasVehiculos" class="{% if pintarSubPestana == 'pestanaAdminParadasVehiculos' %}   active {% endif %}">
+                        <a href= "{% url 'adminReporteParadasVehiculosZonas' tenant=tenant %}">Reportes paradas vehículos - zonas </a>
+                    </li>
+                    <li id="pestanaAdminActividadVehiculos" class="{% if pintarSubPestana == 'pestanaAdminActividadVehiculos' %}   active {% endif %}">
+                        <a href= "{% url 'adminReporteActividadVehiculos' tenant=tenant %}">Reportes kilometraje por hora</a>
+                    </li>
+                    <li id="pestanaAdminCalificacionConductores" class="{% if pintarSubPestana == 'pestanaAdminCalificacionConductores' %}   active {% endif %}">
+                        <a href= "{% url 'adminReporteCalificacionConductores' tenant=tenant %}">Reporte calificación de conductores</a>
+                    </li>
+                    <li id="pestanaAdminConduccionHorarioPermitido" class="{% if pintarSubPestana == 'pestanaAdminConduccionHorarioPermitido' %}   active {% endif %}">
+                        <a href= "{% url 'adminReporteConduccionHorarioPermitido' tenant=tenant %}">Reporte conducción fuera horario permitido</a>
+                    </li>
+                    <li id="pestanaAdminReportesCadenaFrio"  class="{% if pintarSubPestana == 'pestanaAdminReportesCadenaFrio' %}   active {% endif %}">
+                        <a href= "{% url 'adminReportesCadenaFrio' tenant=tenant %}">Reportes cadena de frío</a>
+                    </li>
+                </ul>
+            </li>
+            
+
+		    <!-------------------------------------------------------------------->
+
+		      </ul>
+		       <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+			 <ul class="nav navbar-nav navbar-right">
+			   <!-- Dropdown Tenant selector ----------------------------------------------------------- -->
+			   <li class="dropdown">
+			     <a href="#" class="dropdown-toggle"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="true" style="padding-bottom: 0; padding-top: 1.33em;">			       			       
+			       <span id="selectorTenantSeleccionado">Seleccione un item </span> <span class="caret"></span></a>
+			     <ul id="selectorTenantContenedorOpciones" class="dropdown-menu">
+			       <!-- <li><a class="selectorTenantTenant" href="#">DEMO <input type="hidden" value="demo"/></a></li>-->
+			       
+			     </ul>
+			   </li>
+			   <!-- -------------------------------------------------------------------------------------- -->
+			   
+			        <li class="dropdown">
+			          <a href="#" class="dropdown-toggle"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="true" style="padding-bottom: 0; padding-top: 1.33em;">
+			            <!-- <img id="imagenUsuario" class="img-circle" src="{% static "images/userimage.png" %}" style="height: 2em;"/> -->
+			          	<span id="divID" class="divID circle-avatar"></span>
+			          	<span id="nombreUsuario"> NombreUsuario</span> <span class="caret"></span></a>
+			          <ul class="dropdown-menu">
+			          	<li><a id="miCuenta" href="#"><i class="fa fa-user fa-fw"></i>Mi cuenta</a></li>
+			            <li><a id="cerrarSesion" href="#"><i class="fa fa-sign-out fa-fw"></i>Cerrar Sesión</a></li>
+			          </ul>
+			        </li>
+			      </ul>
+			  </div><!-- /.navbar-collapse -->
+
+		    </div>
+		  </div>
+		</nav>
+
+    	{% block contenido %}...contenido...{% endblock %}
+
+    </div>
+    <!-- /#wrapper -->
+
+</body>
+</html>

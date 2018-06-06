@@ -1,0 +1,481 @@
+body{
+  font-family: 'Poppins', sans-serif;
+}
+
+.fondoDosPartes{
+  width           : 100%;
+  height          : 30em;
+  background: -webkit-linear-gradient(120deg, #003A84, #69C3D1);
+  background: -o-linear-gradient(120deg, #eb2626, #69C3D1);
+  background: -moz-linear-gradient(120deg, #003A84, #69C3D1);
+  background: linear-gradient(120deg, #003A84, #69C3D1);
+  top             : 0;
+  position        : absolute;
+  /*width           : 100%;
+  height          : 30em;
+  background: -webkit-linear-gradient(210deg, #eb2626, #eb2626); 
+  background: -o-linear-gradient(210deg, #eb2626, #eb2626); 
+  background: -moz-linear-gradient(210deg, #eb2626, #eb2626); 
+  background: linear-gradient(210deg, #eb2626, #eb2626); 
+  top             : 0;
+  position        : absolute;*/
+}
+
+/*.btn-success{
+	background-color: #0086b6 !important;
+}*/
+
+.container-fluid{
+	background-color: #eb2626 !important;
+}
+
+body h1{
+	color: #eb2626;
+	font-family: 'Oxygen', sans-serif !important;
+}
+
+body h3{
+  color: #eb2626;
+  font-family: 'Oxygen', sans-serif !important;
+}
+/*
+.btn {
+    padding: 14px 24px;
+    border: 0 none;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+ */
+
+
+/*
+.navbar .navbar-nav .active a, .navbar .navbar-nav .active a:hover, .navbar .navbar-nav .active a:focus {
+    color: #eb2626;
+    background-color:#0086b6;
+    font-weight:700;
+}
+
+.navbar-default .navbar-nav>li>a{
+	color:#FFFFFF;
+}
+
+.navbar .navbar-nav > .open > a,
+.navbar .navbar-nav > .open > a:hover,
+.navbar .navbar-nav > .open > a:focus {
+	color: inherit;
+    background-color:#0086b6;
+    font-weight:700;
+}
+
+
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li > a:focus {
+    color: #8BC34A;
+}
+
+*/
+.toolbar{
+	text-align: right;
+}
+
+.dropdown .dropdown-toggle{
+	padding-bottom: 0;
+    padding-top: 1.33em;
+}
+
+.pos{
+	position: absolute;
+    display: inline-block;
+    top: 0;
+    right: 0;
+    margin-top: 1em;
+    margin-right: 1em;
+}
+
+.btn{
+	text-transform:none;
+}
+
+.buscarInput {
+    padding-left: 2em !important;
+    width:250px !important;
+    color:#FFFFFF;
+}
+
+.estilo{
+	color:#FFFFFF;
+    color:#DADADA;
+	
+}
+
+/*Callout tipo infor */
+.bs-callout {
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid #eee;
+    border-left-width: 5px;
+    border-radius: 3px;
+}
+.bs-callout h4 {
+    margin-top: 0;
+    margin-bottom: 5px;
+}
+.bs-callout p:last-child {
+    margin-bottom: 0;
+}
+.bs-callout code {
+    border-radius: 3px;
+}
+.bs-callout+.bs-callout {
+    margin-top: -5px;
+}
+.bs-callout-default {
+    border-left-color: #777;
+}
+.bs-callout-default h4 {
+    color: #777;
+}
+.bs-callout-primary {
+    border-left-color: #428bca;
+}
+.bs-callout-primary h4 {
+    color: #428bca;
+}
+.bs-callout-success {
+    border-left-color: #5cb85c;
+}
+.bs-callout-success h4 {
+    color: #5cb85c;
+}
+.bs-callout-danger {
+    border-left-color: #d9534f;
+}
+.bs-callout-danger h4 {
+    color: #d9534f;
+}
+.bs-callout-warning {
+    border-left-color: #f0ad4e;
+}
+.bs-callout-warning h4 {
+    color: #f0ad4e;
+}
+.bs-callout-info {
+    border-left-color: #5bc0de;
+}
+.bs-callout-info h4 {
+    color: #5bc0de;
+}
+/**********************************cliente pedido********************************************/
+
+.pestana .nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus{
+	color: #555 !important;
+    cursor: default;
+    background-color: #fff !important;
+    border: 1px solid #ddd !important;
+    border-bottom-color: transparent !important;
+}
+
+
+.pestana .nav-tabs>li>a, .nav-tabs>li>a:hover, .nav-tabs>li>a:focus{
+	font-weight: 500;
+	color:#eb2626 !important;
+} 
+
+.pestana .nav-tabs{
+	background: #FFFFFF;
+}
+
+.positionBoton{
+	float: right;
+	margin-right: 1em;
+}
+
+.tituloCrear{
+    color: rgba(255,255,255,0.8);
+}
+
+.espacioIzq{
+	margin-left: 4.6em;
+}
+
+a, a:hover, a:focus {
+    color: #eb2626;
+}
+
+.enviarPedido{
+    float: right;
+    color: #ffffff !important;
+  
+}
+
+.bootstrap-datetimepicker-widget{
+	    width: auto !important;
+}
+
+
+
+
+.espacioFilas{
+	    margin-top: 2em;
+}
+
+.espacioAbajo{
+	margin-bottom: 1em;
+}
+
+
+/********************************** mi cuwenta********************************************/
+.checkbox-primary input[type=checkbox]:checked+.checkbox-material .check {
+	color: #0086b6;
+	border-color: #0086b6;
+
+}
+
+
+/**********************************turnos picker********************************************/
+.espacioFila{
+	margin-top: 0.6em;
+}
+
+/**********************************tabla de asignaciones***************************************************/
+.centralVertical{
+	vertical-align: middle !important;
+}
+
+.bold{
+  font-weight: bold;
+}
+/*tamaño imagen de la camara*/
+.imagenCamara{
+  width: 30px; 
+  height: 25px;
+}
+/*tamaño imagen del microfono*/
+.imagenMicrofono{
+  width: 25px; 
+  height: 25px;
+}
+/*tamaño imagen del play*/
+.imagenPlay{
+  width: 12px; 
+  height: 12px;
+}
+
+/*tamaño imagen del pin*/
+.imagenPin{
+  width: 20px; 
+  height: 20px;
+}
+
+.colorRojo{
+  color: #eb2626;
+  font-weight: bold;
+}
+
+.rojoFleet{
+  color: #eb2626 !important;
+}
+
+.zonaCheckbox{
+    margin-bottom: 0px !important;
+    margin-top: 0px !important;
+}
+
+/******* Notificaciones **************************/
+#numeroNotificacionesPendientes{
+    background-color: #067dff;
+    display: none;
+
+}
+
+.estiloFormGroup{
+	margin: 0px 0 0 0 !important;
+}
+
+.noUi-horizontal {
+    height: 3.2px !important;
+    margin-bottom: 3em 0;
+    background: #eb2626 !important; 
+}
+
+
+.estiloLabelSlider{
+	border-width: 0.1em;
+    border-color: #BDBDBD;
+    border-style: solid;
+    padding: 0.5em;
+    color:#000000;
+}
+
+
+.claselinea{
+	    margin-top: 12px !important;
+}
+
+
+.estiloLineaTabla{
+	 margin-top: 0px !important;
+}
+
+.tablaEncabezado{
+	    margin-bottom: 10px !important;
+}
+
+
+.infoWindowRojo1{
+	color: #eb2626;
+	font-size: 1.5em;	
+}
+
+.infoWindowRojo2{
+	color: #eb2626;
+	font-size: 1.0em;	
+}
+
+.infoWindowNegro1{
+	color: #000000;
+	font-size:2.0em;	
+}
+
+.infoWindowNegro2{
+	color: #000000;
+	font-size: 2.0em;	
+
+}
+
+
+.labelRojo{
+	color: #eb2626;
+}
+
+.labelVerde{
+	color: #01873d;
+}
+
+.labelAzul{
+	color: #24a1de;
+}
+
+.filaImagen {
+	width: 2em;
+}
+.filaTitulo {
+	color :  #f44336;
+}
+.filaPosicion {
+	color :  #f44336;
+}
+
+.labelinfowindow{
+	color :  #f44336;
+	padding-top:0.3em;
+}
+
+.not-active {
+   pointer-events: none;
+   cursor: default;
+}
+
+.navbar .navbar-nav .dropdown .dropdown-toggle:after {
+    content: none !important;
+}
+
+.navbar .navbar-nav .dropdown .dropdown-toggle:after {
+    content: none !important;
+    display: none !important;
+}
+
+.tempera .form-group{
+	 padding-bottom: 0px !important;
+     margin: 0px 0 0 0 !important; 
+}
+
+/******* checkbox color rojo **************************/
+.checkbox {
+    padding-left: 20px; }
+    .checkbox label {
+      display: inline-block;
+      position: relative;
+      padding-left: 5px; }
+      .checkbox label::before {
+        content: "";
+        display: inline-block;
+        position: absolute;
+        width: 17px;
+        height: 17px;
+        left: 0;
+        margin-left: -20px;
+        border: 1px solid #cccccc;
+        border-radius: 3px;
+        background-color: #fff;
+        -webkit-transition: border 0.15s ease-in-out, color 0.15s ease-in-out;
+        -o-transition: border 0.15s ease-in-out, color 0.15s ease-in-out;
+        transition: border 0.15s ease-in-out, color 0.15s ease-in-out; }
+      .checkbox label::after {
+        display: inline-block;
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        left: 0;
+        top: 0;
+        margin-left: -20px;
+        padding-left: 3px;
+        padding-top: 1px;
+        font-size: 11px;
+        color: #555555; }
+    .checkbox input[type="checkbox"] {
+      opacity: 0; }
+      .checkbox input[type="checkbox"]:focus + label::before {
+        outline: thin dotted;
+        outline: 5px auto -webkit-focus-ring-color;
+        outline-offset: -2px; }
+      .checkbox input[type="checkbox"]:checked + label::after {
+        font-family: 'FontAwesome';
+        content: "\f00c"; }
+      .checkbox input[type="checkbox"]:disabled + label {
+        opacity: 0.65; }
+        .checkbox input[type="checkbox"]:disabled + label::before {
+          background-color: #eeeeee;
+          cursor: not-allowed; }
+    .checkbox.checkbox-circle label::before {
+      border-radius: 50%; }
+    .checkbox.checkbox-inline {
+      margin-top: 0; }
+  
+  .checkbox-primary input[type="checkbox"]:checked + label::before {
+    background-color: #428bca;
+    border-color: #428bca; }
+  .checkbox-primary input[type="checkbox"]:checked + label::after {
+    color: #fff; }
+  
+  .checkbox-danger input[type="checkbox"]:checked + label::before {
+    background-color: #d9534f;
+    border-color: #d9534f; }
+  .checkbox-danger input[type="checkbox"]:checked + label::after {
+    color: #fff; }
+  
+  .checkbox-info input[type="checkbox"]:checked + label::before {
+    background-color: #5bc0de;
+    border-color: #5bc0de; }
+  .checkbox-info input[type="checkbox"]:checked + label::after {
+    color: #fff; }
+  
+  .checkbox-warning input[type="checkbox"]:checked + label::before {
+    background-color: #f0ad4e;
+    border-color: #f0ad4e; }
+  .checkbox-warning input[type="checkbox"]:checked + label::after {
+    color: #fff; }
+  
+  .checkbox-success input[type="checkbox"]:checked + label::before {
+    background-color: #5cb85c;
+    border-color: #5cb85c; }
+  .checkbox-success input[type="checkbox"]:checked + label::after {
+    color: #fff; }
+
+/******* FIN checkbox color rojo **************************/
+.conteneForm .form-group{
+    margin: 0px 0 0 0 !important;
+}
+
+

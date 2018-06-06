@@ -1,0 +1,17 @@
+# Integración PEGADO
+
+## Definicón de documento:
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.javascript}
+{
+
+ 
+    "creadoEn"        : "2016-03-12T08:07:19Z",
+    "modificadoEn"    : "2016-03-13T05:07:19Z",
+    "modificadoPor"   : "Pablo Solarte",
+    "activo"          : true,
+    "eliminado"       : false,
+	
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

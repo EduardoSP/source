@@ -1,0 +1,718 @@
+{% extends baseTemplate %}
+<!-- {#% extends "webfleetbigui/baseAdminTenant.html" %#} -->
+{% load staticfiles %}
+{% block titulo %}Ubicación vehículos{% endblock %}
+
+{% block codigoPrincipal %}
+<!-- Estilos -->
+<link href="{% static "select/css/bootstrap-select.min.css" %}"           rel="stylesheet">
+<link href="{% static "css/base.css" %}"  rel="stylesheet">
+<link href="{% static "DataTables/datatables.min.css" %}" rel="stylesheet" type="text/css"  />
+<link href="{% static "mapsPicker/jquery-gmaps-latlon-picker.css" %}" rel="stylesheet" type="text/css" />
+
+
+<!-- Bibliotecas -->
+<script src="{% static "moment/moment-with-locales.js"      %}"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/noUiSlider/6.2.0/jquery.nouislider.min.js"></script>
+<script src="{% static "DataTables/datatables.min.js" %}"   type="text/javascript" ></script>
+<script src="{% static "mapsPicker/jquery-gmaps-latlon-picker.js" %}" ></script>
+<script src="{% static "markerclusterer/markerclusterer.js" %}" ></script>
+<!-- libreria autocompletar typeahead-->
+<script src="{% static "typeahead/bootstrap3-typeahead.min.js" %}" ></script>
+
+<!--<script src="{% static "socketio/socket.io.js" %}"></script>-->
+
+<script>
+
+
+var estaMapaCargado = false;
+
+function initMap(){
+    estaMapaCargado = true;
+}
+
+function generarEnlaceDetalleVehiculo(idVehiculo){
+	return function() {
+		location.href = guibase+"/{{tenant}}/adminDetalleVehiculo/"+idVehiculo+'/'+1;
+	}
+}
+
+var listadoInfoWindows = {};
+
+function generarInfoViewVehiculo(iVehiculo, marker, mostrarPin){
+	//console.log(marker.getMap());
+	return function() {
+		var vehiculo     = tracking[iVehiculo];
+		var mmarker      = marker;
+		var hrefVehiculo = guibase+"/{{tenant}}/adminDetalleVehiculo/"+vehiculo.idVehiculo+'/'+1;
+
+		var tempInfoWindows = null;
+		if(vehiculo.placa in listadoInfoWindows){
+			var tempInfoWindows = listadoInfoWindows[vehiculo.placa]["infowindow"];
+
+			//tempInfoWindows.close();
+/*			listadoInfoWindows[vehiculo.placa] = {
+				"posicion"   : String(vehiculo.latitud)+String(vehiculo.longitud),
+				"map"		 : "hola"	
+			}*/
+		}
+		
+		if(tempInfoWindows != null && tempInfoWindows.getMap() != null && listadoInfoWindows[vehiculo.placa]["posicion"] == String(vehiculo.latitud)+String(vehiculo.longitud)){
+			//tempInfoWindows.close();
+
+			buscarPosicion(vehiculo, tempInfoWindows);
+			//console.log("entro------------zzzzzzzzzzzz");
+		}else{
+
+			if(tempInfoWindows != null){			
+				if(mostrarPin){
+					tempInfoWindows.close();
+				}				
+			}
+			
+			var infowindow = new google.maps.InfoWindow({
+				content: '<h1><a href="'+hrefVehiculo+'">'+vehiculo.placa+'</a></h1><p class="posicion'+vehiculo.placa+'">Calculando</p>'+'<div class="labelinfowindow labelposte'+vehiculo.placa+'"></div><div class="poste'+vehiculo.placa+'"></div>'+'<div class="labelinfowindow labelmunicipio'+vehiculo.placa+'"></div><div class="municipio'+vehiculo.placa+'"></div>'+'<div class="labelinfowindow labelpeaje'+vehiculo.placa+'"></div><div class="peaje'+vehiculo.placa+'"></div>'
+			});
+                
+
+			
+			if(mostrarPin){
+				infowindow.open(map, mmarker);
+			}
+			
+			listadoInfoWindows[vehiculo.placa] = {
+				"posicion"   : String(vehiculo.latitud)+String(vehiculo.longitud),
+				"infowindow" : infowindow,
+				"map"		 : marker.getMap()	
+			}
+			buscarPosicion(vehiculo,tempInfoWindows);
+		}
+		//al cerrar el mensaje
+		//google.maps.event.addListener(infowindow, "closeclick", generarInfoPlacaVehiculo(iVehiculo, marker, mostrarPin));	
+	}
+}
+
+function generarInfoPlacaVehiculo(iVehiculo, marker, mostrarPin){
+	return function() {
+		var vehiculo     = tracking[iVehiculo];
+		var mmarker      = marker;
+		var hrefVehiculo = guibase+"/{{tenant}}/adminDetalleVehiculo/"+vehiculo.idVehiculo+'/'+1;
+
+		var tempInfoWindows = null;
+		if(vehiculo.placa in listadoInfoWindows){
+			var tempInfoWindows = listadoInfoWindows[vehiculo.placa]["infowindow"];
+			
+		}
+		
+		if(tempInfoWindows != null && tempInfoWindows.getMap() != null && listadoInfoWindows[vehiculo.placa]["posicion"] == String(vehiculo.latitud)+String(vehiculo.longitud)){
+			
+		}else{
+
+			if(tempInfoWindows != null){			
+				if(mostrarPin){
+					tempInfoWindows.close();
+				}				
+			}
+			
+			var infowindow = new google.maps.InfoWindow({
+				content: '<h5><a href="'+hrefVehiculo+'">'+vehiculo.placa+'</a></h5>'
+			});
+
+			
+			if(mostrarPin){
+				infowindow.open(map, mmarker);
+			}
+			
+			listadoInfoWindows[vehiculo.placa] = {
+				"posicion"   : String(vehiculo.latitud)+String(vehiculo.longitud),
+				"infowindow" : infowindow
+			}
+			//buscarPosicion(vehiculo);
+		}
+	}
+}
+
+
+
+var geocoder = null;
+
+function buscarPosicion(vehiculo, infoWindowsAnterior){
+
+	var vvehiculo = vehiculo;
+	
+	// funcion para listar la posición de los vehiculos latitud y longitud
+	var peticion = {
+		'autenticacion': {
+			'usuario' : config.getUsuarioLogin(),
+            'token'   : config.getToken(),
+            'tenant'  : config.getTennant()
+        },
+        'data'         : {                     					
+			"latitud"         : parseFloat(vvehiculo.latitud),
+			"longitud"        : parseFloat(vvehiculo.longitud),
+			"buscarDireccion" : true 
+		}
+    };
+	
+    var request = $.ajax({
+        type: "POST",
+        url		: "{% url 'wsBuscarPuntosReferencias' %}",
+        data	: {
+            request: JSON.stringify(peticion)
+        },
+        dataType: "json"
+    });
+	
+    request.done(function(respuesta){
+        if(respuesta.success){
+			var peaje     = null;
+			var municipio = null;
+			var poste     = null;
+			
+            if("peaje" in respuesta.data){
+				peaje = respuesta.data.peaje;
+				
+				var texto = peaje.nombre+" - "+peaje.sector+" - "+peaje.departamento+ " al "+peaje.direccion+" a "+convertirMetrosAKilometros(peaje.distancia)+"Km ";
+				var labelPeaje = "Peaje más cercano:";
+				var textoPeaje = texto;
+			}else{
+				var labelPeaje = "";
+				var textoPeaje = "";
+			}
+			if("municipio" in respuesta.data){
+				municipio = respuesta.data.municipio;
+				var texto = municipio.nombre+" - "+municipio.departamento+ " al "+municipio.direccion+" a "+convertirMetrosAKilometros(municipio.distancia)+"Km";
+				var labelMunicipio = "Municipio más cercano:";
+				var textoMunicipio = texto;
+			}else{
+				var labelMunicipio = "";
+				var textoMunicipio = "";
+			}
+			
+			if("poste" in respuesta.data){
+				poste = respuesta.data.poste;
+				var texto = "#"+poste.nombre+" - "+poste.tramo+" | "+poste.sector+" a "+convertirMetrosAKilometros(poste.distancia)+"Km";
+				var labelposte = "Poste de referencia:";
+				var textoPoste = texto;
+			}else{
+				var labelposte = "";
+				var textoPoste = "";
+			}
+			
+            var direccion = respuesta.data.direccion;
+	        direccion = direccion.trim();
+			if(direccion  == ""){
+			    direccion = "Sin información.";
+			}
+			//verifica sim un vehiculo esta en movimiento o detenio
+			var textoMovimiento;
+			var labelMovimiento;
+/*			console.log(vehiculo.placa);
+			console.log(vehiculo.movimiento);*/
+			if(vehiculo.movimiento){
+				textoMovimiento = "En movimiento";
+				colorLabelMovimiento = "labelVerde";
+			}else{
+				textoMovimiento = "Detenido"
+				//color rojo detenido
+				colorLabelMovimiento = "labelinfowindow";
+			}
+
+            var textoTemperatura = "";
+            if("estaAlarmaCadenaFrioActivada" in vehiculo){
+                textoTemperatura = vehiculo.temperatura+"°C";
+            }
+            
+            if(vehiculo.placa in listadoInfoWindows){
+            	var hrefVehiculo = guibase+"/{{tenant}}/adminDetalleVehiculo/"+vehiculo.idVehiculo+'/'+1;
+			    var tempInfoWindows = listadoInfoWindows[vehiculo.placa]["infowindow"];
+                if(tempInfoWindows!=null){
+
+					var velocidad = " Velocidad: "+vehiculo.velocidad.toFixed(1)+"km/h";
+	
+                	var html = '<h1><a href="'+hrefVehiculo+'">'+vehiculo.placa+'</a> <span id="textoMovimiento'+vehiculo.placa+'" class ="'+colorLabelMovimiento+'" style="font-size:0.35em">'+textoMovimiento+'</span> <span id="textoTemperatura'+vehiculo.placa+'" class ="+colorLabelMovimiento+" style="font-size:0.8em">'+textoTemperatura+'</span></h1>'
+						+'<div style="infoWindowNegro2"> <span id="textoDireccion'+vehiculo.placa+'">'+direccion+'</span><span class="infoWindowRojo2" id="textoVelocidad'+vehiculo.placa+'">'+ velocidad +'</span></div>'+'<div class="labelinfowindow" id="labelPoste'+vehiculo.placa+'" >'+labelposte+'</div>'+'<div id="textoPoste'+vehiculo.placa+'" >'+textoPoste+'</div>'+'<div class="labelinfowindow" id="labelMunicipio'+vehiculo.placa+'" >'+labelMunicipio+'</div>'+'<div id="textoMunicipio'+vehiculo.placa+'" >'+textoMunicipio+'</div>'+'<div class="labelinfowindow" id="labelPeaje'+vehiculo.placa+'" >'+labelPeaje+'</div>'+'<div id="textoPeaje'+vehiculo.placa+'" >'+textoPeaje+'</div>';
+	
+                    tempInfoWindows.setContent(html);
+                    if ( $('#textoMovimiento'+vehiculo.placa).length ) {
+                    	//actualiza infowindow si esta en movimiento o detenido
+                    	$( '#textoMovimiento'+vehiculo.placa).removeClass().addClass(colorLabelMovimiento);
+                        $('#textoMovimiento'+vehiculo.placa).text(textoMovimiento);        
+                    }
+                    if ( $('#textoDireccion'+vehiculo.placa).length ) {
+                    	//actualiza infowindow la direccion actual del vehiculo
+                        $('#textoDireccion'+vehiculo.placa).text(direccion);        
+                    }else{
+                    	$('#textoDireccion'+vehiculo.placa).text("Sin información.");
+                    }
+                    if ( $('#textoVelocidad'+vehiculo.placa).length ) {
+                    	//actualiza infowindow la velocidad actual del vehiculo
+                        $('#textoVelocidad'+vehiculo.placa).text(" Velocidad "+vehiculo.velocidad.toFixed(1)+"km/h");        
+					}
+                    if ( $('#textoTemperatura'+vehiculo.placa).length ) {
+                    	//actualiza infowindow la velocidad actual del vehiculo
+                        $('#textoTemperatura'+vehiculo.placa).text(textoTemperatura);        
+					}
+
+                    if ( $('#textoPoste'+vehiculo.placa).length ) {
+                    	//actualiza infowindow el poste
+                    	$('#labelPoste'+vehiculo.placa).text(labelposte); 
+                        $('#textoPoste'+vehiculo.placa).text(textoPoste);        
+                    }else{
+                    	$('#labelPoste'+vehiculo.placa).text(""); 
+                    	$('#textoPoste'+vehiculo.placa).text(""); 
+                    }
+                    if ( $('#textoMunicipio'+vehiculo.placa).length ) {
+                    	//actualiza infowindow el poste
+                    	$('#labelMunicipio'+vehiculo.placa).text(labelMunicipio); 
+                        $('#textoMunicipio'+vehiculo.placa).text(textoMunicipio);        
+                    }else{
+                    	$('#labelMunicipio'+vehiculo.placa).text(""); 
+                    	$('#textoMunicipio'+vehiculo.placa).text(""); 
+                    }
+                    if ( $('#textoPeaje'+vehiculo.placa).length ) {
+                    	//actualiza infowindow el poste
+                    	$('#labelPeaje'+vehiculo.placa).text(labelPeaje); 
+                        $('#textoPeaje'+vehiculo.placa).text(textoPeaje);        
+                    }else{
+                    	$('#labelPeaje'+vehiculo.placa).text(""); 
+                    	$('#textoPeaje'+vehiculo.placa).text(""); 
+                    }
+                    
+                }			    
+		    }
+            //-----------------------------
+        }else{
+
+		}
+
+    });
+    request.fail(function(jqXHR, textStatus){ });
+
+
+}
+
+function convertirMetrosAKilometros(metros){
+	var kilometros = metros/1000.0;
+	return kilometros.toFixed(2);
+}
+
+
+// //Geocoder geoposición
+// function buscarPosicionORIGINAL(vehiculo){
+// 	var vvehiculo = vehiculo;
+// 	console.log(vvehiculo);
+	
+// 	if(geocoder == null){
+// 		geocoder = new google.maps.Geocoder;
+// 	}
+	
+// 	var latlng = {lat: parseFloat(vvehiculo.latitud), lng: parseFloat(vehiculo.longitud)};
+	
+// 	geocoder.geocode(
+// 		{'location': latlng},
+
+// 		function(results, status) {
+// 			var clase = ".posicion"+vvehiculo.placa;
+// 			if (status === 'OK') {
+// 				if (results[0]) {
+// 					console.log(results);
+// 					var direccion = results[0].formatted_address;					
+// 					$(clase).text(direccion);
+// 				} else {
+// 					$(clase).text("Dirección no definida");
+// 				}
+// 			} else {
+// 				$(clase).text("Servicio de dirección no disponible");
+// 			}
+// 		}
+// 	);
+	
+	
+// }
+
+
+var map  = null;
+
+var mapTemporalBack = null;
+var pinesVehiculos = {};
+var tracking = null;
+var primeraVezCargarMapa = true;
+
+var markerCluster=null;
+function cargarDatosMapa(tracking){
+    if(estaMapaCargado){
+    	var markers = []; //markerclusterer.js
+		
+		var posLat = 0;
+		
+		var posLon = 0;
+		
+		var posLatOrigen = 0;
+		
+		var posLonOrigen = 0;	
+		
+		if (map == null){
+			
+    		map = new google.maps.Map(document.getElementById('map'), {
+				center: {lat: -0, lng: 0}
+				
+			});
+			//buscador del mapa
+			crearBuscador();
+			
+			
+		}
+		
+		var zoom = null;
+		var posicionCamara = null;
+		if(mapTemporalBack != null){
+    		zoom = mapTemporalBack.getZoom();
+    		posicionCamara = mapTemporalBack.getCenter();
+    		//posicionCamara = {lat: 3.41306, lng: -76.3511};
+		}
+		
+		mapTemporalBack = map;
+
+		
+ 		google.maps.event.trigger(map,'resize');
+
+ 		var LatLngList = [];
+
+ 		for(var i = 0 ; i < tracking.length ; i++) { 
+
+			//console.log(tracking[i].estado);
+ 			if(tracking[i].estado == "activo"){
+				var imageOrigen = '{% static "images/pinUbicacion.png" %}';
+			}else if(tracking[i].estado == "inactivo"){
+	    		var imageOrigen = '{% static "images/pinDesactivado.png" %}';
+			}
+
+			var beachMarkerOrigen = null;
+			
+			var idVehiculo = tracking[i].idVehiculo;
+			if (idVehiculo in pinesVehiculos){
+				beachMarkerOrigen = pinesVehiculos[idVehiculo];
+			}
+			
+			if (beachMarkerOrigen == null){
+				
+				beachMarkerOrigen = new google.maps.Marker({         
+					map: map,
+					icon: imageOrigen,
+					title: tracking[i].placa				
+				});
+			
+				
+				beachMarkerOrigen.addListener('click', generarInfoViewVehiculo(i, beachMarkerOrigen, true));
+			}
+			//con esta linea vuelvo siempre al mismo pin
+			//beachMarkerOrigen.setMap(map);
+
+
+			
+			pinesVehiculos[idVehiculo] = beachMarkerOrigen;
+			
+			posLatOrigen = parseFloat(tracking[i].latitud);
+			posLonOrigen = parseFloat(tracking[i].longitud);        
+			beachMarkerOrigen.setPosition({lat: posLatOrigen, lng: posLonOrigen});
+			//map.setZoom(7);
+			LatLngList.push(new google.maps.LatLng (posLatOrigen,posLonOrigen));
+
+
+			if(primeraVezCargarMapa){
+				generarInfoViewVehiculo(i, beachMarkerOrigen,true)(88);
+				//generarInfoPlacaVehiculo(i, beachMarkerOrigen, true)(88);
+				
+			}else{
+				//console.log("segunda vez que garga------")
+				generarInfoViewVehiculo(i, beachMarkerOrigen,false)(88);
+				//generarInfoPlacaVehiculo(i, beachMarkerOrigen, false)(88); 
+			}
+			
+
+
+
+            // TODO validación de eduardo
+	        // if (tracking[i].latitud != null && tracking[i].longitud !=null){
+		    //     posLatOrigen = parseFloat(tracking[i].latitud);
+			// 	posLonOrigen = parseFloat(tracking[i].longitud);        
+		    //     beachMarkerOrigen.setPosition({lat: posLatOrigen, lng: posLonOrigen});
+		    //     map.setZoom(7);
+			// 	LatLngList.push(new google.maps.LatLng (posLatOrigen,posLonOrigen))
+			// }
+		
+		//generarInfoViewVehiculo(i, beachMarkerOrigen)(88); 
+				
+	    	//markerclusterer.js
+			markers.push(beachMarkerOrigen);	
+		}
+
+	}
+
+	if(zoom == null && tracking.length > 1){
+		var latlngbounds = new google.maps.LatLngBounds();
+
+		LatLngList.forEach(function(latLng){
+		   latlngbounds.extend(latLng);
+		});
+
+		map.setCenter(latlngbounds.getCenter());
+		map.fitBounds(latlngbounds); 	
+	}else{
+	    if(zoom == null){
+		zoom = 14;
+	    }
+	    if(posicionCamara == null){
+			var latVehiculo = parseFloat(tracking[0].latitud);
+			var lonVehiculo = parseFloat(tracking[0].longitud);       	        
+			posicionCamara = {lat: posLatOrigen, lng: posLonOrigen};
+			//posicionCamara = {lat: 3.41306, lng: -76.3511};
+	    }
+	    map.setZoom(zoom);
+	    //map.setCenter(posicionCamara);	
+	}
+
+    if(primeraVezCargarMapa){
+        //markerclusterer.js
+	    var options = {
+	        imagePath: '{% static "images/m" %}'
+	    };                
+	    //markerclusterer.js
+        markerCluster = new MarkerClusterer(map, markers, options);
+    }
+    
+
+	primeraVezCargarMapa = false;
+
+
+}
+
+//--------------------------------Funciones buscador--------------------------------------------
+var listaTypeHead = [];
+function crearBuscador(){
+	$('#textoPlaca').keypress(function(e) {
+		if(e.which == 13) {
+			zoomPlacaBusqueda();
+		}
+	});
+	for(var i = 0 ; i < tracking.length ; i++) {
+		listaTypeHead.push({id: tracking[i].placa, name: tracking[i].placa});
+	}
+}
+
+function zoomPlacaBusqueda(){
+	existeVehiculo = false;
+	var texto =  $("#textoPlaca").val();
+	var textoBusqueda =  texto.toUpperCase().trim();
+	for(var i = 0 ; i < tracking.length ; i++) {
+		if(textoBusqueda == tracking[i].placa.toUpperCase().trim()){
+			existeVehiculo = true;
+			var posicionCamara = {lat: tracking[i].latitud, lng: tracking[i].longitud};
+			map.setCenter(posicionCamara);
+			map.setZoom(24);
+	    }
+	}
+	if(!existeVehiculo){
+		notif({
+                 msg     : "La placa del vehículo no está registrada en el sistema",
+                 type    : "warning",
+                 position: "center"
+             });
+	}
+
+}
+
+
+//-------------------------------- fin funciones buscador--------------------------
+
+
+function cargarPosicionVehiculo(){
+	// funcion para listar la posición de los vehiculos latitud y longitud
+	var peticion    = { 'autenticacion': {  'usuario' : config.getUsuarioLogin(),
+                                            'token'   : config.getToken(),
+                                            'tenant'  : config.getTennant(),
+                                                
+                                            },
+                        'data'         : {                     					
+                        				 }
+                      };
+
+	// valida si la peticion es de un generador de carga
+    if(config.getEsGeneradorCarga()){
+		//si la peticion es de un generador de carga entonces a la autenticación se le agrega el codigo de acceso
+    	peticion["autenticacion"]["codigoAcceso"] = config.getCodigoAcceso();
+    }
+	
+    var request = $.ajax({
+            type: "POST",
+            url		: "{% url 'wslistarMapaVehiculos' %}",
+            data	: {
+                        request: JSON.stringify(peticion)
+             },
+             dataType: "json"
+        });
+    request.done(function(respuesta){
+        if(respuesta.success){
+            //return (respuesta["data"]);
+           // var tracking = new Array();
+            tracking = respuesta["data"];
+			evaluarOpcionesActivasTenant(tracking);
+			cargarDatosMapa(tracking);
+
+        }else{ }
+    });
+    request.fail(function(jqXHR, textStatus){ });
+
+}
+
+
+var listaOpcionesHabilitadasPlataforma = [];
+
+function evaluarOpcionesActivasTenant(data){
+	for (var i = 0; i < data.length; i++) {
+		//console.log(data[index]['opcionesAdicionalesPlataforma']);
+		obtenerValoresHabilitados(data[i]['opcionesAdicionalesPlataforma']);
+	}
+	config.setListaOpcionesHabilitadasPlataforma(listaOpcionesHabilitadasPlataforma);
+	habilitarPestanasAdminTenant();
+}
+
+
+function obtenerValoresHabilitados(valoresVehiculo){
+    if (valoresVehiculo != null){
+		for (var index = 0; index < valoresVehiculo.length; index++) {
+			var indiceLista = listaOpcionesHabilitadasPlataforma.indexOf(valoresVehiculo[index]);
+			if (indiceLista == -1){
+				listaOpcionesHabilitadasPlataforma.push(valoresVehiculo[index]);
+			}
+			
+		}
+	}
+
+}
+
+
+// === Document ready!!! =======================================================
+
+
+function visualizarMapa(){
+	$('#contenedorMapa').show();
+	setTimeout(function(){
+
+		if(estaMapaCargado){
+			cargarPosicionVehiculo();
+		
+		}
+
+	}, 3000);
+}
+
+var socket = null;
+$(document).ready(function() {
+
+	visualizarMapa();
+	var tiempoRecarga = config.getTIEMPO_RECARGA_MAPA_VISTA_GENERAL() 
+	setInterval('visualizarMapa()', tiempoRecarga);
+
+	//--------- Inicio campo de texto autocompletar----------------------------------
+	var $input = $("#textoPlaca");
+	$input.typeahead({
+		source: listaTypeHead,
+		autoSelect: true
+	});	
+
+	$input.change(function() {
+		var current = $input.typeahead("getActive");
+		if (current) {
+			// Some item from your model is active!
+			if (current.name == $input.val()) {
+				// This means the exact match is found. Use toLowerCase() if you want case insensitive match.
+				zoomPlacaBusqueda();
+			} 
+		}
+	});
+	//--------- Fin codigo campo de texto autocompletar----------------------------------
+
+});
+// --- End document ready ------------------------------------------------------
+
+
+</script>
+{% endblock %}
+
+{% block contenido %}
+<body>
+	
+	<div id="page-wrapper" style="  margin: 3em; margin-top: 0;">
+	
+	    <div class="row">
+	        <div class="col-lg-12">
+	            <h1 class="">Ubicación Vehículos</h1>
+	        </div>
+	        <!-- /.col-lg-12 -->
+	    </div>
+	    <!-- /.row -->
+	    <div class="row">
+	        <div class="col-lg-8">
+	            <div class="panel panel-default">
+	                <!-- /.panel-heading -->
+	                <div class="panel-body">
+						<div class="tabbable pestana">
+						  	<ul class="nav nav-tabs">
+						    	<li class="active"><a href="#1" data-toggle="tab">Mapa</a></li>
+							</ul>
+							<div id="contenedorMapa" style="display:none">
+									<!-- <div class=""> -->
+										
+										<div class="row" style="margin-bottom: 1em;">
+												
+											<div class="col-md-6 conteneForm" style="margin-top: 2em;">
+													<label> Si deseas buscar un vehículo ingresa la placa! </label> 
+											<input  class="form-control buscarVeh" type="text" value="" id="textoPlaca" data-provide="typeahead" placeholder="Buscar vehículo">
+											</div>
+										</div>
+									<!-- </div>	 -->
+									
+									<div id="map" style="width:100%; height:50em;"></div>    
+							</div>
+						  
+						  
+						   <div class="tab-pane active" id="1" >
+						   	
+						      <table id="graficoTabla" class="table table-striped table-bordered display" style="width: 100%">
+		                      </table>
+						   </div>
+						</div>
+					</div>
+	                <!-- /.panel-body -->
+	            </div>
+	            <!-- /.panel -->
+	        </div>
+	        <!-- /.col-lg-12 -->
+
+	        <div class = "div-twitter col-lg-4 panel">
+        		<div class="" style="max-height: 65.30em; overflow:auto;">
+            		<a class="twitter-timeline" href="https://twitter.com/Numeral767">
+		                Twitter Invías 767
+		            </a> 
+		            <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+		        </div>
+		        <div class="">
+		        </div>
+		    </div>
+		    <!-- /.col-lg-4 -->
+
+	    </div>
+	</div>
+<!-- /#page-wrapper -->
+
+
+<script async defer
+
+     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDOqPrm-nuqELi0b_kPt7nP0vHFdUunOHc&signed_in=true&callback=initMap&libraries=places&sensor=false"></script>
+
+</body>
+
+
+{% endblock %}

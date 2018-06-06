@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Favicon --> 
+	<!-- <link rel="shortcut icon" type="image/png" href="{% static "images/faviconscientia.png" %}"/>  -->
+	
+    <title>{% block titulo %}...titulo...{% endblock %}</title>
+    
+    <link rel="icon" type="image/png" href="{% static "images/favicon-32x32.png"									%}/" sizes="32x32">
+    <link rel="icon" type="image/png" href="{% static "images/android-chrome-192x192.png"							%}/" sizes="192x192">
+    <link rel="icon" type="image/png" href="{% static "images/favicon-96x96.png"									%}/" sizes="96x96">
+    <link rel="icon" type="image/png" href="{% static "images/favicon-16x16.png"									%}/" sizes="16x16">
+
+	<!-- Estilos -->
+	<!-- <link href="{% static "bootstrap/css/bootstrap.min.css" %}"  rel="stylesheet"> -->
+	<link href="{% static "bootstrap/css/bootstrap.min.css" 					%}" rel="stylesheet" type="text/css">
+    <link href="{% static "ladda/css/ladda-themeless.min.css" 					%}" rel="stylesheet" type="text/css"> 
+    <link href="{% static "font-awesome-4.3.0/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css"> 
+    <link href="{% static "notifit/css/notifIt.css" 							%}" rel="stylesheet" type="text/css"> 
+    <link href="{% static "material/css/material.min.css" %}"  rel="stylesheet">
+    <link href="{% static "material/css/ripples.min.css"  %}"  rel="stylesheet">
+    <link href="{% static "pace/themes/red/pace-theme-corner-indicator.css" %}" rel="stylesheet" />       
+        
+	<!-- Bibliotecas -->
+    <script src="{% static "js/jquery.js"									%}"></script>
+    <script src="{% static "bootstrap/js/bootstrap.min.js" 					%}"></script>
+    <script src="{% static "ladda/js/spin.min.js" 							%}"></script>
+    <script src="{% static "ladda/js/ladda.min.js" 							%}"></script>
+    <script src="{% static "js/configuracion.js" 							%}"></script>
+    <script src="{% static "notifit/js/notifIt.js" 							%}"></script>
+    <script src="{% static "material/js/ripples.min.js" 					%}"></script>
+    <script src="{% static "material/js/material.min.js"					%}"></script>
+    <script >
+		 paceOptions = {
+		 'ajax' : {
+		 'trackMethods': ['GET', 'POST']
+		 }	 
+		 };
+	</script>
+    <script src="{% static "pace/pace.min.js" %}" ></script>
+    
+   
+   
+    
+    <script>
+            $(document).ready(function() {
+                // This command is used to initialize some elements and make them work properly
+                $.material.init();
+            });
+        </script>
+	<!-- Código principal librerias, css, estilos-->
+	{% block codigoPrincipal %}...codigoPrincipal...{% endblock %}
+</head>	
+<body>    
+    {% block contenido %}...contenido...{% endblock %}
+</body>
+</html>
